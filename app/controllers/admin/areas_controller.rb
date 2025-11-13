@@ -4,6 +4,25 @@ class Admin::AreasController < Admin::BaseController
     @areas = Area.order(sort)
   end
 
+  def new
+    @area = Area.new
+  end
+
+  def create
+    area = Area.new
+    area.assign_attributes(area_params)
+    area.tags = params[:area][:joined_tags].to_s.split(",").reject(&:blank?)
+
+    if cover = params[:area][:cover]
+      area.cover = params[:area][:cover]
+    end
+
+    area.save!
+
+    flash[:notice] = "Area created"
+    redirect_to [:admin, area]
+  end
+
   def edit
     set_area
   end
