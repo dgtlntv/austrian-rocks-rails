@@ -10,8 +10,13 @@ namespace :mapbox do
     hull_features = []
 
     Area.published.each do |area|
-      hull = area.boulders.where(ignore_for_area_hull: false).
-        select("st_buffer(st_convexhull(st_collect(polygon::geometry)),0.00007) as hull").to_a.first.hull
+      result = area.boulders.where(ignore_for_area_hull: false).
+        select("st_buffer(st_convexhull(st_collect(polygon::geometry)),0.00007) as hull").to_a.first
+      
+      # Skip areas with no boulders
+      next unless result&.hull
+      
+      hull = result.hull
 
       hash = {}.with_indifferent_access
       hash[:area_id] = area.id
