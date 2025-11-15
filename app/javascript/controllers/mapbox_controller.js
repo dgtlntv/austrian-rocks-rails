@@ -34,12 +34,15 @@ export default class extends Controller {
             language: this.localeValue, // doesn't seem to work?
             locale: this.localeValue == "fr" ? this.getFrLocale() : null,
             hash: true,
-            style: `mapbox://styles/nmondollot/cl95n147u003k15qry7pvfmq2${
+            style: `mapbox://styles/dgtlntv/cmi0wnif6004t01r0araj0ts0${
                 this.draftValue ? "/draft" : ""
             }`,
             bounds: [
-                [2.4806787, 48.2868427],
-                [2.7698927, 48.473906],
+                [13.445352917884037, 47.00402967198772],
+                [13.445352917884037, 47.001030697796836],
+                [13.450138786643492, 47.001030697796836],
+                [13.450138786643492, 47.00402967198772],
+                [13.445352917884037, 47.00402967198772],
             ],
             padding: 5,
         })
