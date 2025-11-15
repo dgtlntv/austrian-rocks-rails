@@ -2,7 +2,7 @@
 
 namespace :app do
   task db: :environment do
-    file_name = Rails.root.join("export", "app", "boolder.db")
+    file_name = Rails.root.join("export", "app", "#{BRAND_CONFIG[:slug]}.db")
 
     File.delete(file_name) if File.exist?(file_name)
 
@@ -216,7 +216,7 @@ namespace :app do
         )
       end
 
-      puts "exported boolder.db".green
+      puts "exported #{BRAND_CONFIG[:slug]}.db".green
 
     rescue SQLite3::Exception => e
       puts "Exception occurred".red

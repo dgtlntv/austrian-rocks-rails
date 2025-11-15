@@ -42,7 +42,7 @@ namespace :mapbox do
 
     geo_json = JSON.pretty_generate(RGeo::GeoJSON.encode(feature_collection))
 
-    file_name = Rails.root.join("..", "boolder-maps", "mapbox", "areas.geojson")
+    file_name = Rails.root.join("..", "#{BRAND_CONFIG[:slug]}-maps", "mapbox", "areas.geojson")
 
     File.open(file_name, "w") do |f|
       f.write(geo_json)
@@ -90,7 +90,7 @@ namespace :mapbox do
 
     geo_json = JSON.pretty_generate(RGeo::GeoJSON.encode(feature_collection))
 
-    file_name = Rails.root.join("..", "boolder-maps", "mapbox", "clusters.geojson")
+    file_name = Rails.root.join("..", "#{BRAND_CONFIG[:slug]}-maps", "mapbox", "clusters.geojson")
 
     File.open(file_name, "w") do |f|
       f.write(geo_json)
@@ -102,7 +102,7 @@ namespace :mapbox do
   task problems: :environment do
     puts "exporting problems"
 
-    raise "please specify a value for include_boulders (true or false). Reminder: don't include boulders when exporting to boolder-data" unless ENV["include_boulders"].present?
+    raise "please specify a value for include_boulders (true or false). Reminder: don't include boulders when exporting to #{BRAND_CONFIG[:slug]}-data" unless ENV["include_boulders"].present?
     include_boulders = ENV["include_boulders"] == "true"
 
     factory = RGeo::GeoJSON::EntityFactory.instance
@@ -142,7 +142,7 @@ namespace :mapbox do
 
     geo_json = RGeo::GeoJSON.encode(feature_collection)
 
-    File.open(Rails.root.join("..", "boolder-maps", "mapbox", "problems#{"-without-boulders" if !include_boulders}.geojson"), "w") do |f|
+    File.open(Rails.root.join("..", "#{BRAND_CONFIG[:slug]}-maps", "mapbox", "problems#{"-without-boulders" if !include_boulders}.geojson"), "w") do |f|
       f.write(JSON.pretty_generate(geo_json))
     end
 
@@ -164,7 +164,7 @@ namespace :mapbox do
 
     geo_json = RGeo::GeoJSON.encode(feature_collection)
 
-    File.open(Rails.root.join("..", "boolder-maps", "mapbox", "circuits.geojson"), "w") do |f|
+    File.open(Rails.root.join("..", "#{BRAND_CONFIG[:slug]}-maps", "mapbox", "circuits.geojson"), "w") do |f|
       f.write(JSON.pretty_generate(geo_json))
     end
 
@@ -195,7 +195,7 @@ namespace :mapbox do
 
   #   geo_json = JSON.pretty_generate(RGeo::GeoJSON.encode(feature_collection))
 
-  #   file_name = Rails.root.join("..", "boolder-maps", "mapbox", "pois.geojson")
+  #   file_name = Rails.root.join("..", "#{BRAND_CONFIG[:slug]}-maps", "mapbox", "pois.geojson")
 
   #   raise "file already exists" if File.exist?(file_name)
 

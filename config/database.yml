@@ -1,48 +1,48 @@
 default: &default
-  adapter: postgis
-  encoding: unicode
-  postgis_extension: postgis      # default is postgis
-  postgis_schema: public          # default is public
-  schema_search_path: public,postgis
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  timeout: 5000
+    adapter: postgis
+    encoding: unicode
+    postgis_extension: postgis # default is postgis
+    postgis_schema: public # default is public
+    schema_search_path: public,postgis
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    timeout: 5000
 
 development:
-  <<: *default
-  database: dump-prod
+    <<: *default
+    database: dump-prod
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
 # Do not set this db to the same as development or production.
 test:
-  <<: *default
-  database: boolder-test
+    <<: *default
+    database: austrian-rocks-test
 
 production:
-  primary:
-    <<: *default
-    database: austrian-rocks-production
-    username: austrian-rocks
-    password: <%= ENV["POSTGRES_PASSWORD"] %>
-    host: <%= ENV["DB_HOST"] %>
-  cache:
-    <<: *default
-    database: austrian-rocks-cache
-    migrations_paths: db/cache_migrate
-    username: austrian-rocks
-    password: <%= ENV["POSTGRES_PASSWORD"] %>
-    host: <%= ENV["DB_HOST"] %>
-  queue:
-    <<: *default
-    database: austrian-rocks-queue
-    migrations_paths: db/queue_migrate
-    username: austrian-rocks
-    password: <%= ENV["POSTGRES_PASSWORD"] %>
-    host: <%= ENV["DB_HOST"] %>
-  cable:
-    <<: *default
-    database: austrian-rocks-cable
-    migrations_paths: db/cable_migrate
-    username: austrian-rocks
-    password: <%= ENV["POSTGRES_PASSWORD"] %>
-    host: <%= ENV["DB_HOST"] %>
+    primary:
+        <<: *default
+        database: austrian-rocks-production
+        username: austrian-rocks
+        password: <%= ENV["POSTGRES_PASSWORD"] %>
+        host: <%= ENV["DB_HOST"] %>
+    cache:
+        <<: *default
+        database: austrian-rocks-cache
+        migrations_paths: db/cache_migrate
+        username: austrian-rocks
+        password: <%= ENV["POSTGRES_PASSWORD"] %>
+        host: <%= ENV["DB_HOST"] %>
+    queue:
+        <<: *default
+        database: austrian-rocks-queue
+        migrations_paths: db/queue_migrate
+        username: austrian-rocks
+        password: <%= ENV["POSTGRES_PASSWORD"] %>
+        host: <%= ENV["DB_HOST"] %>
+    cable:
+        <<: *default
+        database: austrian-rocks-cable
+        migrations_paths: db/cable_migrate
+        username: austrian-rocks
+        password: <%= ENV["POSTGRES_PASSWORD"] %>
+        host: <%= ENV["DB_HOST"] %>

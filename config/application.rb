@@ -9,7 +9,7 @@ Bundler.require(*Rails.groups)
 # Load brand configuration before initializers
 require_relative "brand"
 
-module Boolder
+module AustrianRocks
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.0

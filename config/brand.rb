@@ -1,5 +1,6 @@
 BRAND_CONFIG = {
   name: "Austrian.rocks",
+  slug: "austrian-rocks",
   domains: {
     main: "austrian.rocks",
     www: "www.austrian.rocks",

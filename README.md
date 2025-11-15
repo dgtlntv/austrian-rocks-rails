@@ -6,9 +6,6 @@ This is the code powering the
 [Austrian.rocks website](https://www.austrian.rocks) and all the backend & data
 processing.
 
-NB: if you just want a quick access to the data, check out
-[boolder-data](https://github.com/boolder-org/boolder-data)
-
 ## Stack
 
 -   Ruby On Rails

@@ -9,16 +9,18 @@
     <div class="relative my-4 lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start">
       <div class="relative">
 
+        <!-- TODO: Uncomment when Austrian.rocks mobile apps are published
         <div class="flex justify-center my-4 lg:mb-8">
-          <%= link_to "https://apps.apple.com/#{I18n.locale == :en ? "us" : "fr"}/app/boolder/id1506614493#?platform=iphone" do %>
+          <%= link_to "https://apps.apple.com/#{I18n.locale == :en ? "us" : "fr"}/app/" do %>
             <div class="object-contain h-24">
-              <%= image_tag "app-store-badge-#{I18n.locale}.png", class:"object-contain h-24 p-4" %>  
+              <%= image_tag "app-store-badge-#{I18n.locale}.png", class:"object-contain h-24 p-4" %>
             </div>
           <% end %>
-          <%= link_to "https://play.google.com/store/apps/details?id=com.boolder.boolder" do %>
+          <%= link_to "https://play.google.com/store/apps/details?id=" do %>
             <%= image_tag "play-store-badge-#{I18n.locale}.png", class:"object-contain h-24 p-4" %>
           <% end %>
         </div>
+        -->
 
         <!-- <div class="w-full flex justify-center">
           <a class="lg:max-w-lg mb-8 text-sm leading-5 font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-400/10 rounded-full py-1 px-3 inline-flex items-center hover:bg-emerald-400/20" href="<%= about_path(anchor: "android") %>">

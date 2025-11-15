@@ -57,7 +57,7 @@ env:
         # RAILS_MAX_THREADS: 4
 
         # Match this to any external database server to configure Active Record correctly
-        # Use boolder-db for a db accessory server on same machine via local kamal docker network.
+        # Use austrian-rocks-db for a db accessory server on same machine via local kamal docker network.
         DB_HOST: austrian-rocks-db
 
         # Log everything from Rails

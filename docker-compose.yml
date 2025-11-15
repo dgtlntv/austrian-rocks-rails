@@ -4,9 +4,9 @@ services:
     db:
         image: postgis/postgis:16-3.5
         platform: linux/amd64
-        container_name: boolder-db
+        container_name: austrian-rocks-db
         environment:
-            POSTGRES_USER: boolder
+            POSTGRES_USER: austrian-rocks
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
             POSTGRES_DB: dump-prod
         ports:
@@ -14,7 +14,7 @@ services:
         volumes:
             - postgres_data:/var/lib/postgresql/data
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U boolder -d dump-prod"]
+            test: ["CMD-SHELL", "pg_isready -U austrian-rocks -d dump-prod"]
             interval: 10s
             timeout: 5s
             retries: 5
@@ -23,7 +23,7 @@ services:
         build:
             context: .
             dockerfile: Dockerfile.dev
-        container_name: boolder-web
+        container_name: austrian-rocks-web
         command:
             bash -c "bin/rails db:prepare && rm -f tmp/pids/server.pid &&
             bin/dev"
@@ -33,7 +33,7 @@ services:
         ports:
             - "3000:3000"
         environment:
-            DATABASE_URL: postgis://boolder:${POSTGRES_PASSWORD:-password}@db:5432/dump-prod
+            DATABASE_URL: postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/dump-prod
             RAILS_ENV: ${RAILS_ENV:-development}
             MAPBOX_DEV_ACCESS_KEY: ${MAPBOX_DEV_ACCESS_KEY}
         depends_on:

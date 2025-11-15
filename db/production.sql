@@ -1,4 +1,4 @@
-CREATE DATABASE boolder-production;
-CREATE DATABASE boolder-cache;
-CREATE DATABASE boolder-queue;
-CREATE DATABASE boolder-cable;
+CREATE DATABASE austrian-rocks-production;
+CREATE DATABASE austrian-rocks-cache;
+CREATE DATABASE austrian-rocks-queue;
+CREATE DATABASE austrian-rocks-cable;
