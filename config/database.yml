@@ -21,28 +21,28 @@ test:
 production:
   primary:
     <<: *default
-    database: boolder-production
-    username: boolder
+    database: austrian-rocks-production
+    username: austrian-rocks
     password: <%= ENV["POSTGRES_PASSWORD"] %>
     host: <%= ENV["DB_HOST"] %>
   cache:
     <<: *default
-    database: boolder-cache
+    database: austrian-rocks-cache
     migrations_paths: db/cache_migrate
-    username: boolder
+    username: austrian-rocks
     password: <%= ENV["POSTGRES_PASSWORD"] %>
     host: <%= ENV["DB_HOST"] %>
   queue:
     <<: *default
-    database: boolder-queue
+    database: austrian-rocks-queue
     migrations_paths: db/queue_migrate
-    username: boolder
+    username: austrian-rocks
     password: <%= ENV["POSTGRES_PASSWORD"] %>
     host: <%= ENV["DB_HOST"] %>
   cable:
     <<: *default
-    database: boolder-cable
+    database: austrian-rocks-cable
     migrations_paths: db/cable_migrate
-    username: boolder
+    username: austrian-rocks
     password: <%= ENV["POSTGRES_PASSWORD"] %>
     host: <%= ENV["DB_HOST"] %>
