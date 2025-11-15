@@ -17,7 +17,7 @@ fr:
           crashpad_tip: Nous vous recommandons de prendre un crash pad épais et avec une grande surface au sol, même s'il est plus encombrant.
           guidebook: Un topo
           guidebook_description_html: Un <i>topo</i>, ou <i>topoguide</i>, vous permet de vous repérer dans un secteur d'escalade.
-          guidebook_tip_html: Nous vous recommandons <a href="%{path}">l’appli Boolder</a>. Vous aurez accès à une carte géolocalisée (GPS et boussole) et aux photos des voies.
+          guidebook_tip_html: Nous vous recommandons <a href="%{path}">l'appli %{brand_name}</a>. Vous aurez accès à une carte géolocalisée (GPS et boussole) et aux photos des voies.
           optional: Et aussi
           optional_item1_html: un <strong>paillasson</strong> (ou chiffon) pour essuyer vos chaussons avant de commencer une voie
           optional_item2_html: des <strong>crash pads supplémentaires</strong>, cf. <a href="%{path}">“Grimper en sécurité”</a>
@@ -40,7 +40,7 @@ fr:
           title: Choisir ses voies
           intro: Une fois arrivé sur un secteur, voici quelques conseils pour trouver facilement des voies qui vous correspondent.
           filter_by_level: Filtrer par niveau
-          filter_by_level_p1_html: Grâce à l’<a href="%{path}">appli Boolder</a>, vous pouvez filtrer les voies correspondant à votre niveau.
+          filter_by_level_p1_html: Grâce à l'<a href="%{path}">appli %{brand_name}</a>, vous pouvez filtrer les voies correspondant à votre niveau.
           filter_by_level_p2: Vous pouvez ainsi facilement identifier les zones ayant une bonne densité de voies correspondant à votre niveau.
           filter_by_level_warning: "Attention : une cotation 4a à Fontainebleau équivaut environ à 5a en falaise ou en salle."
           filter_by_level_warning2: Ne vous surestimez pas ;)

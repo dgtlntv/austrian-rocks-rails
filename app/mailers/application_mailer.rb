@@ -1,4 +1,4 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: "Boolder <hello@austrian.rocks>"
+  default from: "#{BRAND_CONFIG[:name]} <#{BRAND_CONFIG[:contact][:email]}>"
   layout "mailer"
 end

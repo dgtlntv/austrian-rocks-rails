@@ -8,9 +8,9 @@
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
     origins [
-      "https://boolder.com",
-      "https://www.boolder.com",
-      "https://assets.boolder.com"
+      "https://#{BRAND_CONFIG[:domains][:main]}",
+      "https://#{BRAND_CONFIG[:domains][:www]}",
+      "https://#{BRAND_CONFIG[:domains][:assets]}"
     ]
 
     resource "*",

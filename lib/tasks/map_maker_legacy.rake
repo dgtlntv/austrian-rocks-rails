@@ -39,7 +39,7 @@ namespace :map_maker_legacy do
       factory.feature(line_string, "circuit_#{circuit.id}", { color: circuit.color })
     end
 
-    readme = "****PLEASE READ ME***** This data belongs to boolder.com. Want to use it in your app? Let's discuss: hello@boolder.com"
+    readme = "****PLEASE READ ME***** This data belongs to #{BRAND_CONFIG[:domains][:main]}. Want to use it in your app? Let's discuss: #{BRAND_CONFIG[:contact][:email]}"
     readme_feature = factory.feature("POINT(0 0)", nil, { readme: readme })
 
     feature_collection = factory.feature_collection(

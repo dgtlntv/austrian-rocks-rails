@@ -20,7 +20,7 @@ Rails.application.configure do
   config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}" }
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
-  config.asset_host = "assets.boolder.com"
+  config.asset_host = BRAND_CONFIG[:domains][:assets]
 
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :amazon
@@ -60,7 +60,7 @@ Rails.application.configure do
   config.action_mailer.raise_delivery_errors = true
 
   # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "www.boolder.com", protocol: "https" }
+  config.action_mailer.default_url_options = { host: BRAND_CONFIG[:domains][:www], protocol: "https" }
 
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {

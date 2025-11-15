@@ -58,7 +58,7 @@ fr:
           subtitle: Découvrez l'impossible circuit des 100 7a réalisé par Seb Berthe et Hugo Parmentier.
           cta: Voir le circuit
         app:
-          title: Découvrez l'appli Boolder
+          title: Découvrez l'appli %{brand_name}
           subtitle: Le compagnon idéal pour vos sorties à Fontainebleau, disponible sur iPhone et Android.
           cta: En savoir plus
         beginners_guide:
@@ -66,8 +66,8 @@ fr:
           subtitle: Découvrez le matériel nécesaire, les conseils pour grimper en sécurité, et les règles à respecter en forêt.
           cta: Lire le guide
         about:
-          title: À propos de Boolder
-          subtitle: En savoir plus sur l'équipe Boolder et comment contribuer au projet.
+          title: À propos de %{brand_name}
+          subtitle: En savoir plus sur l'équipe %{brand_name} et comment contribuer au projet.
           cta: En savoir plus
       metas:
         title: Escalade de blocs à Fontainebleau
@@ -77,12 +77,12 @@ fr:
       areas:
         index:
           title: Cartographier
-          subtitle: Pour nous aider à améliorer Boolder, rendez-vous sur un secteur et prenez en photo les blocs manquants avec votre téléphone.
-          core_mapping_team: Vous souhaitez nous aider à cartographier de nouveaux secteurs ? 
+          subtitle: Pour nous aider à améliorer %{brand_name}, rendez-vous sur un secteur et prenez en photo les blocs manquants avec votre téléphone.
+          core_mapping_team: Vous souhaitez nous aider à cartographier de nouveaux secteurs ?
           core_mapping_team_email_html: Envoyez-nous un email à %{link}, nous serons ravis de discuter !
-          metas: 
+          metas:
             title: Cartographier
-            description: Aidez Boolder à cartographier toutes les voies de bloc à Fontainebleau
+            description: Aidez %{brand_name} à cartographier toutes les voies de bloc à Fontainebleau
       problems:
         index:
           title: Voies à cartographier à %{area}
@@ -113,7 +113,7 @@ fr:
           how_to: Lire le mode d'emploi
           warning_horizontal_html: 'Important : les photos doivent être <span class=" underline">horizontales</span>.'
           problem: Voie
-          problem_url_label: Lien (bleau.info ou Boolder)
+          problem_url_label: Lien (bleau.info ou %{brand_name})
           boulder: Photo du bloc
           boulder_description: Prenez une photo du bloc avec votre téléphone.
           line: Ligne de la voie
@@ -132,8 +132,8 @@ fr:
             title: Nouvelle contribution
       map:
         metas:
-          title: Contribuez à Boolder
-          description: Aidez nous à cartographier les voies manquantes sur Boolder
+          title: Contribuez à %{brand_name}
+          description: Aidez nous à cartographier les voies manquantes sur %{brand_name}
     reports:
       new:
         title: Signaler une erreur
@@ -190,7 +190,7 @@ fr:
       metas:
         title: Confidentialité
     contribute:
-      title: Contribuer à Boolder
+      title: Contribuer à %{brand_name}
       mapping_title: Cartographier
       mapping_description: Rendez-vous sur un secteur et prenez en photo les blocs manquants avec votre téléphone.
       report_title: Signaler une erreur
@@ -204,15 +204,15 @@ fr:
       title_prefix: À propos de
       history:
         title: L'histoire
-        p1: "Boolder est né de la rencontre entre Romain, Cyril et Nicolas — deux passionnés de grimpe et un passionné de technologie — vivant à deux pas de l’un des plus beaux spots de bloc du monde : Fontainebleau."
+        p1: "%{brand_name} est né de la rencontre entre Romain, Cyril et Nicolas — deux passionnés de grimpe et un passionné de technologie — vivant à deux pas de l'un des plus beaux spots de bloc du monde : Fontainebleau."
         p2: "Pour Nicolas c’est le coup de cœur. Ses deux amis lui font découvrir la magie de « Bleau » : les secteurs emblématiques, l’histoire de la forêt, le plaisir de grimper en pleine nature, ainsi que les bonnes pratiques à respecter (nettoie tes chaussons !)."
         p3: "La richesse de la forêt reste cependant intimidante : plus de 200 secteurs, plusieurs dizaines de milliers de blocs, et des centaines de circuits pour tous les niveaux. Comment s’y retrouver ?"
-        p4: Nicolas décide alors de cartographier la forêt avec minutie pendant près de 2 ans, et de créer un topo nouvelle génération. En 2023, Boolder est lancé gratuitement sur iPhone et Android.
+        p4: Nicolas décide alors de cartographier la forêt avec minutie pendant près de 2 ans, et de créer un topo nouvelle génération. En 2023, %{brand_name} est lancé gratuitement sur iPhone et Android.
         podcast: "En savoir plus : interview de Nicolas sur le podcast \"Allez\""
       project:
         title: Le projet
         contact: contacter
-        p1: Boolder est un projet à but non lucratif, géré par des bénévoles.
+        p1: "%{brand_name} est un projet à but non lucratif, géré par des bénévoles."
         p2_html: Notre but est de faciliter la découverte de l’escalade de bloc à Fontainebleau de façon <strong>ludique</strong> et dans le <strong>respect de la forêt</strong>.
         p3_html: Le projet étant tout jeune, nous sommes à l’écoute de suggestions et d'idées pour favoriser l'entraide avec la communauté. N'hésitez pas à nous %{link} !
       team:
@@ -242,7 +242,7 @@ fr:
         title: Questions fréquentes
         data:
           question: D'où viennent les données ?
-          p1: Les photos et données géographiques (GPS) ont été récoltées par l'équipe Boolder.  
+          p1: Les photos et données géographiques (GPS) ont été récoltées par l'équipe %{brand_name}.  
           p2_html: Les noms de voies et cotations viennent essentiellement de %{link_bleau}, %{link_cosiroc}, et %{link_topo_bleau}.
           p3: Certains dessins de blocs (en vue de dessus) s'inspirent de topos existants. Nous travaillons à les remplacer par des dessins originaux.
         why_free:
@@ -254,7 +254,7 @@ fr:
           p1_html: Vous pouvez consulter notre %{link}.
           policy: politique de confidentialité
       metas:
-        title: À propos de Boolder
+        title: À propos de %{brand_name}
     areas:
       index:
         title: Fontainebleau
