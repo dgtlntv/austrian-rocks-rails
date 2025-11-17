@@ -134,7 +134,11 @@ namespace :mapbox do
 
     # Extract boulders alongside problems to ensure we always upload both at the same time to mapbox
     boulder_features = Boulder.where.not(area_id: [ 45, 75, 79, 104, 113 ]).joins(:area).where(area: { published: true }).map do |boulder|
-      factory.feature(boulder.polygon, nil, {})
+      hash = {}.with_indifferent_access
+      hash[:name] = boulder.name if boulder.name.present?
+      hash.deep_transform_keys! { |key| key.camelize(:lower) }
+
+      factory.feature(boulder.polygon, nil, hash)
     end
 
     if include_boulders
