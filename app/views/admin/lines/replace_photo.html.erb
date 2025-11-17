@@ -1,0 +1,38 @@
+<% add_breadcrumb "Fontainebleau", admin_areas_path %>
+<% add_breadcrumb @line.problem.area.name, admin_area_problems_path(area_slug: @line.problem.area.slug, circuit_id: @line.problem.circuit&.id) %>
+<% add_breadcrumb "Problem ##{@line.problem.id}", admin_problem_path(@line.problem) %>
+<% add_breadcrumb "Line ##{@line.id}", edit_admin_line_path(@line) %>
+<% add_breadcrumb "Replace photo", nil, class: "active" %>
+
+<div class="my-3">
+  <h1 class="text-2xl font-bold">Replace photo for Line #<%= @line.id %></h1>
+</div>
+
+<div class="my-3">
+  <%= problem_circle_view_with_name(@line.problem) %>
+</div>
+
+<div class="my-8">
+  <h2 class="text-xl font-semibold mb-4">Current photo</h2>
+  <div class="mb-8">
+    <%= image_tag(@line.topo.photo.variant(:medium), class: "max-w-2xl") %>
+  </div>
+</div>
+
+<div class="shadow overflow-hidden sm:rounded-md">
+  <div class="px-4 py-5 bg-white sm:p-6">
+    <%= form_with url: update_photo_admin_line_path(@line), method: :patch do |form| %>
+      <div class="form-group mb-4">
+        <%= form.label :photo, "Select new photo", class: "block text-sm font-medium text-gray-700 mb-2" %>
+        <%= form.file_field :photo, accept: "image/*", class: "block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100" %>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <%= form.submit "Upload new photo", class: "btn" %>
+        <%= link_to "Cancel", edit_admin_line_path(@line), class: "text-gray-600 hover:text-gray-900" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div style="margin-bottom: 300px"></div>

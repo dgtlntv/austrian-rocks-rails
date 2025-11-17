@@ -71,6 +71,19 @@ class Admin::ProblemsController < Admin::BaseController
     end
   end
 
+  def destroy
+    set_problem
+    area = @problem.area
+
+    if @problem.destroy
+      flash[:notice] = "Problem destroyed"
+      redirect_to admin_area_problems_path(area_slug: area.slug, circuit_id: @problem.circuit&.id || "first")
+    else
+      flash[:error] = @problem.errors.full_messages.join("; ")
+      redirect_to admin_problem_path(@problem)
+    end
+  end
+
   private
   def problem_params
     params.require(:problem).

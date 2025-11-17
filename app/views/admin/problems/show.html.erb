@@ -7,6 +7,7 @@
     <% items = [] %>
     <% items << { text: "Request contributions", link: new_admin_contribution_request_path(problem_id: @problem.id) } %>
     <% items << { text: "Edit", link: edit_admin_problem_path(@problem) } %>
+    <% items << { text: "Delete", link: admin_problem_path(@problem), method: :delete, data: { turbo_method: :delete, turbo_confirm: "Are you sure you want to delete this problem?" } } %>
     <%= render 'shared/dot_menu', items: items %>
   </div>
 <% end %>

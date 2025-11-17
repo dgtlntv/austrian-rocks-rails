@@ -26,7 +26,8 @@
       <div class="my-3">
         <%= form.submit "Save", class: "btn" %>
         <% items = [] %>
-        <% items << { text: "destroy", link: admin_line_path(@line), data: { "turbo-confirm": 'Are you sure?', "turbo-method": :delete } } %>
+        <% items << { text: "Replace photo", link: replace_photo_admin_line_path(@line) } %>
+        <% items << { text: "Destroy", link: admin_line_path(@line), data: { "turbo-confirm": 'Are you sure?', "turbo-method": :delete } } %>
         <%= render 'shared/dot_menu', items: items, align_class: "bottom-0" %>
       </div>
     <% end %>

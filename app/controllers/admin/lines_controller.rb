@@ -56,6 +56,23 @@ class Admin::LinesController < Admin::BaseController
     redirect_to admin_problem_path(line.problem)
   end
 
+  def replace_photo
+    set_line
+  end
+
+  def update_photo
+    set_line
+
+    if params[:photo].present?
+      @line.topo.update(photo: params[:photo])
+      flash[:notice] = "Photo updated successfully"
+      redirect_to edit_admin_line_path(@line)
+    else
+      flash[:error] = "Please select a photo to upload"
+      render "replace_photo", status: :unprocessable_entity
+    end
+  end
+
   private
   def line_params
     params.require(:line).permit(:problem_id, :topo_id, topo_attributes: [ :photo ])

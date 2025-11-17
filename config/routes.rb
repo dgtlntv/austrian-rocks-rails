@@ -21,7 +21,12 @@ Rails.application.routes.draw do
           post :toggle_ignore
         end
       end
-      resources :lines
+      resources :lines do
+        member do
+          get :replace_photo
+          patch :update_photo
+        end
+      end
       resources :pois
       resources :poi_routes
       resources :contribution_requests
