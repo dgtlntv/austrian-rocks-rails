@@ -194,16 +194,16 @@ en:
                 apply: Apply
                 clear: Clear
         app_landing:
-            title: All Fontainebleau in your pocket
-            subtitle: "The best guide to enjoy bouldering in Font"
+            title: All of Austrian bouldering in your pocket
+            subtitle: "The best guide to enjoy bouldering in Austria"
             android_announcement: We are looking for an Android developer
             selling_points:
                 map:
                     title: Interactive map and geolocation
-                    subtitle: Find your way in the forest thanks to the GPS
+                    subtitle: Find your way around boulders thanks to the GPS
                 levels:
                     title: Thousands of problems or all levels
-                    subtitle: Filter problems and circuits for your level
+                    subtitle: Filter problems for your level
                 search:
                     title: Advanced search
                     subtitle: Find any problem or area in a few seconds
@@ -211,10 +211,9 @@ en:
                     title: Offline mode
                     subtitle: The app works even in airplane mode
             metas:
-                title: All Fontainebleau in your pocket
+                title: All of Austrian bouldering in your pocket
                 description:
-                    The bouldering guide for Fontainebleau that fits in your
-                    pocket
+                    The bouldering guide for Austria that fits in your pocket
         privacy:
             metas:
                 title: Privacy
@@ -241,29 +240,24 @@ en:
             history:
                 title: The story
                 p1:
-                    "%{brand_name} was born from the meeting between Romain,
-                    Cyril and Nicolas - two climbing enthusiasts and one
-                    technology enthusiast - living just a stone's throw from one
-                    of the most beautiful bouldering spots in the world:
-                    Fontainebleau."
+                    "Max discovered Boolder on climbing trips to Fontainebleau.
+                    It was the first outdoor climbing app that worked well -
+                    good data quality and open source (meaning the code is
+                    freely available for anyone to use and modify)."
                 p2:
-                    'For Nicolas, it was love at first sight. His two friends
-                    made him discover the magic of "Font": the emblematic
-                    sectors, the history of the forest, the joy of climbing in
-                    the middle of nature, as well as the rules to respect (clean
-                    your shoes!).'
+                    "The idea to fork it (create a modified version) for other
+                    areas came up, then got shelved for two years."
                 p3:
-                    "The richness of the forest remained however intimidating:
-                    more than 200 sectors, several tens of thousands of
-                    boulders, and hundreds of circuits for all levels. How to
-                    find your way around?"
+                    "It came back during a trip to Maltatal, Austria. Twelve
+                    people, one guidebook (Max had forgotten his at home).
+                    Trying to share a single book between that many climbers
+                    doesn't work. The existing apps weren't good enough for
+                    anyone to want to use them."
                 p4:
-                    Nicolas then decided to map the forest in detail for nearly
-                    2 years and create a modern guidebook. In 2023,
-                    %{brand_name} launched as a free app on iPhone and Android.
-                podcast:
-                    'Learn more: Nicolas''s interview on the podcast "Allez" (in
-                    French)'
+                    "So Max forked Boolder, adapted it for Austria, and started
+                    mapping bouldering areas. That's %{brand_name}. A modified
+                    version of Boolder's open source project for Austrian
+                    bouldering."
             project:
                 title: The Project
                 contact: contact
@@ -272,8 +266,8 @@ en:
                     volunteers."
                 p2_html:
                     Our goal is to make discovering bouldering in Austria
-                    <strong>fun</strong> and <strong>respectful of the
-                    forest</strong>.
+                    <strong>fun</strong> and <strong>respectful of
+                    nnature</strong>.
                 p3_html:
                     The project is still very young, we welcome suggestions and
                     ideas to foster help within the climbing community. Feel
