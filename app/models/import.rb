@@ -14,8 +14,8 @@ end
 class ImportParser
   def initialize(features)
     @features = features.to_a
-    @area_id = infer_area_id
     @objects = []
+    @area_id = infer_area_id
   end
 
   def objects_to_update
@@ -80,13 +80,13 @@ class ImportParser
   private
 
   def infer_area_id
+    # If we only have cluster features, area_id is not needed
+    return nil if problem_features.empty? && boulder_features.empty? && cluster_features.any?
+
     problems = problem_features.map { |feature| Problem.find_by(id: feature["problemId"]) }
     boulders = boulder_features.map { |feature| Boulder.find_by(id: feature["boulderId"]) }
 
     ids = (problems + boulders).compact.map(&:area_id).uniq
-
-    # If we have cluster features but no problems/boulders, area_id is not needed
-    return nil if ids.empty? && cluster_features.any?
 
     raise "All features must have the same area_id" if ids.count > 1
     raise "Couldn't infer area_id" if ids.count == 0
