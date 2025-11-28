@@ -116,9 +116,10 @@ class ImportParser
     cluster_features.each do |feature|
       cluster = Cluster.find(feature["clusterId"])
 
-      # Detect conflicts
-      cluster.conflicting_updated_at = true if cluster.persisted? &&
-        cluster.updated_at.to_s != feature["updatedAt"]
+      # Detect conflicts - only check if updatedAt is present in the feature
+      if cluster.persisted? && feature["updatedAt"].present?
+        cluster.conflicting_updated_at = true if cluster.updated_at.to_s != feature["updatedAt"]
+      end
 
       # Extract rectangle corners from polygon
       polygon = feature.geometry
