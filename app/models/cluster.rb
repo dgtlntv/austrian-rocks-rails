@@ -1,5 +1,7 @@
 class Cluster < ApplicationRecord
   include CheckConflicts
 
+  audited associated_with: :import
+
   has_many :areas
 end
