@@ -125,8 +125,9 @@ class ImportParser
       points = polygon.exterior_ring.points
 
       # Get bounding box from rectangle
-      lons = points.map(&:lon)
-      lats = points.map(&:lat)
+      # Handle both Cartesian (x/y) and Geographic (lon/lat) points
+      lons = points.map { |p| p.respond_to?(:lon) ? p.lon : p.x }
+      lats = points.map { |p| p.respond_to?(:lat) ? p.lat : p.y }
 
       sw = FACTORY.point(lons.min, lats.min)
       ne = FACTORY.point(lons.max, lats.max)
