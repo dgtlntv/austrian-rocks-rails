@@ -1,0 +1,59 @@
+<% add_breadcrumb "Clusters", admin_clusters_path %>
+<% add_breadcrumb "#{@cluster.name} ##{@cluster.id}", edit_admin_cluster_path(@cluster) %>
+<% add_breadcrumb "Edit", nil, class: "active" %>
+
+<div class="flex justify-end mb-4">
+  <% items = [] %>
+  <% items << { text: "Map edit", link: geojson_io_url(@cluster), target: "_blank" } %>
+  <% items << { text: "Map download", link: admin_cluster_map_path(@cluster, format: :geojson, download: true) } %>
+  <% items << { text: "Map import", link: new_admin_import_path } %>
+  <% items << { text: "Delete", link: admin_cluster_path(@cluster), method: :delete, data: { confirm: "Are you sure?" } } %>
+  <%= render "shared/dropdown_menu", items: items %>
+</div>
+
+<div class="mt-10 sm:mt-0">
+  <div class="md:grid md:grid-cols-4 md:gap-6">
+    <div class="mt-5 md:mt-0 md:col-span-2">
+      <%= form_with model: [:admin, @cluster] do |form| %>
+        <div class="shadow overflow-hidden sm:rounded-md">
+          <div class="px-4 py-5 bg-white sm:p-6">
+            <div class="grid grid-cols-6 gap-6">
+              <%= render "form", form: form %>
+            </div>
+          </div>
+          <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
+            <button type="submit" class="btn">Update</button>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    <div class="md:col-span-2">
+      <div class="px-4 sm:px-0">
+        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-2">Areas in this cluster</h3>
+        <ul class="mb-4 space-y-1">
+          <% @cluster.areas.each do |area| %>
+            <li class="text-sm"><%= link_to area.name, edit_admin_area_path(area), class: "text-brand-600" %></li>
+          <% end %>
+        </ul>
+        <% if @cluster.areas.empty? %>
+          <p class="text-sm text-gray-500">No areas assigned yet</p>
+        <% end %>
+      </div>
+      <div class="px-4 sm:px-0 mt-6">
+        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-2">Bounds</h3>
+        <% if @cluster.sw && @cluster.ne && @cluster.center %>
+          <dl class="text-sm space-y-1">
+            <dt class="text-gray-500">Center:</dt>
+            <dd class="font-mono"><%= "#{@cluster.center.lat.round(6)}, #{@cluster.center.lon.round(6)}" %></dd>
+            <dt class="text-gray-500 mt-2">Southwest:</dt>
+            <dd class="font-mono"><%= "#{@cluster.sw.lat.round(6)}, #{@cluster.sw.lon.round(6)}" %></dd>
+            <dt class="text-gray-500 mt-2">Northeast:</dt>
+            <dd class="font-mono"><%= "#{@cluster.ne.lat.round(6)}, #{@cluster.ne.lon.round(6)}" %></dd>
+          </dl>
+        <% else %>
+          <p class="text-sm text-gray-500">No bounds defined. Use "Map edit" to set bounds.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

@@ -21,6 +21,7 @@ class ImportParser
   def objects_to_update
     parse_problems
     parse_boulders
+    parse_clusters
 
     @objects
   end
@@ -84,6 +85,9 @@ class ImportParser
 
     ids = (problems + boulders).compact.map(&:area_id).uniq
 
+    # If we have cluster features but no problems/boulders, area_id is not needed
+    return nil if ids.empty? && cluster_features.any?
+
     raise "All features must have the same area_id" if ids.count > 1
     raise "Couldn't infer area_id" if ids.count == 0
     ids.first
@@ -95,6 +99,50 @@ class ImportParser
 
   # some editors use LineString and some use Polygon => we need to handle both
   def boulder_features
-    @boulder_features ||= @features.select { |f| f.geometry.geometry_type.in?([ ::RGeo::Feature::LineString, ::RGeo::Feature::Polygon ]) }
+    @boulder_features ||= @features.select { |f|
+      f.geometry.geometry_type.in?([ ::RGeo::Feature::LineString, ::RGeo::Feature::Polygon ]) &&
+      f["boulderId"].present?
+    }
+  end
+
+  def cluster_features
+    @cluster_features ||= @features.select { |f|
+      f.geometry.geometry_type == ::RGeo::Feature::Polygon &&
+      f["clusterId"].present?
+    }
+  end
+
+  def parse_clusters
+    cluster_features.each do |feature|
+      cluster = Cluster.find(feature["clusterId"])
+
+      # Detect conflicts
+      cluster.conflicting_updated_at = true if cluster.persisted? &&
+        cluster.updated_at.to_s != feature["updatedAt"]
+
+      # Extract rectangle corners from polygon
+      polygon = feature.geometry
+      points = polygon.exterior_ring.points
+
+      # Get bounding box from rectangle
+      lons = points.map(&:lon)
+      lats = points.map(&:lat)
+
+      sw = FACTORY.point(lons.min, lats.min)
+      ne = FACTORY.point(lons.max, lats.max)
+      center = FACTORY.point(
+        (lons.min + lons.max) / 2,
+        (lats.min + lats.max) / 2
+      )
+
+      cluster.assign_attributes(
+        sw: sw,
+        ne: ne,
+        center: center,
+        name: feature["name"]
+      )
+
+      @objects << cluster if cluster.changes.any?
+    end
   end
 end

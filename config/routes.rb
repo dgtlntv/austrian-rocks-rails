@@ -5,12 +5,14 @@ Rails.application.routes.draw do
   scope "/:locale", locale: /#{I18n.available_locales.join('|')}/ do
     namespace :admin do
       get "map", to: "maps#show"
+      get "clusters/:cluster_id/map", to: "cluster_maps#show", as: :cluster_map
       resources :areas, param: :slug do
         resources :problems, only: :index
       end
       resources :problems, except: :index
       resources :boulders
       resources :circuits
+      resources :clusters
       resources :imports do
         get "apply", on: :member
       end
