@@ -24,7 +24,13 @@
   <%= form.label :priority %>
   <%= form.select :priority, [["1", 1], ["2", 2], ["3", 3]] %>
 </div>
-<div class="col-span-6 sm:col-span-4"></div>
+
+<div class="col-span-6 sm:col-span-2">
+  <%= form.label :cluster_id, "Cluster" %>
+  <%= form.collection_select :cluster_id, Cluster.all, :id, :name, { include_blank: true } %>
+</div>
+
+<div class="col-span-6 sm:col-span-2"></div>
 
 <div class="col-span-6 sm:col-span-4">
   <%= form.label :joined_tags, 'Tags' %>
