@@ -38,7 +38,7 @@ namespace :app do
           featured, popularity, parent_id)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           [ p.id,
-            I18n.with_locale(:fr) { p.name_with_fallback },
+            I18n.with_locale(:de) { p.name_with_fallback },
             I18n.with_locale(:en) { p.name_with_fallback },
             normalize(p.name),
             p.grade, p.location&.lat, p.location&.lon,
@@ -53,9 +53,9 @@ namespace :app do
           name TEXT NOT NULL,
           name_searchable TEXT NOT NULL,
           priority INTEGER NOT NULL,
-          description_fr TEXT,
+          description_de TEXT,
           description_en TEXT,
-          warning_fr TEXT,
+          warning_de TEXT,
           warning_en TEXT,
           tags TEXT,
           south_west_lat REAL NOT NULL,
@@ -79,7 +79,7 @@ namespace :app do
 
       Area.published.each do |a|
         db.execute(
-          "INSERT INTO areas (id, name, name_searchable, priority, description_fr, description_en, warning_fr, warning_en, tags, south_west_lat, south_west_lon, north_east_lat, north_east_lon,
+          "INSERT INTO areas (id, name, name_searchable, priority, description_de, description_en, warning_de, warning_en, tags, south_west_lat, south_west_lon, north_east_lat, north_east_lon,
                               level1_count, level2_count, level3_count, level4_count, level5_count, level6_count, level7_count, level8_count, problems_count, cluster_id, download_size)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           [
@@ -87,8 +87,8 @@ namespace :app do
             a.name,
             normalize(a.name),
             a.priority,
-            a.description_fr.presence, a.description_en.presence,
-            a.warning_fr.presence, a.warning_en.presence,
+            a.description_de.presence, a.description_en.presence,
+            a.warning_de.presence, a.warning_en.presence,
             a.tags.join(",").presence,
             a.bounds[:south_west]&.lat, a.bounds[:south_west]&.lon, a.bounds[:north_east]&.lat, a.bounds[:north_east]&.lon,
             a.problems.with_location.level(1).count, a.problems.with_location.level(2).count, a.problems.with_location.level(3).count, a.problems.with_location.level(4).count,
@@ -237,5 +237,5 @@ end
 
 def normalize(string)
   return nil if string.nil?
-  I18n.with_locale(:fr) { I18n.transliterate(string) }.gsub(/[^0-9a-zA-Z]/, "")&.downcase
+  I18n.with_locale(:de) { I18n.transliterate(string) }.gsub(/[^0-9a-zA-Z]/, "")&.downcase
 end

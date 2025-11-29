@@ -1,0 +1,107 @@
+de:
+  views:
+    articles:
+      index:
+        metas:
+          title: Der Anfängerguide für das Bouldern in Österreich
+      table_of_contents: Inhaltsverzeichnis
+      beginners_guide:
+        title: Der Anfängerguide
+        subtitle: Um das Bouldern in Österreich zu entdecken
+        equipment:
+          title: Die notwendige Ausrüstung
+          intro: Hier ist die Ausrüstung, die du für deine Kletterausflüge in Österreich brauchst.
+          shoes: Kletterschuhe
+          crashpad: Ein Crashpad
+          crashpad_description: Ein Crashpad ist eine Matte, die deine Stürze abfedert.
+          crashpad_tip: Wir empfehlen ein dickes Crashpad mit einer großen Bodenfläche, auch wenn es sperriger ist.
+          guidebook: Ein Topo-Guide
+          guidebook_description_html: Ein <i>Topo-Guide</i> ermöglicht es dir, dich in einem Klettergebiet zu orientieren.
+          guidebook_tip_html: Wir empfehlen <a href="%{path}">die %{brand_name} App</a>. Du hast Zugriff auf eine geolokalisierte Karte (GPS und Kompass) und Fotos der Routen.
+          optional: Und außerdem
+          optional_item1_html: eine <strong>Fußmatte</strong> (oder Tuch) zum Abwischen deiner Schuhe vor Beginn einer Route
+          optional_item2_html: <strong>zusätzliche Crashpads</strong>, siehe <a href="%{path}">"Sicher klettern"</a>
+          optional_item3_html: <strong>Magnesia</strong> (sparsam verwenden!), siehe <a href="%{path}">"Verhaltensregeln"</a>
+          optional_item4_html: eine <strong>weiche Bürste</strong> zum Reinigen des Felsens und Entfernen von Magnesiaspuren
+          warning_chalk_html: Übertreib's nicht mit Magnesia, da dies den Felsen beschädigt, siehe <a href="%{path}" class="">"Zu beachtende Regeln"</a>.
+          other_tips: Denk auch daran, Sportkleidung mitzunehmen, die dich in deinen Bewegungen nicht einschränkt, sowie Essen und Wasser.
+          metas:
+            title: Die notwendige Ausrüstung zum Bouldern im Freien
+        choose_area:
+          title: Ein Gebiet auswählen
+          beginner_friendly_areas: Gebiete für einen guten Start
+          p1_html: "Hier ist eine Auswahl von Gebieten, um Österreich sanft zu entdecken:"
+          p4_html: Sie bieten viele Routen im Anfängerniveau (1, 2, 3), niedrige Boulder (3 Meter und weniger) und mit einer guten Landung am Boden.
+          all_areas: Alle Gebiete ansehen
+          metas:
+            title: Wie man ein Anfängergebiet in Österreich auswählt
+        choose_problems:
+          title: Routen auswählen
+          intro: Sobald du in einem Gebiet angekommen bist, hier einige Tipps, um leicht Routen zu finden, die zu dir passen.
+          filter_by_level: Nach Schwierigkeitsgrad filtern
+          filter_by_level_p1_html: Mit der <a href="%{path}">%{brand_name} App</a> kannst du die Routen nach deinem Schwierigkeitsgrad filtern.
+          filter_by_level_p2: So kannst du leicht Bereiche mit einer guten Dichte an Routen identifizieren, die deinem Schwierigkeitsgrad entsprechen.
+          filter_by_level_warning: "Achtung: Eine 4a-Bewertung in Österreich entspricht etwa 5a an der Felswand oder in der Halle."
+          filter_by_level_warning2: Überschätz dich nicht ;)
+          metas:
+            title: Wie man die richtigen Routen in Österreich auswählt
+        climb_safely:
+          title: Sicher klettern
+          intro: Hier sind einige Tipps, um die Risiken von Stürzen und Verletzungen zu minimieren und mit ruhigerem Geist zu klettern.
+          avoid_risky_problems: Riskante Routen vermeiden
+          avoid_risky_problems_p1_html: Als Anfänger solltest du Routen von <strong>weniger als 3 oder 4 Metern</strong> bevorzugen, mit einer <strong>guten Landung am Boden</strong> (flaches Gelände, ohne Felsen oder Wurzeln).
+          height: "Höhe:"
+          good_landing: Landung auf ebenem Gelände (Sand)
+          bad_landing: Schwierige Landung am Boden
+          safe: Perfekt zum sicheren Klettern
+          unsafe: Zu vermeiden
+          multi_crashpad: Mehrere Crashpads nehmen
+          multi_crashpad_p1: Es ist manchmal beruhigend, mehrere Crashpads zu haben, um eine größere Bodenfläche abzudecken.
+          multi_crashpad_p2: Wenn du mit mehreren Personen kletterst, kannst du auch um Hilfe bitten, dein Crashpad zu verschieben, während du kletterst, damit es senkrecht zu deiner Position bleibt.
+          spot: Spotten
+          spot_p1_html: Um deinen Freunden beim sicheren Klettern zu helfen, kannst du sie <i>spotten</i>.
+          spot_p2: Beim Spotten begleitest du den Sturz deines Freundes — zum Beispiel mit den Händen an der Taille — damit er/sie auf dem Crashpad landet.
+          spot_p3: "Achtung: Versuch nicht, den Sturz deines Freundes selbst zu verlangsamen, du könntest dich verletzen!"
+          descent: Den Abstieg antizipieren
+          descent_p1: Sobald du oben auf einer Route bist, ist es manchmal schwierig, wieder herunterzukommen. Denk daran, den Abstieg vor dem Klettern zu erkunden — besonders wenn du allein bist!
+          metas:
+            title: Die Sicherheitsregeln für das Bouldern im Freien
+        rules:
+          title: Verhaltensregeln
+          intro: Die österreichische Natur ist eine einzigartige und fragile Umgebung. Es ist wichtig, bestimmte Verhaltensregeln zu beachten, um sie zu schützen.
+          chalk: Stopp mit Magnesia
+          chalk_p1: Magnesia beschädigt den Felsen, verwende sie sparsam. Ein sauberer Felsen hat bessere Haftung, daher ist es besser, die Griffe zu reinigen (mit einer weichen Bürste), anstatt Magnesia zu verwenden.
+          chalk_p2: Wenn du fertig bist, denk daran, die Griffe zu bürsten (immer mit einer weichen Bürste), um deine Spuren verschwinden zu lassen.
+          clean_shoes: Reinige deine Schuhe
+          clean_shoes_p1: Sand und Erde, die unter deine Schuhe gelangen, tragen dazu bei, den Felsen zu polieren, was ihn auf lange Sicht unbegehbar macht.
+          clean_shoes_p2: Denk daran, deine Schuhe mit einer Fußmatte oder einem Tuch zu reinigen, bevor du eine Route beginnst.
+          rain: Kein Klettern nach Regen
+          rain_p1: Der österreichische Fels ist sehr empfindlich, wenn er feucht ist.
+          rain_p2: Um zu vermeiden, den Felsen zu beschädigen und/oder Griffe zu brechen, solltest du warten, bis der Felsen gut trocken ist.
+          other_rules: Weitere Regeln
+          other_rules_item1: Geh auf bestehenden Wegen (die Fauna und Flora werden es dir danken!)
+          other_rules_item2: Trag dein Crashpad, anstatt es über den Boden zu schleifen
+          other_rules_item3: Nimm deinen Müll mit (und vielleicht auch den, den du vor Ort gefunden hast?)
+          other_rules_item4: Mach kein Feuer, rauch nicht
+          other_rules_item5_html: Campe nur an zugelassenen Stellen (es ist <a href="%{path}" target="_blank">verboten zu parken</a> auf allen Parkplätzen von 22:00 bis 6:00 Uhr)
+          video: Als Video
+          metas:
+            title: Die Verhaltensregeln
+      top_areas:
+        discover_fontainebleau: Österreich entdecken
+        all_areas: Alle Gebiete in Österreich
+        see_also: "Siehe auch:"
+        dry_fast:
+          title: Gebiete, die schnell trocknen
+          metas:
+            title: Gebiete, die schnell trocknen in Österreich
+        groups:
+          title: Gebiete, die für Gruppen geeignet sind
+          metas:
+            title: Gebiete, die für Gruppen geeignet sind in Österreich
+        train:
+          title: Mit Zug + Fahrrad erreichbare Gebiete
+          from_train_station: "Vom Bahnhof %{train_station}"
+          bike_time: "Fahrzeit mit dem Fahrrad:"
+          metas:
+            title: Mit Zug + Fahrrad erreichbare Gebiete in Österreich

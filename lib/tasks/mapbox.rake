@@ -119,10 +119,10 @@ namespace :mapbox do
       hash.merge!(problem.slice(:grade, :steepness, :featured, :popularity))
       hash[:id] = problem.id
 
-      name_fr = I18n.with_locale(:fr) { problem.name_with_fallback }
+      name_de = I18n.with_locale(:de) { problem.name_with_fallback }
       name_en = I18n.with_locale(:en) { problem.name_with_fallback }
-      hash[:name] = name_fr
-      hash[:name_en] = (name_en != name_fr) ? name_en : ""
+      hash[:name] = name_de
+      hash[:name_en] = (name_en != name_de) ? name_en : ""
 
       hash.deep_transform_keys! { |key| key.camelize(:lower) }
 

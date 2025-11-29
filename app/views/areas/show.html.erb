@@ -71,18 +71,18 @@
               </div>
             <% end %>
   
-            <% if (I18n.locale == :fr && @area.description_fr.present?) || (I18n.locale == :en && @area.description_en.present?) %>
+            <% if (I18n.locale == :de && @area.description_de.present?) || (I18n.locale == :en && @area.description_en.present?) %>
               <div class="pt-4">
                 <div class="prose text-justify">
-                  <% desc = I18n.locale == :en ? @area.description_en : @area.description_fr %>
+                  <% desc = I18n.locale == :en ? @area.description_en : @area.description_de %>
                   <%= simple_format(desc) %>
                 </div>
               </div>
             <% end %>
-  
-            <% if (I18n.locale == :fr && @area.warning_fr.present?) || (I18n.locale == :en && @area.warning_en.present?) %>
+
+            <% if (I18n.locale == :de && @area.warning_de.present?) || (I18n.locale == :en && @area.warning_en.present?) %>
               <div class="pt-4">
-                <% warning = I18n.locale == :en ? @area.warning_en : @area.warning_fr %>
+                <% warning = I18n.locale == :en ? @area.warning_en : @area.warning_de %>
                 <%= warning_box do %>
                   <div>
                     <%= simple_format(warning) %>

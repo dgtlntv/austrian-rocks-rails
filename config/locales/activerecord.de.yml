@@ -1,0 +1,8 @@
+de:
+  activerecord:
+    models:
+    attributes:
+      contribution:
+        contributor_name: Name
+        contributor_email: E-Mail
+        problem_name: Name der Route

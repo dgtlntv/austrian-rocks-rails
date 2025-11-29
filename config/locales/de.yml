@@ -1,0 +1,404 @@
+de:
+    problem:
+        no_name: Ohne Name
+        start: Start
+        problems: Routen
+        level_x: Schwierigkeitsgrad %{level}
+        see_on_map: Auf der Karte ansehen
+        steepness:
+            wall: Wand
+            slab: Platte
+            overhang: Überhang
+            roof: Dach
+            traverse: Quergang
+            other: Andere
+        sit_start: Sitzstart
+        risky: Gefährlich bei Sturz
+        featured: Beliebt
+        filters:
+            level: Schwierigkeitsgrad
+            selection: Auswahl
+    area:
+        tags:
+            popular: beliebt
+            beginner_friendly: anfängerfreundlich
+            family_friendly: familienfreundlich
+            dry_fast: trocknet schnell
+    views:
+        homepage:
+            title1: Bouldern
+            title2: in Österreich
+            subtitle:
+                Entdecke tausende Boulderprobleme für alle Schwierigkeitsgrade.
+            see_map: Karte ansehen
+            read_guide: Anfängerguide lesen
+            popular_areas: Beliebte Gebiete
+            all_areas: Alle Gebiete ansehen
+            promoted:
+                app:
+                    title: Entdecke die %{brand_name} App
+                    subtitle:
+                        Der ideale Begleiter für deine Ausflüge in Österreich,
+                        verfügbar für iPhone und Android.
+                    cta: Mehr erfahren
+                beginners_guide:
+                    title: Der Anfängerguide
+                    subtitle:
+                        Entdecke die notwendige Ausrüstung, Tipps zum sicheren
+                        Klettern und die Regeln zum Schutz der Natur.
+                    cta: Guide lesen
+                about:
+                    title: Über %{brand_name}
+                    subtitle:
+                        Erfahre mehr über das %{brand_name} Team und wie du zum
+                        Projekt beitragen kannst.
+                    cta: Mehr erfahren
+            metas:
+                title: Bouldern in Österreich
+                description:
+                    Entdecke tausende Boulderprobleme für alle
+                    Schwierigkeitsgrade.
+        mapping:
+            see_on_map: Auf der Karte ansehen
+            areas:
+                index:
+                    title: Kartieren
+                    subtitle:
+                        Um uns bei der Verbesserung von %{brand_name} zu helfen,
+                        geh zu einem Gebiet und fotografiere die fehlenden
+                        Boulder mit deinem Handy.
+                    core_mapping_team:
+                        Möchtest du uns beim Kartieren neuer Gebiete helfen?
+                    core_mapping_team_email_html:
+                        Schick uns eine E-Mail an %{link}, wir freuen uns auf
+                        den Austausch!
+                    metas:
+                        title: Kartieren
+                        description:
+                            Hilf %{brand_name} dabei, alle Boulderrouten in
+                            Österreich zu kartieren
+            problems:
+                index:
+                    title: Zu kartierende Routen in %{area}
+                    group_header:
+                        one: "1 Route"
+                        other: "%{count} Routen"
+                    rest_warning:
+                        Diese Routen sind noch nicht auf der Karte platziert,
+                        aber du kannst trotzdem Beiträge einreichen.
+                    tab_prio: Priorität
+                    tab_rest: Weitere
+                    other_problem:
+                        Eine Route kartieren, die hier nicht aufgeführt ist
+                    metas:
+                        title: Kartierung des Gebiets %{area}
+                show:
+                    step1: Geh zur Route
+                    step2: Beitrag hinzufügen
+                    no_location: (Standort nicht verfügbar)
+                    photo: Boulder-Foto
+                    line: Linienverlauf
+                    location: Standort auf der Karte
+                    add_contribution: Beitrag hinzufügen
+                    pending_contributions: Ausstehende Beiträge
+                    metas:
+                        title: Zu einer Route beitragen
+            contributions:
+                new:
+                    title: Beitrag hinzufügen
+                    how_to: Anleitung lesen
+                    warning_horizontal_html:
+                        'Wichtig: Die Fotos müssen <span class="
+                        underline">horizontal</span> sein.'
+                    problem: Route
+                    problem_url_label: Link zu %{brand_name}
+                    boulder: Boulder-Foto
+                    boulder_description:
+                        Mach ein Foto des Boulders mit deinem Handy.
+                    line: Linie der Route
+                    line_description: Zeig, wie der Boulder geklettert wird.
+                    location: Standort des Starts
+                    location_description:
+                        Gib an, wo genau sich der Start der Route auf der Karte
+                        befindet.
+                    location_gps: GPS-Position des Boulders eingeben
+                    location_optional: (optional)
+                    comments: Kommentare
+                    private: Privat
+                    private_info: Persönliche Informationen
+                    private_info_info_description:
+                        Damit wir dich bei Fragen kontaktieren können.
+                    submit: Absenden
+                    flash_success: Vielen Dank für deinen Beitrag!
+                    metas:
+                        title: Neuer Beitrag
+            map:
+                metas:
+                    title: Zu %{brand_name} beitragen
+                    description:
+                        Hilf uns, die fehlenden Routen auf %{brand_name} zu
+                        kartieren
+        reports:
+            new:
+                title: Fehler melden
+                mistake: Fehlerbeschreibung
+                mistake_description:
+                    Gib so viele Details wie möglich an und füg gerne Links zu
+                    den betreffenden Routen hinzu.
+                flash_success: Vielen Dank für deine Meldung!
+                metas:
+                    title: Fehler melden
+        map:
+            fontainebleau:
+                metas:
+                    title: Topo-Karte Österreich
+                    description: Interaktive Karte zum Klettern in Österreich
+            area:
+                metas:
+                    title: Topo-Karte %{area}
+                    description:
+                        Interaktive Karte für das Klettergebiet %{area} in
+                        Österreich
+            filters:
+                label: Filter
+                level: Schwierigkeitsgrad
+                beginner: Schwierigkeitsgrad 1 → 3
+                level4: Schwierigkeitsgrad 4
+                level5: Schwierigkeitsgrad 5
+                level6: Schwierigkeitsgrad 6
+                level7: Schwierigkeitsgrad 7
+                level8: Schwierigkeitsgrad 8
+                beginner_label: Anfänger
+                custom: Benutzerdefiniert
+                grade_min: Minimale Bewertung
+                grade_max: Maximale Bewertung
+                apply: Anwenden
+                clear: Löschen
+        app_landing:
+            title: Ganz Österreich in deiner Tasche
+            subtitle: "Der beste Topo-Guide zum Bouldern in Österreich"
+            android_announcement: Wir suchen einen Android-Entwickler
+            selling_points:
+                map:
+                    title: Karte und Geolokalisierung
+                    subtitle: Finde dich dank GPS leicht im Wald zurecht
+                levels:
+                    title: Tausende Routen für alle Schwierigkeitsgrade
+                    subtitle: Filtere Routen nach deinem Schwierigkeitsgrad
+                search:
+                    title: Erweiterte Suche
+                    subtitle: Finde eine Route oder ein Gebiet in Sekunden
+                offline:
+                    title: Offline-Modus
+                    subtitle: Die App funktioniert ohne Internetverbindung
+            metas:
+                title: Ganz Österreich in deiner Tasche
+                description:
+                    Der Kletterführer für Österreich, der in deine Tasche passt
+        privacy:
+            metas:
+                title: Datenschutz
+        contribute:
+            title: Zu %{brand_name} beitragen
+            mapping_title: Kartieren
+            mapping_description:
+                Geh zu einem Gebiet und fotografiere die fehlenden Boulder mit
+                deinem Handy.
+            report_title: Fehler melden
+            report_description: Melde einen Fehler bei einer bestehenden Route.
+            dev_title: Für Entwickler
+            dev_description:
+                "Trag zum Quellcode der Apps bei: Ruby on Rails, iPhone und
+                Android."
+            metas:
+                title: Beitragen
+                description:
+                    Kartiere Gebiete, fotografiere Boulder, melde Fehler oder
+                    trag zum Open-Source-Projekt bei
+        about:
+            title_prefix: Über
+            history:
+                title: Die Geschichte
+                p1:
+                    "%{brand_name} entstand aus der Begegnung zwischen Romain,
+                    Cyril und Nicolas — zwei Kletterbegeisterten und einem
+                    Technikbegeisterten — die nur einen Steinwurf von einem der
+                    schönsten Bouldergebiete der Welt entfernt leben:
+                    Fontainebleau."
+                p2:
+                    "Für Nicolas war es Liebe auf den ersten Blick. Seine beiden
+                    Freunde ließen ihn die Magie von Bleau entdecken die
+                    legendären Gebiete, die Geschichte des Waldes, die Freude am
+                    Klettern in der Natur sowie die zu beachtenden guten
+                    Praktiken (putz deine Schuhe!)."
+                p3:
+                    "Der Reichtum des Waldes bleibt jedoch einschüchternd: mehr
+                    als 200 Gebiete, mehrere zehntausend Boulder. Wie soll man
+                    sich da zurechtfinden?"
+                p4:
+                    Nicolas beschloss daraufhin, den Wald fast 2 Jahre lang
+                    akribisch zu kartieren und einen Topo-Guide der neuen
+                    Generation zu erstellen. Im Jahr 2023 wurde %{brand_name}
+                    kostenlos für iPhone und Android veröffentlicht.
+                podcast:
+                    'Mehr erfahren: Interview mit Nicolas im Podcast "Allez"'
+            project:
+                title: Das Projekt
+                contact: kontaktieren
+                p1:
+                    "%{brand_name} ist ein gemeinnütziges Projekt, das von
+                    Freiwilligen verwaltet wird."
+                p2_html:
+                    Unser Ziel ist es, das Entdecken des Boulderns in Österreich
+                    auf <strong>spielerische</strong> Weise und mit
+                    <strong>Respekt für die Natur</strong> zu erleichtern.
+                p3_html:
+                    Da das Projekt noch sehr jung ist, sind wir offen für
+                    Vorschläge und Ideen, um die gegenseitige Hilfe mit der
+                    Community zu fördern. Zögere nicht, uns zu %{link}!
+            team:
+                title: Das Team
+                nico_desc: Entwicklung, Kartierung
+                romain_desc: Klettern
+                cyril_desc: Klettern
+                emile_desc: Kartierung
+            contact:
+                title: Kontakt
+                p1: Bei Fragen kannst du uns kontaktieren unter
+            support:
+                title: Danksagungen
+                p1:
+                    "Wir danken allen, die zur Klettergemeinschaft in Österreich
+                    beigetragen haben: den Erstbegehern, allen, die zur Wartung
+                    und Reinigung von Bouldern beigetragen haben, und den
+                    Naturschutzbemühungen."
+                app: App
+            open:
+                title: Eine kollaborative Plattform
+                p1_html:
+                    Der Code der Apps sowie die Daten sind als Open Source auf
+                    %{link} verfügbar.
+                p2_html:
+                    Du kannst auch %{link}, indem du fehlende Routen kartierst
+                    oder Fehler meldest.
+                contribute_link: beitragen
+            web_dev:
+                title: Du kannst programmieren?
+                p1_html:
+                    Wir suchen aktiv einen %{link_web} und %{link_ios}
+                    Entwickler. Trag bei!
+            faq:
+                title: Häufig gestellte Fragen
+                data:
+                    question: Woher stammen die Daten?
+                    p1:
+                        Die Fotos und geografischen Daten (GPS) wurden vom
+                        %{brand_name}-Team gesammelt.
+                    p3:
+                        Einige Boulder-Zeichnungen (in Draufsicht) sind von
+                        bestehenden Topo-Guides inspiriert. Wir arbeiten daran,
+                        sie durch Originalzeichnungen zu ersetzen.
+                why_free:
+                    question: Warum ist die App kostenlos?
+                    p1:
+                        Weil wir möchten, dass so viele Menschen wie möglich
+                        davon profitieren können!
+                    p2:
+                        Nicolas nutzte ein Sabbatjahr, um viele Gebiete zu
+                        kartieren und die erste Version der Anwendung zu
+                        programmieren. Dadurch sind nur sehr geringe Kosten
+                        angefallen. Wir planen, diese Dynamik in Zukunft durch
+                        ein freiwilliges Open-Source-Modell fortzusetzen.
+                privacy:
+                    question: Welche persönlichen Daten sammelt ihr?
+                    p1_html: Du kannst unsere %{link} einsehen.
+                    policy: Datenschutzrichtlinie
+            metas:
+                title: Über %{brand_name}
+        areas:
+            index:
+                title: Österreich
+                sort_by:
+                    label: Sortieren nach
+                    problems: Anzahl der Routen
+                    problems_of_level: Anzahl der Routen der Stufe %{level}
+                    area_name: Gebietsname
+                problems: Routen
+                problems_of_level_html: "Routen <br/> der Stufe %{level}"
+                area_column: Gebiet
+                problems_column: Routen
+                levels_column: Schwierigkeitsgrade
+                popular: Beliebt
+                areas: Alle Gebiete
+                cards:
+                    beginner_html: Der Guide für <br>einen guten Start
+                    level: Nach Grad
+                    dry_fast: Trocknet schnell
+                    train_html: Mit Zug <br>+ Fahrrad erreichbar
+                metas:
+                    title: Alle Gebiete in Österreich
+                    description:
+                        Entdecke die besten Gebiete zum Bouldern in Österreich.
+                map:
+                    see: "Ansehen"
+            levels:
+                beginner_friendly: Ideal für Anfänger
+                areas: Gebiete nach Schwierigkeitsgraden
+                metas:
+                    title: Gebiete nach Schwierigkeitsgrad in Österreich
+                    description:
+                        Entdecke anfängerfreundliche Gebiete sowie Gebiete mit
+                        Routen der Stufen 4, 5, 6, 7, 8.
+            show:
+                see_map: Auf der Karte ansehen
+                see_parking: Parkplatz ansehen
+                levels: "Schwierigkeitsgrade:"
+                problems_count: "%{count} Routen"
+                popular_problems: Beliebte Routen
+                all_problems: Alle Routen ansehen (%{count})
+                access: Zugang
+                problems: Routen
+                problems_in: Routen in %{area}
+                loading: Lädt...
+                levels_chart:
+                    title: Anzahl der Routen pro Schwierigkeitsgrad
+                metas:
+                    title: "%{area}, Österreich"
+                    description:
+                        "Alles was du zum Klettern in %{area} in Österreich
+                        wissen musst: Routen, Topo-Karte, Fotos, Zugang, ..."
+            train_station: "Bahnhof %{name}"
+            train_station_generic: "Bahnhof"
+        problems:
+            show:
+                variants: Varianten
+                see_also: Siehe auch
+                metas:
+                    title: "%{problem} - %{grade} - %{area}"
+            index:
+                metas:
+                    title: Beliebte Routen in Österreich
+        search:
+            placeholder: Name der Route oder des Gebiets
+            clear: Löschen
+            cancel: Abbrechen
+            submit: Suchen
+        layout:
+            nav:
+                open_menu: Hauptmenü öffnen
+                discover: Entdecken
+                map: Karte
+                app: App
+            footer:
+                contact: Kontakt
+                privacy: Datenschutz
+                about: Über
+                contribute: Beitragen
+        pagination:
+            first: "Anfang"
+            last: "Ende"
+            previous: "Zurück"
+            next: "Weiter"
+            truncate: "&hellip;"
+        breadcrumbs:
+            back: zurück

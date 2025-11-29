@@ -28,7 +28,7 @@ export default class extends Controller {
         this.map = new mapboxgl.Map({
             container: "map",
             language: this.localeValue, // doesn't seem to work?
-            locale: this.localeValue == "fr" ? this.getFrLocale() : null,
+            locale: this.localeValue == "de" ? this.getDeLocale() : null,
             hash: true,
             style: `mapbox://styles/dgtlntv/cmi0wnif6004t01r0araj0ts0${
                 this.draftValue ? "/draft" : ""
@@ -464,8 +464,8 @@ export default class extends Controller {
                 const html = `<a href="${
                     e.features[0].properties.googleUrl
                 }" target="_blank">${
-                    this.localeValue == "fr"
-                        ? "Voir sur Google"
+                    this.localeValue == "de"
+                        ? "Auf Google ansehen"
                         : "See on Google"
                 }</a>`
 
@@ -560,27 +560,27 @@ export default class extends Controller {
     }
 
     // https://github.com/mapbox/mapbox-gl-js/blob/20e8fd2b60fb751f5846d3be2d46dfa76d940324/src/ui/default_locale.js
-    getFrLocale() {
+    getDeLocale() {
         return {
             "AttributionControl.ToggleAttribution":
-                "Changer valeur attribution",
-            "AttributionControl.MapFeedback": "Feedback sur la carte",
-            "FullscreenControl.Enter": "Mode plein écran",
-            "FullscreenControl.Exit": "Sortir du mode plein écran",
-            "GeolocateControl.FindMyLocation": "Trouver ma position",
+                "Attribution umschalten",
+            "AttributionControl.MapFeedback": "Karten-Feedback",
+            "FullscreenControl.Enter": "Vollbildmodus",
+            "FullscreenControl.Exit": "Vollbildmodus verlassen",
+            "GeolocateControl.FindMyLocation": "Meinen Standort finden",
             "GeolocateControl.LocationNotAvailable":
-                "Localisation non disponible",
-            "LogoControl.Title": "Logo Mapbox",
-            "Map.Title": "Carte",
-            "NavigationControl.ResetBearing": "Remettre au Nord",
-            "NavigationControl.ZoomIn": "Zoomer",
-            "NavigationControl.ZoomOut": "Dézoomer",
+                "Standort nicht verfügbar",
+            "LogoControl.Title": "Mapbox Logo",
+            "Map.Title": "Karte",
+            "NavigationControl.ResetBearing": "Nach Norden ausrichten",
+            "NavigationControl.ZoomIn": "Vergrößern",
+            "NavigationControl.ZoomOut": "Verkleinern",
             "ScrollZoomBlocker.CtrlMessage":
-                "Utilisez ctrl + défilement pour zoomer",
+                "Verwenden Sie Strg + Scrollen zum Zoomen",
             "ScrollZoomBlocker.CmdMessage":
-                "Utilisez ⌘ + défilement pour zoomer",
+                "Verwenden Sie ⌘ + Scrollen zum Zoomen",
             "TouchPanBlocker.Message":
-                "Utilisez deux doigts pour bouger la carte",
+                "Verwenden Sie zwei Finger, um die Karte zu bewegen",
         }
     }
 
