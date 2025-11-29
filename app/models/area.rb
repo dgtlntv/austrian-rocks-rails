@@ -5,7 +5,6 @@ class Area < ApplicationRecord
 
   has_many :boulders
   has_many :problems
-  has_many :circuits, -> { distinct }, through: :problems
   has_many :poi_routes
   belongs_to :cluster, optional: true
   belongs_to :bleau_area, optional: true
@@ -32,8 +31,7 @@ class Area < ApplicationRecord
 
   def self.beginner_friendly
     published.any_tags(:beginner_friendly).
-    map { |area| [ area, area.problems.with_location.count ] }.sort { |a, b| b.second <=> a.second }.map(&:first).
-    sort_by { |a| -a.circuits.select(&:beginner_friendly?).length }
+    map { |area| [ area, area.problems.with_location.count ] }.sort { |a, b| b.second <=> a.second }.map(&:first)
   end
 
   def self.with_ids_keep_order(ids)
@@ -61,15 +59,6 @@ class Area < ApplicationRecord
       south_west: { lat: bounds[:south_west]&.lat || 0.0, lng: bounds[:south_west]&.lon || 0.0 },
       north_east: { lat: bounds[:north_east]&.lat || 0.0, lng: bounds[:north_east]&.lon || 0.0 }
     }
-  end
-
-  # TODO: rewrite in SQL
-  def main_circuits
-    circuits.select { |c| c.problems.where(area_id: id).count >= 10 }.sort_by(&:average_grade)
-  end
-
-  def sorted_circuits
-    circuits.sort_by(&:average_grade)
   end
 
   def download_size

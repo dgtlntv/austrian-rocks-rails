@@ -56,7 +56,6 @@ namespace :bleau do
       problem.steepness = bleau_problem.steepness
       problem.sit_start = bleau_problem.sit_start
 
-      # TODO: circuit
       # TODO: created_at
 
       problem.ratings = bleau_problem.ratings

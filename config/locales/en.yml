@@ -1,23 +1,4 @@
 en:
-    circuit:
-        name:
-            white_for_kids: White (kids)
-            yellow: Yellow
-            purple: Purple
-            orange: Orange
-            green: Green
-            blue: Blue
-            skyblue: Sky blue
-            salmon: Salmon
-            red: Red
-            white: White
-            black: Black
-        long_name: "%{name} circuit"
-        off_circuit: Other
-        dangerous:
-            "This circuit is dangerous : some boulders are very high and/or with
-            difficult landings"
-        beginner_friendly: This circuit is suited for beginners
     problem:
         no_name: No name
         start: Start
@@ -37,7 +18,6 @@ en:
         featured: Popular
         filters:
             level: Level
-            circuit: Circuit
             selection: Selection
     area:
         tags:
@@ -55,12 +35,6 @@ en:
             popular_areas: Popular areas
             all_areas: See all areas
             promoted:
-                circuit7a:
-                    title: Fond of Font
-                    subtitle:
-                        Discover the impossible circuit of 100 7a by Seb Berthe
-                        and Hugo Parmentier
-                    cta: See the circuit
                 app:
                     title: Discover the %{brand_name} app
                     subtitle:
@@ -82,7 +56,7 @@ en:
             metas:
                 title: Bouldering in Austria
                 description:
-                    Discover thousands of boulders & circuits for all levels.
+                    Discover thousands of boulders for all levels.
         mapping:
             see_on_map: See on the map
             areas:
@@ -164,7 +138,7 @@ en:
                 mistake: Mistake description
                 mistake_description:
                     Give as much details as possible and feel free to add links
-                    to the relevant problems/circuits.
+                    to the relevant problems.
                 flash_success: Thank you for your report!
                 metas:
                     title: Report a mistake
@@ -225,7 +199,7 @@ en:
                 your phone.
             report_title: Report a mistake
             report_description:
-                Report a mistake on an existing problem or circuit.
+                Report a mistake on an existing problem.
             dev_title: For Developers
             dev_description:
                 "Contribute to the source code of our apps: Ruby on Rails,
@@ -285,8 +259,7 @@ en:
                 title: Thanks
                 p1:
                     'We extend our thanks to everyone who has contributed to the
-                    Font ecosystem: the route setters, the circuit creators (aka
-                    "track painters"), and all those who have contributed to the
+                    Font ecosystem: the route setters and all those who have contributed to the
                     maintenance and cleaning of boulders, anti-erosion
                     operations, ...'
                 p2_html:
@@ -393,32 +366,12 @@ en:
                     title: "%{area}, Fontainebleau"
                     description:
                         "All you need to know to climb in %{area} in
-                        Fontainebleau : problems, circuits, map, topos, access,
+                        Fontainebleau : problems, map, topos, access,
                         ..."
             train_station: "%{name} train station"
             train_station_generic: "Train station"
-        circuits:
-            show:
-                metas:
-                    title: "%{circuit} circuit at %{area}"
-            index:
-                metas:
-                    title: All Fontainebleau circuits
-        circuit7a:
-            title: Fond of Font
-            subtitle_html:
-                The impossible circuit of 100 7a by Seb Berthe and Hugo
-                Parmentier in 2023.
-            see_on_map: See on map
-            see_movie: See the movie
-            metas:
-                title: Fond of Font - 100 7a circuit
-                description:
-                    The impossible circuit of 100 7a in Fontainebleau by Seb
-                    Berthe and Hugo Parmentier.
         problems:
             show:
-                see_circuit: See the circuit
                 variants: Variants
                 see_also: See also
                 metas:

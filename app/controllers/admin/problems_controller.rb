@@ -2,17 +2,7 @@ class Admin::ProblemsController < Admin::BaseController
   def index
     @area = Area.find_by(slug: params[:area_slug])
 
-    if params[:circuit_id] == "first" && (id = @area.sorted_circuits.first&.id)
-      redirect_to admin_area_problems_path(area_slug: @area.slug, circuit_id: id)
-    end
-
-    arel = Problem.where(area_id: @area.id)
-
-    arel = if params[:circuit_id].to_i > 0
-      arel.where(circuit_id: params[:circuit_id]).sort_by(&:enumerable_circuit_number) if params[:circuit_id].present?
-    else
-      arel.order("ascents DESC NULLS LAST")
-    end
+    arel = Problem.where(area_id: @area.id).order("ascents DESC NULLS LAST")
 
     arel = if params[:missing] == "line"
       arel.without_line_only
@@ -24,9 +14,6 @@ class Admin::ProblemsController < Admin::BaseController
 
     @problems = arel
 
-    circuits = @area.sorted_circuits
-    @circuit_tabs = circuits.map { |c| [ c.id, c.name ] }.push([ nil, "All" ])
-
     @missing_grade = @area.problems.where("grade IS NULL OR grade = ''")
   end
 
@@ -36,7 +23,6 @@ class Admin::ProblemsController < Admin::BaseController
     @problem = Problem.new(steepness: :other)
 
     @problem.area = area
-    @circuits = area.sorted_circuits
   end
 
   def create
@@ -77,7 +63,7 @@ class Admin::ProblemsController < Admin::BaseController
 
     if @problem.destroy
       flash[:notice] = "Problem destroyed"
-      redirect_to admin_area_problems_path(area_slug: area.slug, circuit_id: @problem.circuit&.id || "first")
+      redirect_to admin_area_problems_path(area_slug: area.slug)
     else
       flash[:error] = @problem.errors.full_messages.join("; ")
       redirect_to admin_problem_path(@problem)
@@ -88,12 +74,11 @@ class Admin::ProblemsController < Admin::BaseController
   def problem_params
     params.require(:problem).
       permit(:area_id, :name, :grade, :steepness, :sit_start,
-        :bleau_info_id, :circuit_number, :circuit_letter, :circuit_id, :parent_id,
+        :bleau_info_id, :parent_id,
       )
   end
 
   def set_problem
     @problem = Problem.find(params[:id])
-    @circuits = @problem.area.sorted_circuits
   end
 end

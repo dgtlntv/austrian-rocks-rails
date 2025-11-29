@@ -20,8 +20,6 @@ class AreasController < ApplicationController
   def show
     @area = Area.find_by!(slug: params[:slug])
 
-    @circuits = @area.main_circuits
-
     @popular_problems = @area.problems.with_location.where(featured: true).order(grade: :desc, popularity: :desc)
   end
 

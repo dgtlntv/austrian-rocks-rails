@@ -10,13 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_13_122427) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_29_091349) do
+  create_schema "tiger"
+  create_schema "tiger_data"
+  create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
+  enable_extension "fuzzystrmatch"
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
   enable_extension "postgis"
+  enable_extension "tiger.postgis_tiger_geocoder"
+  enable_extension "topology.postgis_topology"
   enable_extension "unaccent"
 
   create_table "active_storage_attachments", force: :cascade do |t|
@@ -124,14 +130,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_122427) do
     t.datetime "updated_at", null: false
     t.bigint "area_id"
     t.boolean "ignore_for_area_hull", default: false, null: false
+    t.string "name"
     t.index ["area_id"], name: "index_boulders_on_area_id"
-  end
-
-  create_table "circuits", force: :cascade do |t|
-    t.string "color"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.integer "risk", limit: 2
   end
 
   create_table "clusters", force: :cascade do |t|
@@ -214,8 +214,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_122427) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.geography "location", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
-    t.bigint "circuit_id"
-    t.string "circuit_number"
     t.string "steepness", null: false
     t.integer "height"
     t.bigint "area_id"
@@ -227,11 +225,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_122427) do
     t.integer "ratings"
     t.integer "ascents"
     t.integer "popularity"
-    t.string "circuit_letter"
     t.boolean "sit_start", default: false, null: false
     t.boolean "has_line", default: false, null: false
     t.index ["area_id"], name: "index_problems_on_area_id"
-    t.index ["circuit_id"], name: "index_problems_on_circuit_id"
     t.index ["grade"], name: "index_problems_on_grade"
     t.index ["has_line"], name: "index_problems_on_has_line"
     t.index ["location"], name: "index_problems_on_location", using: :gist

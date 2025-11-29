@@ -118,9 +118,6 @@ namespace :mapbox do
       hash = {}.with_indifferent_access
       hash.merge!(problem.slice(:grade, :steepness, :featured, :popularity))
       hash[:id] = problem.id
-      hash[:circuit_color] = problem.circuit&.color
-      hash[:circuit_id] = problem.circuit_id_simplified
-      hash[:circuit_number] = problem.circuit_number_simplified
 
       name_fr = I18n.with_locale(:fr) { problem.name_with_fallback }
       name_en = I18n.with_locale(:en) { problem.name_with_fallback }
@@ -160,27 +157,6 @@ namespace :mapbox do
     puts "exported problems.geojson".green
   end
 
-  task circuits: :environment do
-    factory = RGeo::GeoJSON::EntityFactory.instance
-
-    circuit_features = Circuit.all.map do |circuit|
-      problems = circuit.problems.exclude_bis.with_location.sort_by(&:enumerable_circuit_number)
-      line_string = FACTORY.line_string(problems.map(&:location))
-      factory.feature(line_string, nil, { id: circuit.id, color: circuit.color })
-    end
-
-    feature_collection = factory.feature_collection(
-      circuit_features
-    )
-
-    geo_json = RGeo::GeoJSON.encode(feature_collection)
-
-    File.open(Rails.root.join("..", "#{BRAND_CONFIG[:slug]}-maps", "mapbox", "circuits.geojson"), "w") do |f|
-      f.write(JSON.pretty_generate(geo_json))
-    end
-
-    puts "exported circuits.geojson".green
-  end
 
   # TODO: Revamp the pois task once we migrate to the new POI data model (split pois and poi routes)
 

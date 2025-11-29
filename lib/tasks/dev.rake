@@ -13,7 +13,6 @@ namespace :dev do
     -t areas \
     -t problems \
     -t boulders \
-    -t circuits \
     -t topos \
     -t lines \
     -t pois \

@@ -19,9 +19,6 @@ namespace :app do
           grade TEXT,
           latitude REAL NOT NULL,
           longitude REAL NOT NULL,
-          circuit_id INTEGER,
-          circuit_number TEXT,
-          circuit_color TEXT,
           steepness TEXT NOT NULL,
           sit_start INTEGER NOT NULL,
           area_id INTEGER NOT NULL,
@@ -32,22 +29,20 @@ namespace :app do
         );
         CREATE INDEX problem_idx ON problems(id);
         CREATE INDEX problem_area_idx ON problems(area_id);
-        CREATE INDEX problem_circuit_idx ON problems(circuit_id);
         CREATE INDEX problem_grade_idx ON problems(grade);
       SQL
 
       Problem.with_location.joins(:area).where(area: { published: true }).find_each do |p|
         db.execute(
-          "INSERT INTO problems (id, name, name_en, name_searchable, grade, latitude, longitude, circuit_id, circuit_number,
-          circuit_color, steepness, sit_start, area_id, bleau_info_id,
+          "INSERT INTO problems (id, name, name_en, name_searchable, grade, latitude, longitude,
+          steepness, sit_start, area_id, bleau_info_id,
           featured, popularity, parent_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           [ p.id,
             I18n.with_locale(:fr) { p.name_with_fallback },
             I18n.with_locale(:en) { p.name_with_fallback },
             normalize(p.name),
             p.grade, p.location&.lat, p.location&.lon,
-            p.circuit_id_simplified, p.circuit_number_simplified, p.circuit&.color,
             p.steepness, p.sit_start ? 1 : 0, p.area_id, p.bleau_info_id.to_s,
             p.featured ? 1 : 0, p.popularity, p.parent_id ]
         )
@@ -123,31 +118,6 @@ namespace :app do
             c.id,
             c.name,
             c.main_area_id
-          ]
-        )
-      end
-
-      db.execute <<-SQL
-        create table circuits (
-          id INTEGER NOT NULL PRIMARY KEY,
-          color TEXT NOT NULL,
-          average_grade TEXT NOT NULL,
-          beginner_friendly INTEGER NOT NULL,
-          dangerous INTEGER NOT NULL,
-          south_west_lat REAL NOT NULL,
-          south_west_lon REAL NOT NULL,
-          north_east_lat REAL NOT NULL,
-          north_east_lon REAL NOT NULL
-        );
-        CREATE INDEX circuit_idx ON circuits(id);
-      SQL
-
-      Circuit.all.select { |c| c.problems.count > 0 }.each do |c|
-        db.execute(
-          "INSERT INTO circuits (id, color, average_grade, beginner_friendly, dangerous, south_west_lat, south_west_lon, north_east_lat, north_east_lon)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-          [ c.id, c.color, c.average_grade, c.beginner_friendly? ? 1 : 0, c.dangerous? ? 1 : 0,
-            c.bounds[:south_west]&.lat, c.bounds[:south_west]&.lon, c.bounds[:north_east]&.lat, c.bounds[:north_east]&.lon
           ]
         )
       end

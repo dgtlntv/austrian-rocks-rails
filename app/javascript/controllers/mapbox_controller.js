@@ -1,6 +1,4 @@
 // This file is getting too complex and will eventually need some refactoring
-// Note: we could buy some time by removing/refactoring the "circuit 7a" code introduced here: https://github.com/nmondollot/boolder/pull/26
-// (lots of complexity for such a small feature)
 
 import { Controller } from "@hotwired/stimulus"
 
@@ -22,8 +20,6 @@ export default class extends Controller {
         draft: { type: Boolean, default: false },
         contribute: { type: Boolean, default: false },
         contributeSource: String,
-        circuit7a: { type: Boolean, default: false },
-        circuit7aSource: String,
     }
 
     connect() {
@@ -188,7 +184,6 @@ export default class extends Controller {
                 minzoom: 15,
                 layout: {
                     visibility: "visible",
-                    "circle-sort-key": ["case", ["has", "circuitId"], 2, 1],
                 },
                 paint: {
                     "circle-radius": [
@@ -200,93 +195,9 @@ export default class extends Controller {
                         18,
                         4,
                         22,
-                        ["case", ["has", "circuitNumber"], 16, 10],
+                        10,
                     ],
-                    // FIXME: make it DRY
-                    "circle-color": [
-                        "case",
-                        [
-                            "match",
-                            ["get", "circuitColor"],
-                            ["", "yellow"],
-                            true,
-                            false,
-                        ],
-                        "#FFCC02",
-                        [
-                            "match",
-                            ["get", "circuitColor"],
-                            ["", "purple"],
-                            true,
-                            false,
-                        ],
-                        "#D783FF",
-                        [
-                            "match",
-                            ["get", "circuitColor"],
-                            ["", "orange"],
-                            true,
-                            false,
-                        ],
-                        "#FF9500",
-                        [
-                            "match",
-                            ["get", "circuitColor"],
-                            ["", "green"],
-                            true,
-                            false,
-                        ],
-                        "#77C344",
-                        [
-                            "match",
-                            ["get", "circuitColor"],
-                            ["", "blue"],
-                            true,
-                            false,
-                        ],
-                        "#017AFF",
-                        [
-                            "match",
-                            ["get", "circuitColor"],
-                            ["", "skyblue"],
-                            true,
-                            false,
-                        ],
-                        "#5AC7FA",
-                        [
-                            "match",
-                            ["get", "circuitColor"],
-                            ["", "salmon"],
-                            true,
-                            false,
-                        ],
-                        "#FDAF8A",
-                        [
-                            "match",
-                            ["get", "circuitColor"],
-                            ["", "red"],
-                            true,
-                            false,
-                        ],
-                        "#FF3B2F",
-                        [
-                            "match",
-                            ["get", "circuitColor"],
-                            ["", "black"],
-                            true,
-                            false,
-                        ],
-                        "#000",
-                        [
-                            "match",
-                            ["get", "circuitColor"],
-                            ["", "white"],
-                            true,
-                            false,
-                        ],
-                        "#FFFFFF",
-                        "#878A8D",
-                    ],
+                    "circle-color": "#878A8D",
                     "circle-opacity": [
                         "interpolate",
                         ["linear"],
@@ -301,43 +212,6 @@ export default class extends Controller {
             },
             "areas" // layer will be inserted just before this layer
         )
-
-        this.map.addLayer({
-            id: "problems-texts",
-            type: "symbol",
-            source: "problems",
-            "source-layer": "problems-8pdvh4",
-            minzoom: 19,
-            layout: {
-                visibility: "visible",
-                "text-allow-overlap": true,
-                "text-field": ["to-string", ["get", "circuitNumber"]],
-                "text-size": [
-                    "interpolate",
-                    ["linear"],
-                    ["zoom"],
-                    19,
-                    10,
-                    22,
-                    20,
-                ],
-            },
-            paint: {
-                "text-color": [
-                    "case",
-                    [
-                        "match",
-                        ["get", "circuitColor"],
-                        ["", "white"],
-                        true,
-                        false,
-                    ],
-                    "#333",
-                    "#fff",
-                ],
-            },
-            filter: ["match", ["geometry-type"], ["Point"], true, false],
-        })
 
         // CONTRIBUTE LAYERS
 
@@ -356,7 +230,6 @@ export default class extends Controller {
                     // 'minzoom': 12,
                     layout: {
                         visibility: "visible",
-                        "circle-sort-key": ["case", ["has", "circuitId"], 2, 1],
                     },
                     paint: {
                         "circle-radius": [
@@ -422,102 +295,6 @@ export default class extends Controller {
                 filter: ["match", ["geometry-type"], ["Point"], true, false],
             })
         }
-
-        // CIRCUIT 7A LAYERS
-
-        if (this.circuit7aValue) {
-            this.map.addSource("circuit7a", {
-                type: "geojson",
-                data: this.circuit7aSourceValue,
-            })
-
-            this.map.addLayer(
-                {
-                    id: "circuit7a-problems",
-                    type: "circle",
-                    source: "circuit7a",
-                    // 'source-layer': '',
-                    // 'minzoom': 12,
-                    layout: {
-                        visibility: "visible",
-                        "circle-sort-key": ["case", ["has", "circuitId"], 2, 1],
-                    },
-                    paint: {
-                        "circle-radius": [
-                            "interpolate",
-                            ["linear"],
-                            ["zoom"],
-                            12,
-                            6,
-                            22,
-                            15,
-                        ],
-                        "circle-color": "#FFDC36",
-                        // 'circle-opacity': 0.25,
-                        "circle-stroke-width": 2,
-                        "circle-stroke-color": "#fff",
-                    },
-                    filter: [
-                        "match",
-                        ["geometry-type"],
-                        ["Point"],
-                        true,
-                        false,
-                    ],
-                }
-                // "areas" // layer will be inserted just before this layer
-            )
-
-            this.map.addLayer({
-                id: "circuit7a-problems-texts",
-                type: "symbol",
-                source: "circuit7a",
-                // 'source-layer': '',
-                minzoom: 13,
-                layout: {
-                    visibility: "visible",
-                    // 'text-allow-overlap': true,
-                    "text-field": ["to-string", ["get", "index"]],
-                    "text-size": [
-                        "interpolate",
-                        ["linear"],
-                        ["zoom"],
-                        12,
-                        10,
-                        22,
-                        20,
-                    ],
-                },
-                paint: {
-                    "text-color": "#fff",
-                },
-                filter: ["match", ["geometry-type"], ["Point"], true, false],
-            })
-
-            this.map.addSource("circuit7a-bike", {
-                type: "vector",
-                url: "mapbox://nmondollot.c2qwxo24",
-                promoteId: "id",
-            })
-
-            this.map.addLayer(
-                {
-                    id: "circuit7a-bike",
-                    type: "line",
-                    source: "circuit7a-bike",
-                    "source-layer": "top7a-bike-2kosot",
-                    // 'minzoom': 8,
-                    layout: {
-                        visibility: "visible",
-                    },
-                    paint: {
-                        "line-color": "#FFDC36",
-                        "line-width": 4,
-                    },
-                },
-                "areas" // layer will be inserted just before this layer
-            )
-        }
     }
 
     centerMap() {
@@ -539,7 +316,7 @@ export default class extends Controller {
                 speed: 2,
             })
 
-            if (!this.contributeValue && !this.circuit7aValue) {
+            if (!this.contributeValue) {
                 // FIXME: make it DRY
                 const coordinates = [problem.lon, problem.lat]
                 var name = problem.name
@@ -572,8 +349,6 @@ export default class extends Controller {
             var url = ""
             if (this.contributeValue) {
                 url = `/${this.localeValue}/mapping/map`
-            } else if (this.circuit7aValue) {
-                url = `/${this.localeValue}/circuit7a/map`
             } else {
                 url = `/${this.localeValue}/map`
             }
@@ -583,8 +358,7 @@ export default class extends Controller {
     }
 
     setupClickEvents() {
-        if (!this.circuit7aValue) {
-            this.map.on("mouseenter", "problems", () => {
+        this.map.on("mouseenter", "problems", () => {
                 this.map.getCanvas().style.cursor = "pointer"
             })
             this.map.on("mouseleave", "problems", () => {
@@ -615,7 +389,6 @@ export default class extends Controller {
                     .setHTML(html)
                     .addTo(this.map)
             })
-        }
 
         this.map.on(
             "mouseenter",
@@ -660,51 +433,6 @@ export default class extends Controller {
         </div>`
                     )
                     .join("")
-
-                new mapboxgl.Popup({
-                    closeButton: false,
-                    focusAfterOpen: false,
-                    offset: [0, -8],
-                })
-                    .setLngLat(coordinates)
-                    .setHTML(html)
-                    .addTo(this.map)
-            }
-        )
-
-        this.map.on(
-            "mouseenter",
-            ["circuit7a-problems", "circuit7a-problems-texts"],
-            () => {
-                this.map.getCanvas().style.cursor = "pointer"
-            }
-        )
-        this.map.on(
-            "mouseleave",
-            ["circuit7a-problems", "circuit7a-problems-texts"],
-            () => {
-                this.map.getCanvas().style.cursor = ""
-            }
-        )
-
-        // FIXME: make DRY
-        this.map.on(
-            "click",
-            ["circuit7a-problems", "circuit7a-problems-texts"],
-            (e) => {
-                let problem = e.features[0].properties
-
-                // FIXME: make it DRY
-                const coordinates = e.features[0].geometry.coordinates.slice()
-                var name = problem.name
-                if (this.localeValue == "en" && problem.nameEn) {
-                    name = problem.nameEn
-                }
-                const html = `<a href="/${
-                    this.localeValue
-                }/redirects/new?problem_id=${problem.id})" target="_blank">${
-                    name || ""
-                }</a><span class="text-gray-400 ml-1">${problem.grade}</span>`
 
                 new mapboxgl.Popup({
                     closeButton: false,

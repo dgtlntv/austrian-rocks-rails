@@ -5,9 +5,6 @@
   <% items = [] %>
   <% items << { text: "New problem", link: new_admin_problem_path(area_id: @area.id) } %>
   <% items << { text: "Edit area", link: edit_admin_area_path(@area) } %>
-  <% if params[:circuit_id].to_i > 0 %>
-    <% items << { text: "Edit circuit", link: edit_admin_circuit_path(id: params[:circuit_id]) } %>
-  <% end %>
   <% items << { text: "Map edit", link: geojson_io_url(@area), target: "_blank" } %>
   <% items << { text: "Map download", link: geojson_source_url(@area, download: true) } %>
   <% items << { text: "Map import", link: new_admin_import_path } %>
@@ -27,27 +24,11 @@
   <% end %>
 <% end %>
 
-<div class="">
-  <div class="border-b border-gray-200">
-    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-      <% @circuit_tabs.each do |id, name| %>
-        <% if params[:circuit_id].presence == id.to_s.presence %>
-          <%= link_to name, admin_area_problems_path(circuit_id: id), class: "border-brand-500 text-brand-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm", aria: {current: "page"} %>
-        <% else %>  
-          <%= link_to name, admin_area_problems_path(circuit_id: id), class: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" %>
-        <% end %>
-      <% end %>
-    </nav>
+<%= form_with url: admin_area_problems_path(@area), method: :get, class: "my-4" do |form| %>
+  <div class="w-1/2">
+    <%# <label for="missing" class="block text-sm font-medium text-gray-700">Missing?</label> %>
+    <%= form.select :missing, [["All", ""], ["Missing location", "location"], ["Missing line only", "line"]], { selected: params[:missing] }, { onchange: 'this.form.submit()', class: "mt-1 block w-full md:w-1/3 rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-brand-500 focus:outline-none focus:ring-brand-500 sm:text-sm" } %>
   </div>
-</div>
-
-<% if params[:circuit_id].nil? %>
-  <%= form_with url: admin_area_problems_path(@area), method: :get, class: "my-4" do |form| %>
-    <div class="w-1/2">
-      <%# <label for="missing" class="block text-sm font-medium text-gray-700">Missing?</label> %>
-      <%= form.select :missing, [["All", ""], ["Missing location", "location"], ["Missing line only", "line"]], { selected: params[:missing] }, { onchange: 'this.form.submit()', class: "mt-1 block w-full md:w-1/3 rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-brand-500 focus:outline-none focus:ring-brand-500 sm:text-sm" } %>
-    </div>
-  <% end %>
 <% end %>
 
 <div class="flex flex-col my-6">

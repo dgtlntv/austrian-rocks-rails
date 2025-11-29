@@ -1,5 +1,5 @@
 <% add_breadcrumb "Fontainebleau", admin_areas_path %>
-<% add_breadcrumb @problem.area.name, admin_area_problems_path(area_slug: @problem.area.slug, circuit_id: @problem.circuit&.id) %>
+<% add_breadcrumb @problem.area.name, admin_area_problems_path(area_slug: @problem.area.slug) %>
 <% add_breadcrumb "Problem ##{@problem.id}", nil, class: "active" %>
 
 <% content_for :options do %>
@@ -21,7 +21,6 @@
         <%# </span> %>
       <%# end %>
       <div class="flex items-center">
-        <span class="mr-2"><%= problem_circle_view(@problem) %></span>
         <h1 class="text-2xl font-bold"><%= @problem.name_with_fallback %></h1>
         <span class="ml-2 text-gray-400 text-2xl font-bold"><%= @problem.grade %></span>
       </div>
@@ -46,35 +45,6 @@
         <% end %>
       </span>
     </div>
-
-    <% if @problem.circuit_letter.blank? && (@problem.previous || @problem.next) %>
-      <div class="px-4 sm:px-0 py-2 flex justify-start items-center">
-        <div class="mr-4">
-          <% if previous = @problem.previous %>
-            <%= link_to [:admin, previous] do %>
-              <div class="flex items-center space-x-2 text-brand-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/>
-                </svg>
-                <div><%= t('views.pagination.previous').html_safe %></div>
-              </div>
-            <% end %>
-          <% end %>
-        </div>
-        <div>
-          <% if nexxt = @problem.next %>
-            <%= link_to [:admin, nexxt] do %>
-              <div class="flex items-center space-x-2 text-brand-600">
-                <div><%= t('views.pagination.next').html_safe %></div>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                </svg>
-              </div>
-            <% end %>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
 
     <div class="my-4 px-4 sm:px-0">
       <% if @problem.lines.published.none? %>

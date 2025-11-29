@@ -11,7 +11,6 @@ Rails.application.routes.draw do
       end
       resources :problems, except: :index
       resources :boulders
-      resources :circuits
       resources :clusters
       resources :imports do
         get "apply", on: :member
@@ -73,7 +72,6 @@ Rails.application.routes.draw do
     get "contribute/map", to: redirect("/%{locale}/mapping/map"), as: :map_contribute_legacy_redirect # can be removed as soon as 2024-01-01
 
     scope "fontainebleau" do
-      resources :circuits, only: [ :show, :index ]
       resources :problems, only: [ :index ]
 
       get "/levels", to: "areas#levels", as: :areas_levels
@@ -93,9 +91,6 @@ Rails.application.routes.draw do
     get "privacy", to: "pages#privacy", as: :privacy
     get "about", to: "pages#about", as: :about
     get "contribute", to: "pages#contribute", as: :contribute
-    get "circuit7a", to: "circuit7a#index", as: :circuit7a
-    get "circuit7a/problems", to: "circuit7a#problems", as: :circuit7a_problems
-    get "circuit7a/map", to: "map#index", as: :circuit7a_map, defaults: { circuit7a: true }
 
     resources :redirects, only: :new # useful for redirects where we only know the problem_id or area_id, eg. mapbox
 
