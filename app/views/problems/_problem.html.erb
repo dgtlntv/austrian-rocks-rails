@@ -2,8 +2,7 @@
   <%= link_to problem_friendly_path(problem) do %>
     <div class="flex justify-between py-2">
         <div>
-          <%= problem_circle_view(problem) %>
-          <span class="ml-2"><%= problem.name_with_fallback %></span>
+          <span><%= problem.name_with_fallback %></span>
         </div>
         <div>
           <div class="flex space-x-2">

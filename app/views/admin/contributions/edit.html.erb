@@ -29,8 +29,7 @@
     <div class="mt-5 md:mt-0 md:col-span-2">
       <% if problem = @contribution.problem %>
         <p class="my-4">
-          <%= problem_circle_view(problem) %>
-          <%= link_to problem.name_with_fallback, admin_problem_path(problem), class: "ml-2", target: "_blank" %>
+          <%= link_to problem.name_with_fallback, admin_problem_path(problem), target: "_blank" %>
         </p>
       <% else %>
         <p class="my-4">

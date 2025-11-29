@@ -9,7 +9,7 @@
 </div>
 
 <div class="my-3">
-  <%= problem_circle_view_with_name(@line.problem) %>
+  <%= link_to @line.problem.name_with_fallback, admin_problem_path(@line.problem) %>
 </div>
 
 <div class="my-8">

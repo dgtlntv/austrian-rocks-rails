@@ -28,9 +28,9 @@
                 </td>
                 <td class="px-6 py-2 whitespace-nowrap w-1/12">
                   <% if audit.auditable&.class&.name == "Line" %>
-                    <div><%= problem_circle_view_with_name(audit.auditable.problem) %></div>
+                    <div><%= link_to audit.auditable.problem.name_with_fallback, admin_problem_path(audit.auditable.problem) %></div>
                   <% elsif audit.auditable&.class&.name == "Problem" %>
-                    <div><%= problem_circle_view_with_name(audit.auditable) %></div>
+                    <div><%= link_to audit.auditable.name_with_fallback, admin_problem_path(audit.auditable) %></div>
                   <% else %>
                     <% auditable_string = "#{audit.auditable_type} ##{audit.auditable_id}" %>
                     <% if audit.auditable %>

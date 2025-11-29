@@ -20,7 +20,7 @@
                   <div><%= [object.class.name, "##{object.id}"].join(' ') %></div>
                 </td>
                 <td class="px-6 py-2 whitespace-nowrap w-3/12">
-                  <div><%= problem_circle_view_with_name(object) if object.class.name == "Problem" %></div>
+                  <div><%= link_to(object.name_with_fallback, admin_problem_path(object)) if object.class.name == "Problem" %></div>
                 </td>
                 <td class="px-6 py-2 whitespace-nowrap w-1/12">
                   <% if object.conflicting_updated_at %>

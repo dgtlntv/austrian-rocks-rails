@@ -1,7 +1,7 @@
-<div class="relative" data-controller="topo-line" data-action="turbo:before-cache@window->topo-line#hidePath" data-topo-line-coordinates-value="<%= line.coordinates.to_json %>" data-topo-line-color-value="<%= uicolor(nil) %>">
+<div class="relative" data-controller="topo-line" data-action="turbo:before-cache@window->topo-line#hidePath" data-topo-line-coordinates-value="<%= line.coordinates.to_json %>">
   <%= render 'shared/topo_image', topo: line.topo, klass: "sm:rounded-lg" %>
 
-  <% 
+  <%
     # README
     # please be careful about z-index when changing this partial
     # a few rules of thumb:
@@ -16,7 +16,7 @@
   <% if line.coordinates %>
     <div class="absolute" style="left:<%= line.coordinates.first['x']*100 %>%; top:<%= line.coordinates.first['y']*100 %>%">
       <div class="absolute hidden" style="top:-12px; left:-12px;" data-topo-line-target="circle">
-        <%= circle_view("&nbsp;".html_safe, klass: "h-6 w-6 leading-6 bg-gray-500 topo-line-shadow") %>
+        <span class="rounded-full h-6 w-6 leading-6 inline-flex justify-center bg-brand-500 topo-line-shadow">&nbsp;</span>
       </div>
     </div>
     <div class="absolute top-0 left-0 w-full pointer-events-none">
@@ -29,15 +29,8 @@
       <div class="absolute" style="left:<%= secondary_line.coordinates.first['x']*100 %>%; top:<%= secondary_line.coordinates.first['y']*100 %>%">
         <div class="relative">
           <div class="absolute hidden z-0" style="top:-12px; left:-12px;" data-topo-line-target="circle">
-            <%= circle_view("&nbsp;".html_safe, klass: "h-6 w-6 leading-6 bg-gray-500 topo-line-shadow") %>
+            <span class="rounded-full h-6 w-6 leading-6 inline-flex justify-center bg-brand-500 topo-line-shadow">&nbsp;</span>
           </div>
-          <div class="absolute hidden z-0" style="top:-12px; left:-12px;" data-topo-line-target="circle">
-            <% path = (scope == :admin) ? admin_problem_path(secondary_line.problem) : problem_friendly_path(secondary_line.problem) %>
-            <%= link_to path do %>
-              <%= problem_circle_view(secondary_line.problem) %>
-            <% end %>
-          </div>
-          
         </div>
       </div>
     <% end %>
@@ -46,7 +39,7 @@
   <% if line.coordinates %>
     <div class="absolute z-20" style="left:<%= line.coordinates.first['x']*100 %>%; top:<%= line.coordinates.first['y']*100 %>%">
       <div class="absolute hidden" style="top:-12px; left:-12px;" data-topo-line-target="circle">
-        <%= problem_circle_view(line.problem) %>
+        <span class="rounded-full h-6 w-6 leading-6 inline-flex justify-center bg-brand-500">&nbsp;</span>
       </div>
     </div>
   <% end %>

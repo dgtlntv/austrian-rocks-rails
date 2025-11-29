@@ -56,8 +56,7 @@
                 </td>
                 <td class="px-6 py-2 whitespace-nowrap w-2/12">
                   <div class="text-sm text-gray-900 shrink max-w-16">
-                    <%= problem_circle_view(problem) %>
-                    <span class="ml-2"><%= link_to problem.name_with_fallback&.truncate(50), admin_problem_path(problem) %></span>
+                    <%= link_to problem.name_with_fallback&.truncate(50), admin_problem_path(problem) %>
                   </div>
                 </td>
                 <td class="px-6 py-2 whitespace-nowrap w-1/12">

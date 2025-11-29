@@ -35,11 +35,11 @@ export default class extends Controller {
     this.path = document.createElementNS("http://www.w3.org/2000/svg", "path");
 
     this.path.setAttribute("d", this.pathString());
-    this.path.setAttribute("stroke", this.hasColorValue ? this.colorValue : "black" );
+    this.path.setAttribute("stroke", this.hasColorValue ? this.colorValue : "#ef3340" ); // brand-500 from tailwind.config.js
     this.path.setAttribute("stroke-linecap", "round");
     this.path.setAttribute("stroke-width", this.hasStrokeWidthValue ? this.strokeWidthValue : "3");
     this.path.setAttribute("fill", "none");
-    
+
     this.svgTarget.appendChild(this.path);
   }
 

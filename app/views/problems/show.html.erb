@@ -107,8 +107,7 @@
             <% @problem.variants.sort_by(&:grade).reverse.each do |variant| %>
               <li class="mt-2">
                 <%= link_to problem_friendly_path(variant) do %>
-                  <%= problem_circle_view(variant) %>
-                  <span class="ml-2 font-medium"><%= variant.name_with_fallback %></span>
+                  <span class="font-medium"><%= variant.name_with_fallback %></span>
                   <span class="ml-2 text-gray-400"><%= variant.grade %></span>
                 <% end %>
               </li>

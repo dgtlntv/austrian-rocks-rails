@@ -38,7 +38,6 @@
           <% if problem = @contribution.problem %>
             <div class="sm:col-span-full flex justify-between">
                 <div class="flex space-x-2">
-                  <span><%= problem_circle_view(problem) %></span>
                   <span><%= problem.name_with_fallback %></span>
                 </div>
                 <div class="text-gray-500"><%= problem.area.name%></div>
