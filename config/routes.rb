@@ -17,11 +17,6 @@ Rails.application.routes.draw do
       end
       resources :topos
       resources :problem_imports
-      resources :bleau_problems do
-        member do
-          post :toggle_ignore
-        end
-      end
       resources :lines do
         member do
           get :replace_photo

@@ -22,7 +22,6 @@ namespace :app do
           steepness TEXT NOT NULL,
           sit_start INTEGER NOT NULL,
           area_id INTEGER NOT NULL,
-          bleau_info_id TEXT,
           featured INTEGER NOT NULL,
           popularity INTEGER,
           parent_id INTEGER
@@ -35,15 +34,15 @@ namespace :app do
       Problem.with_location.joins(:area).where(area: { published: true }).find_each do |p|
         db.execute(
           "INSERT INTO problems (id, name, name_en, name_searchable, grade, latitude, longitude,
-          steepness, sit_start, area_id, bleau_info_id,
+          steepness, sit_start, area_id,
           featured, popularity, parent_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           [ p.id,
             I18n.with_locale(:fr) { p.name_with_fallback },
             I18n.with_locale(:en) { p.name_with_fallback },
             normalize(p.name),
             p.grade, p.location&.lat, p.location&.lon,
-            p.steepness, p.sit_start ? 1 : 0, p.area_id, p.bleau_info_id.to_s,
+            p.steepness, p.sit_start ? 1 : 0, p.area_id,
             p.featured ? 1 : 0, p.popularity, p.parent_id ]
         )
       end

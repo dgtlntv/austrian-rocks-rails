@@ -4,7 +4,6 @@ en:
         start: Start
         problems: Problems
         level_x: Level %{level}
-        see_on_bleau_info: See on bleau.info
         see_on_map: See on the map
         steepness:
             wall: Wall
@@ -90,7 +89,6 @@ en:
                 show:
                     step1: Go to the problem
                     step2: Add a contribution
-                    see_on_bleau_info: See info on bleau.info
                     no_location: (no location available)
                     photo: Boulder photo
                     line: Route line
@@ -107,7 +105,7 @@ en:
                         'Important: photos must be <span class="
                         underline">horizontal</span>.'
                     problem: Problem
-                    problem_url_label: Link (bleau.info or %{brand_name})
+                    problem_url_label: Link to %{brand_name}
                     boulder: Boulder photo
                     boulder_description:
                         Take a picture of the boulder with your phone.
@@ -259,19 +257,8 @@ en:
                 title: Thanks
                 p1:
                     'We extend our thanks to everyone who has contributed to the
-                    Font ecosystem: the route setters and all those who have contributed to the
-                    maintenance and cleaning of boulders, anti-erosion
-                    operations, ...'
-                p2_html:
-                    Special thanks to %{link_bleau}, whose team has referenced
-                    almost 50.000 problems with great care and passion for the
-                    past 20 years, and made it free for everyone. You can
-                    support them on their %{link_bleau_sponsoring} page.
-                p3_html:
-                    We also extend our thanks to the %{link_cosiroc} association
-                    and the %{link_topo_bleau} website, which have provided a
-                    wealth of firsthand data and carried out numerous
-                    on-the-ground operations.
+                    Austrian bouldering community: the route setters and all those who have contributed to the
+                    maintenance and cleaning of boulders, and preservation efforts.'
                 app: app
             open:
                 title: A collaborative platform
@@ -294,9 +281,6 @@ en:
                     p1:
                         Photos and geographical data (GPS) were collected by the
                         %{brand_name} team.
-                    p2_html:
-                        The problem names and grades come mainly from
-                        %{link_bleau}, %{link_cosiroc} and %{link_topo_bleau}.
                     p3:
                         Some of the boulder drawings (in top view) are inspired
                         by existing guidebooks. We are working to replace them

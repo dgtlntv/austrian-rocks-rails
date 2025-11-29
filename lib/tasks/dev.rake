@@ -17,8 +17,6 @@ namespace :dev do
     -t lines \
     -t pois \
     -t poi_routes \
-    -t bleau_areas \
-    -t bleau_problems \
     -t contribution_requests \
     -t active_storage_attachments \
     -t active_storage_blobs \

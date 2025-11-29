@@ -10,10 +10,10 @@ namespace :popularity do
     end
 
     problems.find_each do |problem|
-      ascents = problem.bleau_problem&.ascents || 0
-      ratings_average = problem.bleau_problem&.ratings_average || 0
+      ascents = problem.ascents || 0
+      ratings_average = problem.ratings_average || 0
       popularity = ascents * (ratings_average*ratings_average)
-      problem.update!(ascents: ascents, ratings_average: ratings_average, popularity: popularity)
+      problem.update!(popularity: popularity)
       puts "Computed popularity for problem ##{problem.id}"
     end
     puts "Done".green

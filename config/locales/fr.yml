@@ -3,8 +3,7 @@ fr:
     no_name: Sans nom
     start: Départ
     problems: Voies
-    level_x: Niveau %{level} 
-    see_on_bleau_info: Voir sur bleau.info
+    level_x: Niveau %{level}
     see_on_map: Voir sur la carte
     steepness:
       wall: Mur
@@ -76,7 +75,6 @@ fr:
         show:
           step1: Rendez vous devant la voie
           step2: Ajoutez une contribution
-          see_on_bleau_info: Voir infos sur bleau.info
           no_location: (localisation non disponible)
           photo: Photo du bloc
           line: Tracé de la ligne
@@ -91,7 +89,7 @@ fr:
           how_to: Lire le mode d'emploi
           warning_horizontal_html: 'Important : les photos doivent être <span class=" underline">horizontales</span>.'
           problem: Voie
-          problem_url_label: Lien (bleau.info ou %{brand_name})
+          problem_url_label: Lien vers %{brand_name}
           boulder: Photo du bloc
           boulder_description: Prenez une photo du bloc avec votre téléphone.
           line: Ligne de la voie
@@ -204,9 +202,7 @@ fr:
         p1: Pour toute question, vous pouvez nous contacter à l'adresse 
       support:
         title: Remerciements
-        p1: "Nous remercions toutes les personnes qui ont contribué à l'écosystème de Bleau : les ouvreurs, toutes les personnes ayant contribué à la maintenance et au nettoyage de blocs, aux opérations anti-érosion, ..."
-        p2_html: Nous remercions %{link_bleau} qui centralise et référence des dizaines de milliers de blocs avec minutie et passion depuis plus de 20 ans, de façon gratuite. Vous pouvez les soutenir sur leur page %{link_bleau_sponsoring}.
-        p3_html: Nous remercions également l'association %{link_cosiroc} et le site %{link_topo_bleau}, à l'origine de nombreuses données de première main et d'opérations sur le terrain.
+        p1: "Nous remercions toutes les personnes qui ont contribué à la communauté d'escalade en Autriche : les ouvreurs, toutes les personnes ayant contribué à la maintenance et au nettoyage de blocs, et aux efforts de préservation."
         app: appli
       open:
         title: Une plateforme collaborative
@@ -220,8 +216,7 @@ fr:
         title: Questions fréquentes
         data:
           question: D'où viennent les données ?
-          p1: Les photos et données géographiques (GPS) ont été récoltées par l'équipe %{brand_name}.  
-          p2_html: Les noms de voies et cotations viennent essentiellement de %{link_bleau}, %{link_cosiroc}, et %{link_topo_bleau}.
+          p1: Les photos et données géographiques (GPS) ont été récoltées par l'équipe %{brand_name}.
           p3: Certains dessins de blocs (en vue de dessus) s'inspirent de topos existants. Nous travaillons à les remplacer par des dessins originaux.
         why_free:
           question: Pourquoi l'appli est-elle gratuite ?

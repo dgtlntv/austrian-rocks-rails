@@ -13,7 +13,6 @@ namespace :map_maker_legacy do
       hash = {}.with_indifferent_access
       hash.merge!(problem.slice(:grade, :steepness, :height))
       hash[:name] = problem.name
-      hash[:bleau_info_id] = problem.bleau_info_id.to_s
       hash[:parent_id] = problem.parent_id
 
       tags = []
