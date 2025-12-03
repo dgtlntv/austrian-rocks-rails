@@ -11,7 +11,7 @@ class Problem < ApplicationRecord
   has_many :contribution_requests
   has_many :contributions
 
-  audited except: [ :has_line, :ascents, :ratings, :ratings_average, :popularity, :featured ], associated_with: :import
+  audited except: [ :has_line, :ascents, :ratings, :ratings_average, :popularity, :featured, :video_links ], associated_with: :import
   attr_accessor :import # used by audited associated_with: :import
   include CheckConflicts
 

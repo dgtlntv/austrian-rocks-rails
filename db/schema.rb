@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_29_155141) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_03_193025) do
   create_schema "tiger"
   create_schema "tiger_data"
   create_schema "topology"
@@ -195,6 +195,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_29_155141) do
     t.integer "popularity"
     t.boolean "sit_start", default: false, null: false
     t.boolean "has_line", default: false, null: false
+    t.text "description"
+    t.text "video_links", default: [], array: true
     t.index ["area_id"], name: "index_problems_on_area_id"
     t.index ["grade"], name: "index_problems_on_grade"
     t.index ["has_line"], name: "index_problems_on_has_line"

@@ -27,7 +27,11 @@ class Admin::ProblemsController < Admin::BaseController
 
   def create
     problem = Problem.new
-    problem.assign_attributes(problem_params)
+
+    attrs = problem_params
+    attrs[:video_links] = parse_video_links(attrs[:video_links]) if attrs[:video_links]
+
+    problem.assign_attributes(attrs)
 
     problem.save!
 
@@ -46,7 +50,10 @@ class Admin::ProblemsController < Admin::BaseController
   def update
     set_problem
 
-    @problem.assign_attributes(problem_params)
+    attrs = problem_params
+    attrs[:video_links] = parse_video_links(attrs[:video_links]) if attrs[:video_links]
+
+    @problem.assign_attributes(attrs)
 
     if @problem.save
       flash[:notice] = "Problem updated"
@@ -74,8 +81,13 @@ class Admin::ProblemsController < Admin::BaseController
   def problem_params
     params.require(:problem).
       permit(:area_id, :name, :grade, :steepness, :sit_start,
-        :parent_id,
+        :parent_id, :description, :video_links,
       )
+  end
+
+  def parse_video_links(video_links_str)
+    return [] if video_links_str.blank?
+    video_links_str.split("\n").map(&:strip).reject(&:blank?)
   end
 
   def set_problem

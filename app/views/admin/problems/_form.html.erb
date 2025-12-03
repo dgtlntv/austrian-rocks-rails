@@ -22,3 +22,14 @@
   <%= form.label :parent_id, "Parent id" %>
   <%= form.text_field :parent_id, autocomplete: "off" %>
 </div>
+
+<div class="col-span-6">
+  <%= form.label :description %>
+  <%= form.text_area :description, rows: 5, autocomplete: "off" %>
+</div>
+
+<div class="col-span-6">
+  <%= form.label :video_links, "Video links (one per line)" %>
+  <%= form.text_area :video_links, value: form.object.video_links&.join("\n"), rows: 3, autocomplete: "off", placeholder: "https://youtube.com/watch?v=..." %>
+  <p class="text-sm text-gray-500 mt-1">Enter one video URL per line</p>
+</div>
