@@ -77,6 +77,56 @@ class Admin::ProblemsController < Admin::BaseController
     end
   end
 
+  def export
+    include_boulders = params[:include_boulders] == "true"
+
+    factory = RGeo::GeoJSON::EntityFactory.instance
+
+    problem_features = Problem.with_location.joins(:area).where(area: { published: true }).map do |problem|
+      hash = {}.with_indifferent_access
+      hash.merge!(problem.slice(:grade, :steepness, :featured, :popularity))
+      hash[:id] = problem.id
+
+      name_de = I18n.with_locale(:de) { problem.name_with_fallback }
+      name_en = I18n.with_locale(:en) { problem.name_with_fallback }
+      hash[:name] = name_de
+      hash[:name_en] = (name_en != name_de) ? name_en : ""
+
+      hash.deep_transform_keys! { |key| key.camelize(:lower) }
+
+      factory.feature(problem.location, nil, hash)
+    end
+
+    # Extract boulders alongside problems to ensure we always upload both at the same time to mapbox
+    boulder_features = Boulder.where.not(area_id: [ 45, 75, 79, 104, 113 ]).joins(:area).where(area: { published: true }).map do |boulder|
+      hash = {}.with_indifferent_access
+      hash[:name] = boulder.name if boulder.name.present?
+      hash.deep_transform_keys! { |key| key.camelize(:lower) }
+
+      factory.feature(boulder.polygon, nil, hash)
+    end
+
+    if include_boulders
+      features = problem_features + boulder_features
+    else
+      features = problem_features
+    end
+
+    feature_collection = factory.feature_collection(
+      features
+    )
+
+    geo_json = JSON.pretty_generate(RGeo::GeoJSON.encode(feature_collection))
+
+    filename = include_boulders ? "problems.geojson" : "problems-without-boulders.geojson"
+
+    respond_to do |format|
+      format.geojson do
+        send_data geo_json, filename: filename, type: "application/geo+json"
+      end
+    end
+  end
+
   private
   def problem_params
     params.require(:problem).

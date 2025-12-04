@@ -8,12 +8,19 @@ Rails.application.routes.draw do
       get "clusters/:cluster_id/map", to: "cluster_maps#show", as: :cluster_map
       get "regions/:region_id/map", to: "region_maps#show", as: :region_map
       resources :areas, param: :slug do
+        get "export", on: :collection
         resources :problems, only: :index
       end
-      resources :problems, except: :index
+      resources :problems, except: :index do
+        get "export", on: :collection
+      end
       resources :boulders
-      resources :clusters
-      resources :regions
+      resources :clusters do
+        get "export", on: :collection
+      end
+      resources :regions do
+        get "export", on: :collection
+      end
       resources :imports do
         get "apply", on: :member
       end

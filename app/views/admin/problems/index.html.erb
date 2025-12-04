@@ -3,6 +3,8 @@
 
 <% content_for :options do %>
   <% items = [] %>
+  <% items << { text: "Export problems.geojson (with boulders)", link: export_admin_problems_path(format: :geojson, include_boulders: true) } %>
+  <% items << { text: "Export problems.geojson (without boulders)", link: export_admin_problems_path(format: :geojson, include_boulders: false) } %>
   <% items << { text: "New problem", link: new_admin_problem_path(area_id: @area.id) } %>
   <% items << { text: "Edit area", link: edit_admin_area_path(@area) } %>
   <% items << { text: "Map edit", link: geojson_io_url(@area), target: "_blank" } %>
