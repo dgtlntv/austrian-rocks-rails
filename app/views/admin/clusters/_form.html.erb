@@ -4,6 +4,11 @@
 </div>
 
 <div class="col-span-6 sm:col-span-4">
+  <%= form.label :region_id, "Region" %>
+  <%= form.collection_select :region_id, Region.order(:name), :id, :name, { include_blank: true } %>
+</div>
+
+<div class="col-span-6 sm:col-span-4">
   <%= form.label :main_area_id, "Main Area" %>
   <%= form.collection_select :main_area_id, Area.order(:name), :id, :name, { include_blank: "Select an area" } %>
 </div>

@@ -92,7 +92,7 @@ class Admin::ClustersController < Admin::BaseController
   private
 
   def cluster_params
-    params.require(:cluster).permit(:name, :main_area_id)
+    params.require(:cluster).permit(:name, :main_area_id, :region_id)
   end
 
   def set_cluster

@@ -19,6 +19,9 @@
                 Name
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Region
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Main Area
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -41,6 +44,11 @@
                 <td class="px-6 py-2 whitespace-nowrap">
                   <span class="text-sm text-gray-900 font-bold">
                     <%= link_to cluster.name, edit_admin_cluster_path(cluster) %>
+                  </span>
+                </td>
+                <td class="px-6 py-2 whitespace-nowrap">
+                  <span class="text-sm text-gray-500">
+                    <%= cluster.region ? cluster.region.name : "—" %>
                   </span>
                 </td>
                 <td class="px-6 py-2 whitespace-nowrap">
