@@ -6,12 +6,14 @@ Rails.application.routes.draw do
     namespace :admin do
       get "map", to: "maps#show"
       get "clusters/:cluster_id/map", to: "cluster_maps#show", as: :cluster_map
+      get "regions/:region_id/map", to: "region_maps#show", as: :region_map
       resources :areas, param: :slug do
         resources :problems, only: :index
       end
       resources :problems, except: :index
       resources :boulders
       resources :clusters
+      resources :regions
       resources :imports do
         get "apply", on: :member
       end

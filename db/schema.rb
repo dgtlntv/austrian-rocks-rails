@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_03_193025) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_04_195209) do
   create_schema "tiger"
   create_schema "tiger_data"
   create_schema "topology"
@@ -111,6 +111,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_03_193025) do
     t.geography "ne", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "region_id"
   end
 
   create_table "contribution_requests", force: :cascade do |t|
@@ -201,6 +202,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_03_193025) do
     t.index ["grade"], name: "index_problems_on_grade"
     t.index ["has_line"], name: "index_problems_on_has_line"
     t.index ["location"], name: "index_problems_on_location", using: :gist
+  end
+
+  create_table "regions", force: :cascade do |t|
+    t.string "name"
+    t.integer "main_cluster_id"
+    t.geography "center", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
+    t.geography "sw", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
+    t.geography "ne", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "topos", force: :cascade do |t|

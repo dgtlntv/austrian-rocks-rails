@@ -1,9 +1,8 @@
-class Cluster < ApplicationRecord
+class Region < ApplicationRecord
   include CheckConflicts
 
   audited associated_with: :import
   attr_accessor :import # used by audited associated_with: :import
 
-  belongs_to :region, optional: true
-  has_many :areas
+  has_many :clusters
 end

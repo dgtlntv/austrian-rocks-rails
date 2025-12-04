@@ -526,6 +526,27 @@ export default class extends Controller {
         })
 
         // FIXME: make DRY
+        this.map.on("mouseenter", "regions", () => {
+            if (this.map.getZoom() <= 10) {
+                this.map.getCanvas().style.cursor = "pointer"
+            }
+        })
+        this.map.on("mouseleave", "regions", () => {
+            if (this.map.getZoom() <= 10) {
+                this.map.getCanvas().style.cursor = ""
+            }
+        })
+
+        this.map.on("click", "regions", (e) => {
+            if (this.map.getZoom() <= 10) {
+                let props = e.features[0].properties
+                this.flyToBounds([
+                    [props.southWestLon, props.southWestLat],
+                    [props.northEastLon, props.northEastLat],
+                ])
+            }
+        })
+
         this.map.on("mouseenter", "clusters", () => {
             if (this.map.getZoom() <= 12) {
                 this.map.getCanvas().style.cursor = "pointer"

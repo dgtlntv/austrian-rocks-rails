@@ -22,6 +22,7 @@ class ImportParser
     parse_problems
     parse_boulders
     parse_clusters
+    parse_regions
 
     @objects
   end
@@ -80,8 +81,8 @@ class ImportParser
   private
 
   def infer_area_id
-    # If we only have cluster features, area_id is not needed
-    return nil if problem_features.empty? && boulder_features.empty? && cluster_features.any?
+    # If we only have cluster or region features, area_id is not needed
+    return nil if problem_features.empty? && boulder_features.empty? && (cluster_features.any? || region_features.any?)
 
     problems = problem_features.map { |feature| Problem.find_by(id: feature["problemId"]) }
     boulders = boulder_features.map { |feature| Boulder.find_by(id: feature["boulderId"]) }
@@ -109,6 +110,13 @@ class ImportParser
     @cluster_features ||= @features.select { |f|
       f.geometry.geometry_type == ::RGeo::Feature::Polygon &&
       f["clusterId"].present?
+    }
+  end
+
+  def region_features
+    @region_features ||= @features.select { |f|
+      f.geometry.geometry_type == ::RGeo::Feature::Polygon &&
+      f["regionId"].present?
     }
   end
 
@@ -145,6 +153,42 @@ class ImportParser
       )
 
       @objects << cluster if cluster.changes.any?
+    end
+  end
+
+  def parse_regions
+    region_features.each do |feature|
+      region = Region.find(feature["regionId"])
+
+      # Detect conflicts - only check if updatedAt is present in the feature
+      if region.persisted? && feature["updatedAt"].present?
+        region.conflicting_updated_at = true if region.updated_at.to_s != feature["updatedAt"]
+      end
+
+      # Extract rectangle corners from polygon
+      polygon = feature.geometry
+      points = polygon.exterior_ring.points
+
+      # Get bounding box from rectangle
+      # Handle both Cartesian (x/y) and Geographic (lon/lat) points
+      lons = points.map { |p| p.respond_to?(:lon) ? p.lon : p.x }
+      lats = points.map { |p| p.respond_to?(:lat) ? p.lat : p.y }
+
+      sw = FACTORY.point(lons.min, lats.min)
+      ne = FACTORY.point(lons.max, lats.max)
+      center = FACTORY.point(
+        (lons.min + lons.max) / 2,
+        (lats.min + lats.max) / 2
+      )
+
+      region.assign_attributes(
+        sw: sw,
+        ne: ne,
+        center: center,
+        name: feature["name"]
+      )
+
+      @objects << region if region.changes.any?
     end
   end
 end
