@@ -6,9 +6,31 @@
 <% end %>
 
 <div class="max-w-7xl mx-auto pt-5 mt-1 px-4 sm:px-6 lg:px-8 bg-gray-100 hidden sm:block mb-4">
-  <%= link_to areas_path, class: "text-sm font-medium text-gray-500 hover:text-gray-700 flex items-center space-x-1" do %>
-    <div>Fontainebleau</div>
-  <% end %>
+  <nav class="flex" aria-label="Breadcrumb">
+    <ol role="list" class="flex items-center space-x-2">
+      <li>
+        <%= link_to regions_path, class: "text-sm font-medium text-gray-500 hover:text-gray-700" do %>
+          <%= t("views.areas.show.breadcrumbs.explore") %>
+        <% end %>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="h-5 w-5 flex-shrink-0 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M5.555 17.776l8-16 .894.448-8 16-.894-.448z" />
+          </svg>
+          <%= link_to @region.name, region_path(@region), class: "ml-2 text-sm font-medium text-gray-500 hover:text-gray-700" %>
+        </div>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="h-5 w-5 flex-shrink-0 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M5.555 17.776l8-16 .894.448-8 16-.894-.448z" />
+          </svg>
+          <%= link_to @cluster.name, cluster_path(@region, @cluster), class: "ml-2 text-sm font-medium text-gray-500 hover:text-gray-700" %>
+        </div>
+      </li>
+    </ol>
+  </nav>
 </div>
 
 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

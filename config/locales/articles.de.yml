@@ -41,8 +41,7 @@ de:
           filter_by_level: Nach Schwierigkeitsgrad filtern
           filter_by_level_p1_html: Mit der <a href="%{path}">%{brand_name} App</a> kannst du die Routen nach deinem Schwierigkeitsgrad filtern.
           filter_by_level_p2: So kannst du leicht Bereiche mit einer guten Dichte an Routen identifizieren, die deinem Schwierigkeitsgrad entsprechen.
-          filter_by_level_warning: "Achtung: Eine 4a-Bewertung in Österreich entspricht etwa 5a an der Felswand oder in der Halle."
-          filter_by_level_warning2: Überschätz dich nicht ;)
+          filter_by_level_warning: "Achtung: Outdoor-Schwierigkeitsgrade können härter sein als Hallen-Schwierigkeitsgrade. Überschätz dich nicht!"
           metas:
             title: Wie man die richtigen Routen in Österreich auswählt
         climb_safely:
@@ -75,9 +74,9 @@ de:
           clean_shoes: Reinige deine Schuhe
           clean_shoes_p1: Sand und Erde, die unter deine Schuhe gelangen, tragen dazu bei, den Felsen zu polieren, was ihn auf lange Sicht unbegehbar macht.
           clean_shoes_p2: Denk daran, deine Schuhe mit einer Fußmatte oder einem Tuch zu reinigen, bevor du eine Route beginnst.
-          rain: Kein Klettern nach Regen
-          rain_p1: Der österreichische Fels ist sehr empfindlich, wenn er feucht ist.
-          rain_p2: Um zu vermeiden, den Felsen zu beschädigen und/oder Griffe zu brechen, solltest du warten, bis der Felsen gut trocken ist.
+          rain: Vermeide das Klettern auf nassem Fels
+          rain_p1: Nasser Fels hat weniger Reibung und kann gefährlich zum Klettern sein.
+          rain_p2: Aus Sicherheitsgründen und um den Felsen zu schonen, ist es am besten, zu warten, bis die Griffe trocken sind, bevor du kletterst.
           other_rules: Weitere Regeln
           other_rules_item1: Geh auf bestehenden Wegen (die Fauna und Flora werden es dir danken!)
           other_rules_item2: Trag dein Crashpad, anstatt es über den Boden zu schleifen
@@ -88,7 +87,7 @@ de:
           metas:
             title: Die Verhaltensregeln
       top_areas:
-        discover_fontainebleau: Österreich entdecken
+        discover_austria: Österreich entdecken
         all_areas: Alle Gebiete in Österreich
         see_also: "Siehe auch:"
         dry_fast:

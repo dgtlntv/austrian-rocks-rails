@@ -1,6 +1,9 @@
 class ProblemsController < ApplicationController
   def show
     @problem = Problem.find(params[:id])
+    @area = @problem.area
+    @cluster = @area.cluster
+    @region = @cluster.region
     @line = @problem.lines.published.first
   end
 

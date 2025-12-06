@@ -1,0 +1,16 @@
+<% set_meta_tags title: t("views.regions.index.metas.title") %>
+<% set_meta_tags description: t("views.regions.index.metas.description") %>
+<% set_meta_tags og: { type: "website", image: image_url("hero-homepage.jpg") } %>
+<% set_meta_tags canonical: regions_url %>
+
+<div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-8 pb-8">
+  <h1 class="text-3xl font-bold mt-8 mb-4 px-4 sm:px-0"><%= t("views.regions.index.title") %></h1>
+
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-4 sm:px-0">
+    <% @regions.each do |region| %>
+      <%= link_to region_path(region) do %>
+        <%= render 'shared/region_card', region: region %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

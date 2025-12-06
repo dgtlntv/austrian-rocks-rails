@@ -46,13 +46,13 @@
 
   <div class="max-w-7xl mx-auto py-8">
 
-    <h2 class="px-4 sm:px-6 lg:px-8 text-2xl font-bold text-gray-900"><%= t("views.homepage.popular_areas") %></h2>
+    <h2 class="px-4 sm:px-6 lg:px-8 text-2xl font-bold text-gray-900"><%= t("views.homepage.popular_regions") %></h2>
 
     <div class="py-2 relative">
       <div class="flex flex-nowrap overflow-x-auto py-4 space-x-2 px-4 sm:px-6 lg:px-8">
-        <% Area.with_ids_keep_order(@popular_areas_ids).each do |area| %>
-          <%= link_to area_path(area) do %>
-            <%= render 'shared/area_card', area: area %>
+        <% Region.where(id: @popular_regions_ids).sort_by { |r| @popular_regions_ids.index(r.id) }.each do |region| %>
+          <%= link_to region_path(region) do %>
+            <%= render 'shared/region_card', region: region %>
           <% end %>
         <% end %>
         <div class="pr-16">&nbsp;</div>
@@ -61,13 +61,13 @@
       </div>
     </div>
 
-    <a href="<%= areas_path %>" class="place-self-center">
+    <a href="<%= regions_path %>" class="place-self-center">
       <div class="px-4 sm:px-6 lg:px-8 text-brand-500 flex space-x-2">
 
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-6 w-6 ">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <div><%= t("views.homepage.all_areas") %></div>
+        <div><%= t("views.homepage.explore_regions") %></div>
       </div>
     </a>
 

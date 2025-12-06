@@ -10,13 +10,39 @@
   <div class="md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8">
     <div class="col-span-2">
       <div class="px-4 sm:px-0">
-        <div class="flex items-center space-x-1 text-sm font-medium text-gray-500">
-          <div><%= link_to "Fontainebleau", areas_path, class: "hover:text-gray-700" %></div>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-          <div><%= link_to @problem.area.name, area_path(@problem.area), class: "hover:text-gray-700" %></div>
-        </div>
+        <nav class="flex" aria-label="Breadcrumb">
+          <ol role="list" class="flex items-center space-x-1 text-sm font-medium text-gray-500">
+            <li>
+              <%= link_to regions_path, class: "hover:text-gray-700" do %>
+                <%= t("views.problems.show.breadcrumbs.explore") %>
+              <% end %>
+            </li>
+            <li>
+              <div class="flex items-center space-x-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <%= link_to @region.name, region_path(@region), class: "hover:text-gray-700" %>
+              </div>
+            </li>
+            <li>
+              <div class="flex items-center space-x-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <%= link_to @cluster.name, cluster_path(@region, @cluster), class: "hover:text-gray-700" %>
+              </div>
+            </li>
+            <li>
+              <div class="flex items-center space-x-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <%= link_to @area.name, area_path(@region, @cluster, @area), class: "hover:text-gray-700" %>
+              </div>
+            </li>
+          </ol>
+        </nav>
         <div class="flex justify-between items-center">
           <div class="flex justify-between items-center w-full mt-2">
             <h1 class="text-4xl font-bold"><%= @problem.name_with_fallback %></h1>

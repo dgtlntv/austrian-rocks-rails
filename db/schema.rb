@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_04_195209) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_06_153911) do
   create_schema "tiger"
   create_schema "tiger_data"
   create_schema "topology"
@@ -112,6 +112,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_195209) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "region_id"
+    t.string "slug"
+    t.string "tags", default: [], null: false, array: true
+    t.boolean "published", default: true, null: false
+    t.index ["tags"], name: "index_clusters_on_tags", using: :gin
   end
 
   create_table "contribution_requests", force: :cascade do |t|
@@ -212,6 +216,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_195209) do
     t.geography "ne", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "slug"
+    t.string "tags", default: [], null: false, array: true
+    t.boolean "published", default: true, null: false
+    t.index ["tags"], name: "index_regions_on_tags", using: :gin
   end
 
   create_table "topos", force: :cascade do |t|

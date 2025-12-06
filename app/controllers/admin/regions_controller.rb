@@ -8,7 +8,13 @@ class Admin::RegionsController < Admin::BaseController
   end
 
   def create
-    region = Region.new(region_params)
+    region = Region.new
+    region.assign_attributes(region_params)
+    region.tags = params[:region][:joined_tags].to_s.split(",").reject(&:blank?)
+
+    if cover = params[:region][:cover]
+      region.cover = params[:region][:cover]
+    end
 
     if region.save
       flash[:notice] = "Region created"
@@ -27,7 +33,14 @@ class Admin::RegionsController < Admin::BaseController
   def update
     set_region
 
-    if @region.update(region_params)
+    @region.assign_attributes(region_params)
+    @region.tags = params[:region][:joined_tags].to_s.split(",").reject(&:blank?)
+
+    if cover = params[:region][:cover]
+      @region.cover = params[:region][:cover]
+    end
+
+    if @region.save
       flash[:notice] = "Region updated"
       redirect_to edit_admin_region_path(@region)
     else
@@ -98,10 +111,11 @@ class Admin::RegionsController < Admin::BaseController
   private
 
   def region_params
-    params.require(:region).permit(:name, :main_cluster_id)
+    params.require(:region).permit(:name, :slug, :published, :main_cluster_id)
   end
 
   def set_region
-    @region = Region.find(params[:id])
+    # Try to find by slug first, fall back to ID
+    @region = Region.find_by(slug: params[:id]) || Region.find(params[:id])
   end
 end

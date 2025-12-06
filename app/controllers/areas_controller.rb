@@ -18,13 +18,17 @@ class AreasController < ApplicationController
   end
 
   def show
-    @area = Area.find_by!(slug: params[:slug])
+    @region = Region.find_by!(slug: params[:region_slug])
+    @cluster = @region.clusters.find_by!(slug: params[:cluster_slug])
+    @area = @cluster.areas.find_by!(slug: params[:area_slug])
 
     @popular_problems = @area.problems.with_location.where(featured: true).order(grade: :desc, popularity: :desc)
   end
 
   def problems
-    @area = Area.find_by(slug: params[:slug])
+    @region = Region.find_by!(slug: params[:region_slug])
+    @cluster = @region.clusters.find_by!(slug: params[:cluster_slug])
+    @area = @cluster.areas.find_by!(slug: params[:area_slug])
 
     @problems = @area.problems.with_location.order(popularity: :desc).group_by { |p| p.grade }.sort_by { |grade, _| grade || "" }.reverse
   end

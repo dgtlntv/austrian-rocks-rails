@@ -1,0 +1,30 @@
+<% set_meta_tags title: @region.name %>
+<% set_meta_tags description: t("views.regions.show.metas.description", region: @region.name) %>
+<% set_meta_tags og: { type: "website", image: image_url("hero-homepage.jpg") } %>
+<% set_meta_tags canonical: region_url(@region) %>
+
+<div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-8 pb-8">
+  <nav class="flex mb-4 px-4 sm:px-0" aria-label="Breadcrumb">
+    <ol role="list" class="flex items-center space-x-2">
+      <li>
+        <%= link_to regions_path, class: "text-sm font-medium text-gray-500 hover:text-gray-700" do %>
+          <%= t("views.regions.show.breadcrumbs.explore") %>
+        <% end %>
+      </li>
+    </ol>
+  </nav>
+
+  <h1 class="text-3xl font-bold mb-4 px-4 sm:px-0"><%= @region.name %></h1>
+
+  <h2 class="py-4 px-4 sm:px-0 text-2xl font-bold text-gray-900">
+    <%= t("views.regions.show.clusters") %>
+  </h2>
+
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-4 sm:px-0">
+    <% @clusters.each do |cluster| %>
+      <%= link_to cluster_path(@region, cluster) do %>
+        <%= render 'shared/cluster_card', cluster: cluster %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

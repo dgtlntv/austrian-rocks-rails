@@ -22,21 +22,21 @@
             </div>
           </div>
           <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
-            <button type="submit" class="btn">Update</button>
+            <button type="submit" class="btn"><%= t('admin.regions.edit.update') %></button>
           </div>
         </div>
       <% end %>
     </div>
     <div class="md:col-span-2">
       <div class="px-4 sm:px-0">
-        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-2">Clusters in this region</h3>
+        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-2"><%= t('admin.regions.edit.clusters_title') %></h3>
         <ul class="mb-4 space-y-1">
           <% @region.clusters.each do |cluster| %>
             <li class="text-sm"><%= link_to cluster.name, edit_admin_cluster_path(cluster), class: "text-brand-600" %></li>
           <% end %>
         </ul>
         <% if @region.clusters.empty? %>
-          <p class="text-sm text-gray-500">No clusters assigned yet</p>
+          <p class="text-sm text-gray-500"><%= t('admin.regions.edit.no_clusters') %></p>
         <% end %>
       </div>
       <div class="px-4 sm:px-0 mt-6">

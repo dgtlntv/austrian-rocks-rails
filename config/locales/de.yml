@@ -32,8 +32,9 @@ de:
                 Entdecke tausende Boulderprobleme für alle Schwierigkeitsgrade.
             see_map: Karte ansehen
             read_guide: Anfängerguide lesen
-            popular_areas: Beliebte Gebiete
-            all_areas: Alle Gebiete ansehen
+            popular_regions: Beliebte Regionen
+            explore_regions: Alle Regionen erkunden
+            clusters: Cluster
             promoted:
                 app:
                     title: Entdecke die %{brand_name} App
@@ -130,6 +131,36 @@ de:
                         Damit wir dich bei Fragen kontaktieren können.
                     submit: Absenden
                     flash_success: Vielen Dank für deinen Beitrag!
+                    errors: Fehler
+                    how_to_boulder:
+                        title: "So machst du das Foto:"
+                        instruction_1: Verwende die "Kamera"-App deines Handys
+                        instruction_2_html: Mach ein <span class="underline">horizontales</span> Foto. <span class="font-bold">Achtung vertikale Fotos werden nicht akzeptiert</span>
+                        instruction_3: Erfasse möglichst die gesamte Vorderseite des Boulders
+                        instruction_4: Lass oben, unten, links und rechts vom Boulder etwas Rand
+                        instruction_5: Verwende den Weitwinkelmodus (Zoom x0.5), falls verfügbar
+                        instruction_6: Speichere das Foto in höchstmöglicher Qualität und Größe
+                        example: "Beispiel:"
+                        details_title: "Weitere Details:"
+                        detail_1: "Wenn sich die Route über mehrere Seiten erstreckt (z.B. eine Traverse), mach von jeder Seite ein Foto"
+                        detail_2: Vermeide Gegenstände im Foto (Crashpads, Taschen) oder Personen
+                        detail_3: Vermeide Regentage, da Feuchtigkeit den Boulder schwer erkennbar macht
+                        detail_4: Vermeide Schatten von Ästen und Blättern
+                    how_to_line:
+                        instruction_1: Verwende das Foto aus dem vorherigen Schritt
+                        instruction_2: Verwende eine App, um die Routenlinie direkt auf das Foto zu zeichnen (z.B. mit der Fotos-App)
+                        instruction_3: Speichere das Ergebnis als separates Bild
+                        example: "Beispiel:"
+                    how_to_location:
+                        instruction_1: Mach einen Screenshot der Karte
+                        instruction_2: Bearbeite das Bild im Zeichenmodus, wie im vorherigen Schritt
+                        instruction_3: Zeichne eine Linie, um die genaue Startposition auf einem vorhandenen Boulder zu markieren
+                        example: "Beispiel:"
+                        details_title: "Weitere Details:"
+                        detail_1: Falls der Boulder noch nicht auf der Karte existiert, zeichne ihn ein und gib seine genaue GPS-Position im dafür vorgesehenen Feld an
+                show:
+                    title: Beitrag
+                    gps_label: "GPS : "
                     metas:
                         title: Neuer Beitrag
             map:
@@ -220,28 +251,25 @@ de:
             history:
                 title: Die Geschichte
                 p1:
-                    "%{brand_name} entstand aus der Begegnung zwischen Romain,
-                    Cyril und Nicolas — zwei Kletterbegeisterten und einem
-                    Technikbegeisterten — die nur einen Steinwurf von einem der
-                    schönsten Bouldergebiete der Welt entfernt leben:
-                    Fontainebleau."
+                    "Max entdeckte Boolder bei Kletterausflügen nach Fontainebleau.
+                    Es war die erste Outdoor-Kletter-App, die gut funktionierte -
+                    gute Datenqualität und Open Source (das heißt, der Code ist
+                    frei verfügbar für jeden zur Nutzung und Änderung)."
                 p2:
-                    "Für Nicolas war es Liebe auf den ersten Blick. Seine beiden
-                    Freunde ließen ihn die Magie von Bleau entdecken die
-                    legendären Gebiete, die Geschichte des Waldes, die Freude am
-                    Klettern in der Natur sowie die zu beachtenden guten
-                    Praktiken (putz deine Schuhe!)."
+                    "Die Idee, sie zu forken (eine modifizierte Version zu erstellen)
+                    für andere Gebiete kam auf, wurde dann aber zwei Jahre lang
+                    verschoben."
                 p3:
-                    "Der Reichtum des Waldes bleibt jedoch einschüchternd: mehr
-                    als 200 Gebiete, mehrere zehntausend Boulder. Wie soll man
-                    sich da zurechtfinden?"
+                    "Sie kam während einer Reise nach Maltatal, Österreich, zurück.
+                    Zwölf Leute, ein Kletterführer (Max hatte seinen zu Hause
+                    vergessen). Ein einzelnes Buch zwischen so vielen Kletterern
+                    zu teilen funktioniert nicht. Die existierenden Apps waren nicht
+                    gut genug, dass jemand sie nutzen wollte."
                 p4:
-                    Nicolas beschloss daraufhin, den Wald fast 2 Jahre lang
-                    akribisch zu kartieren und einen Topo-Guide der neuen
-                    Generation zu erstellen. Im Jahr 2023 wurde %{brand_name}
-                    kostenlos für iPhone und Android veröffentlicht.
-                podcast:
-                    'Mehr erfahren: Interview mit Nicolas im Podcast "Allez"'
+                    "Also forkte Max Boolder, passte es für Österreich an und begann,
+                    Bouldergebiete zu kartieren. Das ist %{brand_name}. Eine
+                    modifizierte Version von Boolders Open-Source-Projekt für
+                    österreichisches Bouldern."
             project:
                 title: Das Projekt
                 contact: kontaktieren
@@ -258,6 +286,11 @@ de:
                     Community zu fördern. Zögere nicht, uns zu %{link}!
             team:
                 title: Das Team
+                max_desc: Kartierung, Entwicklung, Datensammlung
+            original_team:
+                title: Ursprüngliches Boolder-Team
+                subtitle_html:
+                    "%{brand_name} ist ein Fork von <a href='https://www.boolder.com' target='_blank' class='underline'>Boolder</a>, der ausgezeichneten Boulder-App für Fontainebleau, erstellt von Nicolas, Romain, Cyril und Emile. Wir sind dankbar für ihre Arbeit, eine Open-Source-Plattform zu schaffen, die das Bouldern zugänglicher macht."
                 nico_desc: Entwicklung, Kartierung
                 romain_desc: Klettern
                 cyril_desc: Klettern
@@ -304,17 +337,38 @@ de:
                         Weil wir möchten, dass so viele Menschen wie möglich
                         davon profitieren können!
                     p2:
-                        Nicolas nutzte ein Sabbatjahr, um viele Gebiete zu
-                        kartieren und die erste Version der Anwendung zu
-                        programmieren. Dadurch sind nur sehr geringe Kosten
-                        angefallen. Wir planen, diese Dynamik in Zukunft durch
-                        ein freiwilliges Open-Source-Modell fortzusetzen.
+                        Durch die Nutzung der Open-Source-Codebasis von Boolder
+                        sind die Kosten für die Anpassung und Wartung von
+                        %{brand_name} für Österreich sehr gering geblieben. Wir
+                        planen, diese Dynamik in Zukunft durch ein freiwilliges
+                        Open-Source-Modell fortzusetzen.
                 privacy:
                     question: Welche persönlichen Daten sammelt ihr?
                     p1_html: Du kannst unsere %{link} einsehen.
                     policy: Datenschutzrichtlinie
             metas:
                 title: Über %{brand_name}
+        regions:
+            index:
+                title: Österreich erkunden
+                clusters: Cluster
+                metas:
+                    title: Boulderregionen in Österreich
+                    description: Entdecke Boulderregionen in ganz Österreich
+            show:
+                clusters: Cluster
+                areas: Gebiete
+                breadcrumbs:
+                    explore: Erkunden
+                metas:
+                    description: Boulder-Cluster in %{region}
+        clusters:
+            show:
+                areas: Gebiete
+                breadcrumbs:
+                    explore: Erkunden
+                metas:
+                    description: Bouldergebiete in %{cluster}, %{region}
         areas:
             index:
                 title: Österreich
@@ -344,6 +398,8 @@ de:
             levels:
                 beginner_friendly: Ideal für Anfänger
                 areas: Gebiete nach Schwierigkeitsgraden
+                breadcrumbs:
+                    explore: Erkunden
                 metas:
                     title: Gebiete nach Schwierigkeitsgrad in Österreich
                     description:
@@ -360,6 +416,8 @@ de:
                 problems: Routen
                 problems_in: Routen in %{area}
                 loading: Lädt...
+                breadcrumbs:
+                    explore: Erkunden
                 levels_chart:
                     title: Anzahl der Routen pro Schwierigkeitsgrad
                 metas:
@@ -367,15 +425,22 @@ de:
                     description:
                         "Alles was du zum Klettern in %{area} in Österreich
                         wissen musst: Routen, Topo-Karte, Fotos, Zugang, ..."
+            problems:
+                breadcrumbs:
+                    explore: Erkunden
             train_station: "Bahnhof %{name}"
             train_station_generic: "Bahnhof"
         problems:
             show:
                 variants: Varianten
                 see_also: Siehe auch
+                breadcrumbs:
+                    explore: Erkunden
                 metas:
                     title: "%{problem} - %{grade} - %{area}"
             index:
+                breadcrumbs:
+                    explore: Erkunden
                 metas:
                     title: Beliebte Routen in Österreich
         search:
@@ -402,3 +467,21 @@ de:
             truncate: "&hellip;"
         breadcrumbs:
             back: zurück
+    admin:
+        mapping:
+            dashboard:
+                title: Kartierungsfortschritt
+                area: Gebiet
+                ascents: Begehungen
+                completion: Fertigstellung
+                with_contributions: Mit Beiträgen
+        contribution_requests:
+            new:
+                title: Neue Beitragsanfrage
+                create: Erstellen
+                update: Aktualisieren
+        regions:
+            edit:
+                update: Aktualisieren
+                clusters_title: Cluster in dieser Region
+                no_clusters: Noch keine Cluster zugewiesen

@@ -21,7 +21,7 @@ en:
                         even if it's a bit more bulky.
                     guidebook: A guidebook
                     guidebook_description_html:
-                        A guidebook (or <i>topo</i> in French), will help you
+                        A guidebook (or <i>topo</i>), will help you
                         navigate climbing areas.
                     guidebook_tip_html:
                         We recommend you use <a href="%{path}">the %{brand_name}
@@ -50,7 +50,7 @@ en:
                     title: Choose an area
                     beginner_friendly_areas: Areas suited for beginners
                     p1_html:
-                        "Here is a selection of areas to discover Fontainebleau
+                        "Here is a selection of areas to discover Austrian bouldering
                         gently:"
                     p3_html:
                         All these areas are <strong>suited for
@@ -63,7 +63,7 @@ en:
                     metas:
                         title:
                             How to choose an area suited for beginners in
-                            Fontainebleau
+                            Austria
                 choose_problems:
                     title: Choose problems
                     intro:
@@ -77,9 +77,8 @@ en:
                         This way you can identify the zones with a good density
                         of problems adapted to your level.
                     filter_by_level_warning:
-                        "Careful: the grade 4a in Fontainebleau is roughly
-                        equivalent to 5a elsewhere."
-                    filter_by_level_warning2: Don't overestimate yourself ;)
+                        "Careful: outdoor grades can be harder than gym grades.
+                        Don't overestimate yourself!"
                     metas:
                         title: How to choose problems in Austria
                 climb_safely:
@@ -123,7 +122,7 @@ en:
                 rules:
                     title: Rules of good conduct
                     intro:
-                        The Fontainebleau area is a unique and fragile
+                        Austrian nature is a unique and fragile
                         environment. It is important to respect a few rules to
                         protect it.
                     chalk: Use chalk sparingly
@@ -141,11 +140,11 @@ en:
                     clean_shoes_p2:
                         Don't forget to clean your shoes with a doormat or a rug
                         before you start climbing.
-                    rain: No climbing after rain
-                    rain_p1: The rock in Fontainebleau is very fragile when wet.
+                    rain: Avoid climbing on wet rock
+                    rain_p1: Wet rock has less friction and can be dangerous to climb on.
                     rain_p2:
-                        To avoid damaging the rock and/or breaking holds, it is
-                        advisable to wait until the rock is thoroughly dry.
+                        For safety and to preserve the rock, it's best to wait
+                        until holds are dry before climbing.
                     other_rules: Other rules
                     other_rules_item1:
                         Walk on existing trails (the wildlife and plants will
@@ -165,7 +164,7 @@ en:
                     metas:
                         title: Rules of good conduct
             top_areas:
-                discover_fontainebleau: Discover Austria
+                discover_austria: Discover Austria
                 all_areas: All areas in Austria
                 see_also: "See also:"
                 dry_fast:

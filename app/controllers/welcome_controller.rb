@@ -3,8 +3,8 @@ class WelcomeController < ApplicationController
 
   def index
     # see https://guides.rubyonrails.org/caching_with_rails.html#avoid-caching-instances-of-active-record-objects
-    @popular_areas_ids = Rails.cache.fetch("welcome/popular_areas_ids", expires_in: 12.hours) do
-      Area.published.any_tags(:popular).pluck(:id).shuffle
+    @popular_regions_ids = Rails.cache.fetch("welcome/popular_regions_ids", expires_in: 12.hours) do
+      Region.published.any_tags(:popular).pluck(:id).shuffle
     end
   end
 

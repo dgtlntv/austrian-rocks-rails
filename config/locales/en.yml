@@ -31,8 +31,9 @@ en:
             subtitle: Discover boulders of all levels.
             see_map: See the map
             read_guide: Read the beginner's guide
-            popular_areas: Popular areas
-            all_areas: See all areas
+            popular_regions: Popular regions
+            explore_regions: Explore all regions
+            clusters: clusters
             promoted:
                 app:
                     title: Discover the %{brand_name} app
@@ -71,7 +72,7 @@ en:
                         title: Mapping
                         description:
                             Help %{brand_name} map all the bouldering routes in
-                            Fontainebleau
+                            Austria
             problems:
                 index:
                     title: Problems to map in %{area}
@@ -124,6 +125,36 @@ en:
                         To allow us to contact you in case of questions.
                     submit: Submit
                     flash_success: Thank you for your contribution!
+                    errors: Errors
+                    how_to_boulder:
+                        title: "How to take the photo:"
+                        instruction_1: Use your phone's "Camera" app
+                        instruction_2_html: Take a <span class="underline">horizontal</span> photo. <span class="font-bold">Warning vertical photos are not accepted</span>
+                        instruction_3: Frame the entire face of the boulder if possible
+                        instruction_4: Keep a bit of margin at the top, bottom, left, and right of the boulder
+                        instruction_5: Use the wide-angle mode (zoom x0.5) if available
+                        instruction_6: Save the photo with the highest possible quality and size
+                        example: "Example:"
+                        details_title: "Additional details:"
+                        detail_1: "If the route extends over several faces (example: a traverse), then take a photo of each face"
+                        detail_2: Avoid objects in the photo (crash pads, bags) or people
+                        detail_3: Avoid rainy days, as moisture makes the boulder hard to recognize
+                        detail_4: Avoid shadows from tree branches and leaves
+                    how_to_line:
+                        instruction_1: Re-use the photo from the previous step
+                        instruction_2: Use an app to draw the route line directly on the photo (for example with the Photos app)
+                        instruction_3: Save the result in a separate image
+                        example: "Example:"
+                    how_to_location:
+                        instruction_1: Take a screenshot of the map
+                        instruction_2: Edit the image in drawing mode, as for the previous step
+                        instruction_3: Draw a line to mark the exact starting position on an existing boulder
+                        example: "Example:"
+                        details_title: "Additional details:"
+                        detail_1: If the boulder does not already exist on the map, draw it and indicate its precise GPS position in the dedicated field
+                show:
+                    title: Contribution
+                    gps_label: "GPS : "
                     metas:
                         title: New contribution
             map:
@@ -239,13 +270,18 @@ en:
                 p2_html:
                     Our goal is to make discovering bouldering in Austria
                     <strong>fun</strong> and <strong>respectful of
-                    nnature</strong>.
+                    nature</strong>.
                 p3_html:
                     The project is still very young, we welcome suggestions and
                     ideas to foster help within the climbing community. Feel
                     free to %{link} us!
             team:
                 title: The team
+                max_desc: Mapping, development, data collection
+            original_team:
+                title: Original Boolder team
+                subtitle_html:
+                    "%{brand_name} is a fork of <a href='https://www.boolder.com' target='_blank' class='underline'>Boolder</a>, the excellent bouldering app for Fontainebleau created by Nicolas, Romain, Cyril, and Emile. We're grateful for their work in creating an open source platform that makes bouldering more accessible."
                 nico_desc: Dev, mapping
                 romain_desc: Climbing lover
                 cyril_desc: Climbing lover
@@ -289,20 +325,40 @@ en:
                     question: Why is the app free?
                     p1: Because we want as many people as possible to enjoy it!
                     p2:
-                        Nicolas took advantage of a sabbatical year to map many
-                        areas and code the first version of the application.
-                        Thanks to this, costs remained very low. We plan to keep
-                        this momentum going in the future thanks to volunteering
-                        and open source.
+                        By building on the open source Boolder codebase, the cost
+                        to adapt and maintain %{brand_name} for Austria has remained
+                        very low. We plan to keep this momentum going in the future
+                        thanks to volunteering and open source.
                 privacy:
                     question: Do you collect personal data?
                     p1_html: You can consult our %{link}.
                     policy: Privacy policy
             metas:
                 title: About %{brand_name}
+        regions:
+            index:
+                title: Explore Austria
+                clusters: clusters
+                metas:
+                    title: Bouldering regions in Austria
+                    description: Discover bouldering regions across Austria
+            show:
+                clusters: Clusters
+                areas: areas
+                breadcrumbs:
+                    explore: Explore
+                metas:
+                    description: Bouldering clusters in %{region}
+        clusters:
+            show:
+                areas: Areas
+                breadcrumbs:
+                    explore: Explore
+                metas:
+                    description: Bouldering areas in %{cluster}, %{region}
         areas:
             index:
-                title: Fontainebleau
+                title: Austria
                 sort_by:
                     label: Sort by
                     problems: Number of problems
@@ -328,6 +384,8 @@ en:
             levels:
                 beginner_friendly: Beginner friendly
                 areas: All areas by levels
+                breadcrumbs:
+                    explore: Explore
                 metas:
                     title: Areas by levels Austria
                     description:
@@ -344,23 +402,32 @@ en:
                 problems: Problems
                 problems_in: Problems in %{area}
                 loading: Loading...
+                breadcrumbs:
+                    explore: Explore
                 levels_chart:
                     title: Number of problems by level
                 metas:
-                    title: "%{area}, Fontainebleau"
+                    title: "%{area}, Austria"
                     description:
                         "All you need to know to climb in %{area} in
-                        Fontainebleau : problems, map, topos, access,
+                        Austria: problems, map, topos, access,
                         ..."
+            problems:
+                breadcrumbs:
+                    explore: Explore
             train_station: "%{name} train station"
             train_station_generic: "Train station"
         problems:
             show:
                 variants: Variants
                 see_also: See also
+                breadcrumbs:
+                    explore: Explore
                 metas:
                     title: "%{problem} - %{grade} - %{area}"
             index:
+                breadcrumbs:
+                    explore: Explore
                 metas:
                     title: Popular problems in Austria
         search:
@@ -387,3 +454,21 @@ en:
             truncate: "&hellip;"
         breadcrumbs:
             back: back
+    admin:
+        mapping:
+            dashboard:
+                title: Mapping progress
+                area: Area
+                ascents: Ascents
+                completion: Completion
+                with_contributions: With contributions
+        contribution_requests:
+            new:
+                title: New contribution request
+                create: Create
+                update: Update
+        regions:
+            edit:
+                update: Update
+                clusters_title: Clusters in this region
+                no_clusters: No clusters assigned yet

@@ -54,12 +54,10 @@ Rails.application.routes.draw do
         get "rules", to: "articles#rules", as: :rules
       end
       scope "top-areas" do
-        get "/", to: redirect("/%{locale}/fontainebleau")
-        get "level", to: redirect("/%{locale}/fontainebleau"), as: :legacy_top_areas_level # keep until end of 2023
-        get "groups", to: redirect("/%{locale}/fontainebleau"), as: :legacy_top_areas_groups # keep until end of 2023
+        get "/", to: redirect("/%{locale}/explore")
+        get "level", to: redirect("/%{locale}/explore"), as: :legacy_top_areas_level # keep until end of 2023
+        get "groups", to: redirect("/%{locale}/explore"), as: :legacy_top_areas_groups # keep until end of 2023
         get "beginner", to: redirect("/%{locale}/articles/beginners-guide/choose-area"), as: :legacy_top_areas_beginner # keep until end of 2023
-        get "train", to: "articles#top_areas_train", as: :top_areas_train
-        get "dry_fast", to: "articles#top_areas_dry_fast", as: :top_areas_dry_fast
       end
       root to: redirect("/%{locale}/articles/beginners-guide"), as: :articles
     end
@@ -75,20 +73,25 @@ Rails.application.routes.draw do
     end
     get "contribute/map", to: redirect("/%{locale}/mapping/map"), as: :map_contribute_legacy_redirect # can be removed as soon as 2024-01-01
 
-    scope "fontainebleau" do
-      resources :problems, only: [ :index ]
+    # New hierarchical structure: regions -> clusters -> areas
+    scope "explore" do
+      get "/", to: "regions#index", as: :regions
 
-      get "/levels", to: "areas#levels", as: :areas_levels
+      get ":region_slug", to: "regions#show", as: :region
 
-      get "/areas", to: redirect("/%{locale}/fontainebleau"), as: :areas_legacy # keep until ??
+      # Cluster level with area quick filters
+      get ":region_slug/:cluster_slug", to: "clusters#show", as: :cluster
+      get ":region_slug/:cluster_slug/levels", to: "areas#levels", as: :cluster_areas_levels
+      get ":region_slug/:cluster_slug/train", to: "articles#top_areas_train", as: :cluster_top_areas_train
+      get ":region_slug/:cluster_slug/dry_fast", to: "articles#top_areas_dry_fast", as: :cluster_top_areas_dry_fast
 
-      get ":slug/:id", to: "problems#show", as: :area_problem, id: /\d.*/
-      get ":slug/map", to: redirect("/%{locale}/map/%{slug}"), as: :map_area_legacy_redirect # keep until end of 2023
-      get ":slug/problems", to: "areas#problems", as: :area_problems
-      get ":slug", to: "areas#show", as: :area
-
-      get "/", to: "areas#index", as: :areas
+      # Area routes
+      get ":region_slug/:cluster_slug/:area_slug/problems", to: "areas#problems", as: :area_problems
+      get ":region_slug/:cluster_slug/:area_slug/:id", to: "problems#show", as: :area_problem, id: /\d.*/
+      get ":region_slug/:cluster_slug/:area_slug", to: "areas#show", as: :area
     end
+
+    resources :problems, only: [ :index ]
 
     get "map(/:slug)", to: "map#index", as: :map
     get "app", to: "pages#app", as: :app

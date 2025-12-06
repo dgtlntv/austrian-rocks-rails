@@ -2,7 +2,7 @@
 
 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-8">
   <div class="mt-10 sm:mt-0">
-    <h1 class="text-3xl font-bold mt-8 mb-4 px-4 sm:px-0">Contribution</h1>
+    <h1 class="text-3xl font-bold mt-8 mb-4 px-4 sm:px-0"><%= t('views.mapping.contributions.show.title') %></h1>
 
     <div class="px-4 sm:px-0">
       <p class="my-4">
@@ -15,7 +15,7 @@
       <%= simple_format @contribution.comment %>
 
       <% if (location = @contribution.location) %>
-        <span>GPS : </span>
+        <span><%= t('views.mapping.contributions.show.gps_label') %></span>
         <%= [location.lat, location.lon].join(",") %>
       <% end %>
     </div>

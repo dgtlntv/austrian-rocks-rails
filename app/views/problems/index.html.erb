@@ -3,9 +3,15 @@
 
 <div class="max-w-7xl mx-auto pt-6 sm:px-6 lg:px-8">
   <div class="px-4 sm:px-0">
-    <div class="flex items-center space-x-1 text-sm font-medium text-gray-500">
-      <div><%= link_to "Fontainebleau", areas_path, class: "hover:text-gray-700" %></div>
-    </div>
+    <nav class="flex" aria-label="Breadcrumb">
+      <ol role="list" class="flex items-center space-x-1 text-sm font-medium text-gray-500">
+        <li>
+          <%= link_to regions_path, class: "hover:text-gray-700" do %>
+            <%= t("views.problems.index.breadcrumbs.explore") %>
+          <% end %>
+        </li>
+      </ol>
+    </nav>
   </div>
 </div>
 
