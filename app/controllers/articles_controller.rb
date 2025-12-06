@@ -1,9 +1,24 @@
 class ArticlesController < ApplicationController
+  def beginners_guide
+  end
+
+  def equipment
+  end
+
   def choose_area
     # see https://guides.rubyonrails.org/caching_with_rails.html#avoid-caching-instances-of-active-record-objects
     @beginner_areas_ids = Rails.cache.fetch("articles/choose_area/beginner_friendly_areas_ids", expires_in: 12.hours) do
       Area.beginner_friendly.pluck(:id)
     end
+  end
+
+  def choose_problems
+  end
+
+  def climb_safely
+  end
+
+  def rules
   end
 
   def top_areas_train

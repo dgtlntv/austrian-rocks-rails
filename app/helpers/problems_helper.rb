@@ -1,6 +1,9 @@
 module ProblemsHelper
   def problem_friendly_path(problem)
-    area_problem_path(problem.area, problem)
+    area = problem.area
+    cluster = area.cluster
+    region = cluster.region
+    area_problem_path(region, cluster, area, problem)
   end
 
   def circle_view(content, klass: "h-6 w-6 leading-6")
