@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_06_153911) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_06_200113) do
   create_schema "tiger"
   create_schema "tiger_data"
   create_schema "topology"
@@ -62,9 +62,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_06_153911) do
     t.string "tags", default: [], null: false, array: true
     t.string "short_name"
     t.integer "priority", limit: 2, default: 3, null: false
-    t.text "description_fr"
+    t.text "description_de"
     t.text "description_en"
-    t.text "warning_fr"
+    t.text "warning_de"
     t.text "warning_en"
     t.integer "cluster_id"
     t.index ["slug"], name: "index_areas_on_slug", unique: true

@@ -82,7 +82,6 @@ Rails.application.routes.draw do
       # Cluster level with area quick filters
       get ":region_slug/:cluster_slug", to: "clusters#show", as: :cluster
       get ":region_slug/:cluster_slug/levels", to: "areas#levels", as: :cluster_areas_levels
-      get ":region_slug/:cluster_slug/train", to: "articles#top_areas_train", as: :cluster_top_areas_train
       get ":region_slug/:cluster_slug/dry_fast", to: "articles#top_areas_dry_fast", as: :cluster_top_areas_dry_fast
 
       # Area routes

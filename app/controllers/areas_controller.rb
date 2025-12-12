@@ -9,12 +9,12 @@ class AreasController < ApplicationController
   end
 
   def levels
-    # see https://guides.rubyonrails.org/caching_with_rails.html#avoid-caching-instances-of-active-record-objects
-    @beginner_areas_ids = Rails.cache.fetch("areas/levels/beginner_areas_ids", expires_in: 12.hours) do
-      Area.beginner_friendly.pluck(:id)
-    end
+    @region = Region.find_by!(slug: params[:region_slug])
+    @cluster = @region.clusters.find_by!(slug: params[:cluster_slug])
 
-    @areas_with_count = Area.published.map { |area| [ area, area.problems.with_location.count ] }.sort { |a, b| b.second <=> a.second }
+    @beginner_areas = @cluster.areas.published.any_tags(:beginner_friendly)
+      .map { |area| [area, area.problems.with_location.count] }
+      .sort_by { |a, _| I18n.transliterate(a.first.name) }
   end
 
   def show

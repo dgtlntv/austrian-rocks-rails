@@ -21,10 +21,6 @@ class ArticlesController < ApplicationController
   def rules
   end
 
-  def top_areas_train
-    @train_stations = Poi.train_station.all
-  end
-
   def top_areas_dry_fast
     # see https://guides.rubyonrails.org/caching_with_rails.html#avoid-caching-instances-of-active-record-objects
     @areas_ids = Rails.cache.fetch("articles/top_areas_dry_fast_ids", expires_in: 12.hours) do
