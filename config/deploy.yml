@@ -115,7 +115,7 @@ accessories:
         directories:
             - data:/var/lib/postgresql/data
     db_backup:
-        image: nmondollot/postgres-backup-s3:16
+        image: eeshugerman/postgres-backup-s3:16
         host: 91.98.152.69
         env:
             clear:

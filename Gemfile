@@ -37,6 +37,7 @@ gem "rgeo-geojson", "~> 2.1.1" # TODO: update
 gem "differ"
 gem "breadcrumbs_on_rails"
 gem "meta-tags"
+gem "sqlite3", ">= 2.1"
 
 group :development, :test do
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
@@ -49,7 +50,6 @@ end
 group :development do
   gem "web-console"
   gem "nokogiri"
-  gem "sqlite3", ">= 2.1"
 end
 
 group :test do
