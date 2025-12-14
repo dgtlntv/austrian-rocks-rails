@@ -111,21 +111,15 @@ namespace :app do
           region_id INTEGER,
           slug TEXT,
           tags TEXT,
-          published INTEGER NOT NULL,
-          center_lat REAL,
-          center_lon REAL,
-          sw_lat REAL,
-          sw_lon REAL,
-          ne_lat REAL,
-          ne_lon REAL
+          published INTEGER
         );
         CREATE INDEX cluster_idx ON clusters(id);
       SQL
 
       Cluster.all.each do |c|
         db.execute(
-          "INSERT INTO clusters (id, name, main_area_id, region_id, slug, tags, published, center_lat, center_lon, sw_lat, sw_lon, ne_lat, ne_lon)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "INSERT INTO clusters (id, name, main_area_id, region_id, slug, tags, published)
+          VALUES (?, ?, ?, ?, ?, ?, ?)",
           [
             c.id,
             c.name,
@@ -133,52 +127,46 @@ namespace :app do
             c.region_id,
             c.slug,
             c.tags.join(",").presence,
-            c.published ? 1 : 0,
-            c.center&.lat,
-            c.center&.lon,
-            c.sw&.lat,
-            c.sw&.lon,
-            c.ne&.lat,
-            c.ne&.lon
+            c.published ? 1 : 0
           ]
         )
       end
 
       db.execute <<-SQL
         create table regions (
-          id INTEGER NOT NULL PRIMARY KEY,
-          name TEXT NOT NULL,
-          main_cluster_id INTEGER,
+          id INTEGER PRIMARY KEY,
+          name TEXT,
           slug TEXT,
-          tags TEXT,
-          published INTEGER NOT NULL,
+          main_cluster_id INTEGER,
           center_lat REAL,
           center_lon REAL,
-          sw_lat REAL,
-          sw_lon REAL,
-          ne_lat REAL,
-          ne_lon REAL
+          south_west_lat REAL,
+          south_west_lon REAL,
+          north_east_lat REAL,
+          north_east_lon REAL,
+          tags TEXT,
+          published INTEGER
         );
         CREATE INDEX region_idx ON regions(id);
       SQL
 
       Region.all.each do |r|
         db.execute(
-          "INSERT INTO regions (id, name, main_cluster_id, slug, tags, published, center_lat, center_lon, sw_lat, sw_lon, ne_lat, ne_lon)
+          "INSERT INTO regions (id, name, slug, main_cluster_id, center_lat, center_lon, south_west_lat, south_west_lon, north_east_lat, north_east_lon, tags, published)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           [
             r.id,
             r.name,
-            r.main_cluster_id,
             r.slug,
-            r.tags.join(",").presence,
-            r.published ? 1 : 0,
+            r.main_cluster_id,
             r.center&.lat,
             r.center&.lon,
             r.sw&.lat,
             r.sw&.lon,
             r.ne&.lat,
-            r.ne&.lon
+            r.ne&.lon,
+            r.tags.join(",").presence,
+            r.published ? 1 : 0
           ]
         )
       end
