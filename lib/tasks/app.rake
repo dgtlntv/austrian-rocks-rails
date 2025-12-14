@@ -24,7 +24,9 @@ namespace :app do
           area_id INTEGER NOT NULL,
           featured INTEGER NOT NULL,
           popularity INTEGER,
-          parent_id INTEGER
+          parent_id INTEGER,
+          description TEXT,
+          video_links TEXT
         );
         CREATE INDEX problem_idx ON problems(id);
         CREATE INDEX problem_area_idx ON problems(area_id);
@@ -35,15 +37,16 @@ namespace :app do
         db.execute(
           "INSERT INTO problems (id, name, name_en, name_searchable, grade, latitude, longitude,
           steepness, sit_start, area_id,
-          featured, popularity, parent_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          featured, popularity, parent_id, description, video_links)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           [ p.id,
             I18n.with_locale(:de) { p.name_with_fallback },
             I18n.with_locale(:en) { p.name_with_fallback },
             normalize(p.name),
             p.grade, p.location&.lat, p.location&.lon,
             p.steepness, p.sit_start ? 1 : 0, p.area_id,
-            p.featured ? 1 : 0, p.popularity, p.parent_id ]
+            p.featured ? 1 : 0, p.popularity, p.parent_id,
+            p.description.presence, p.video_links&.join(",").presence ]
         )
       end
 
@@ -104,19 +107,78 @@ namespace :app do
         create table clusters (
           id INTEGER NOT NULL PRIMARY KEY,
           name TEXT NOT NULL,
-          main_area_id INTEGER NOT NULL
+          main_area_id INTEGER NOT NULL,
+          region_id INTEGER,
+          slug TEXT,
+          tags TEXT,
+          published INTEGER NOT NULL,
+          center_lat REAL,
+          center_lon REAL,
+          sw_lat REAL,
+          sw_lon REAL,
+          ne_lat REAL,
+          ne_lon REAL
         );
         CREATE INDEX cluster_idx ON clusters(id);
       SQL
 
       Cluster.all.each do |c|
         db.execute(
-          "INSERT INTO clusters (id, name, main_area_id)
-          VALUES (?, ?, ?)",
+          "INSERT INTO clusters (id, name, main_area_id, region_id, slug, tags, published, center_lat, center_lon, sw_lat, sw_lon, ne_lat, ne_lon)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           [
             c.id,
             c.name,
-            c.main_area_id
+            c.main_area_id,
+            c.region_id,
+            c.slug,
+            c.tags.join(",").presence,
+            c.published ? 1 : 0,
+            c.center&.lat,
+            c.center&.lon,
+            c.sw&.lat,
+            c.sw&.lon,
+            c.ne&.lat,
+            c.ne&.lon
+          ]
+        )
+      end
+
+      db.execute <<-SQL
+        create table regions (
+          id INTEGER NOT NULL PRIMARY KEY,
+          name TEXT NOT NULL,
+          main_cluster_id INTEGER,
+          slug TEXT,
+          tags TEXT,
+          published INTEGER NOT NULL,
+          center_lat REAL,
+          center_lon REAL,
+          sw_lat REAL,
+          sw_lon REAL,
+          ne_lat REAL,
+          ne_lon REAL
+        );
+        CREATE INDEX region_idx ON regions(id);
+      SQL
+
+      Region.all.each do |r|
+        db.execute(
+          "INSERT INTO regions (id, name, main_cluster_id, slug, tags, published, center_lat, center_lon, sw_lat, sw_lon, ne_lat, ne_lon)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          [
+            r.id,
+            r.name,
+            r.main_cluster_id,
+            r.slug,
+            r.tags.join(",").presence,
+            r.published ? 1 : 0,
+            r.center&.lat,
+            r.center&.lon,
+            r.sw&.lat,
+            r.sw&.lon,
+            r.ne&.lat,
+            r.ne&.lon
           ]
         )
       end
