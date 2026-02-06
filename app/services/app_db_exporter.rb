@@ -34,6 +34,9 @@ class AppDbExporter
     create_lines_table(db)
     insert_lines(db)
 
+    create_topos_table(db)
+    insert_topos(db)
+
     @file_path
   ensure
     db.close if db
@@ -288,6 +291,31 @@ class AppDbExporter
         "INSERT INTO lines (id, problem_id, topo_id, coordinates)
         VALUES (?, ?, ?, ?)",
         [ l.id, l.problem_id, l.topo_id, l.coordinates.to_json ]
+      )
+    end
+  end
+
+  def create_topos_table(db)
+    db.execute <<-SQL
+      create table topos (
+        id INTEGER NOT NULL PRIMARY KEY,
+        area_id INTEGER NOT NULL,
+        boulder_id INTEGER,
+        position INTEGER
+      );
+      CREATE INDEX topo_idx ON topos(id);
+      CREATE INDEX topo_area_idx ON topos(area_id);
+      CREATE INDEX topo_boulder_idx ON topos(boulder_id);
+      CREATE INDEX topo_boulder_position_idx ON topos(boulder_id, position);
+    SQL
+  end
+
+  def insert_topos(db)
+    Topo.published.joins(:problems).group("topos.id").each do |t|
+      db.execute(
+        "INSERT INTO topos (id, area_id, boulder_id, position)
+        VALUES (?, ?, ?, ?)",
+        [ t.id, t.area_id, t.boulder_id, t.position ]
       )
     end
   end
