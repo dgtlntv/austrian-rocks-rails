@@ -4,7 +4,7 @@
 
 <div class="flex justify-end mb-4">
   <% items = [] %>
-  <% items << { text: "Map edit", link: geojson_io_url(@region), target: "_blank" } %>
+  <% items << { text: "Map edit", link: region_geojson_io_url(@region), target: "_blank" } %>
   <% items << { text: "Map download", link: admin_region_map_path(@region, format: :geojson, download: true) } %>
   <% items << { text: "Map import", link: new_admin_import_path } %>
   <% items << { text: "Delete", link: admin_region_path(@region), method: :delete, data: { confirm: "Are you sure?" } } %>

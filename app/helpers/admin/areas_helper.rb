@@ -1,9 +1,10 @@
 module Admin::AreasHelper
-  def geojson_io_url(area)
-    "http://geojson.io/#data=data:text/x-url," + URI.encode_www_form_component(geojson_source_url(area, prod_url: true))
+  def area_geojson_io_url(area)
+    "http://geojson.io/#data=data:text/x-url," +
+      URI.encode_www_form_component(area_geojson_source_url(area, prod_url: true))
   end
 
-  def geojson_source_url(area, download: false, prod_url: false)
+  def area_geojson_source_url(area, download: false, prod_url: false)
     args = { download: download.presence }
     args.merge!(host: BRAND_CONFIG[:domains][:www], port: nil, protocol: "https") if prod_url
 
