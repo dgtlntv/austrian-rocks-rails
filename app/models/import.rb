@@ -35,7 +35,9 @@ class ImportParser
         raise "All problems must have a `problemId` property"
       end
 
-      problem.conflicting_updated_at = true if problem.location.present? && (problem.updated_at.to_s != feature["updatedAt"])
+      if problem.location.present? && feature["updatedAt"].present?
+        problem.conflicting_updated_at = true if problem.updated_at.to_s != feature["updatedAt"]
+      end
 
       problem.assign_attributes(
         location: FACTORY.point(feature.geometry.x, feature.geometry.y)
