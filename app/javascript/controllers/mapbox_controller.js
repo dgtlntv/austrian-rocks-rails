@@ -168,7 +168,7 @@ export default class extends Controller {
     addLayers() {
         this.map.addSource("problems", {
             type: "vector",
-            url: "mapbox://dgtlntv.74oi43iu",
+            url: "mapbox://dgtlntv.9qzuqgyl",
             promoteId: "id",
         })
 
@@ -177,7 +177,7 @@ export default class extends Controller {
                 id: "problems",
                 type: "circle",
                 source: "problems",
-                "source-layer": "problems-8pdvh4",
+                "source-layer": "problems_2-a8djjx",
                 minzoom: 15,
                 layout: {
                     visibility: "visible",
