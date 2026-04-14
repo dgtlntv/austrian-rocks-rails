@@ -69,7 +69,9 @@ class ImportParser
         end
       end
 
-      boulder.conflicting_updated_at = true if boulder.persisted? && boulder.updated_at.to_s != feature["updatedAt"]
+      if boulder.persisted? && feature["updatedAt"].present?
+        boulder.conflicting_updated_at = true if boulder.updated_at.to_s != feature["updatedAt"]
+      end
 
       boulder.assign_attributes(
         polygon: polygon,
