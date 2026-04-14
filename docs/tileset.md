@@ -1,192 +1,112 @@
 # Mapbox Tileset Management
 
-This guide explains how to create and manage Mapbox vector tilesets for displaying problem locations on the map.
-
 ## Overview
 
-The application uses Mapbox vector tilesets to display climbing problems on the map. These tilesets are pre-processed datasets hosted on Mapbox's servers that provide fast, optimized map rendering.
+The map displays data from **Mapbox vector tilesets** — static, pre-processed datasets hosted on Mapbox's servers. This means changes to the database (e.g. updating problem locations) do **not** automatically appear on the map. You need to export the data and re-upload the tileset.
 
-The main problems layer references a tileset at `app/javascript/controllers/mapbox_controller.js:86`:
-```javascript
-this.map.addSource('problems', {
-  type: 'vector',
-  url: 'mapbox://nmondollot.4xsv235p',
-  promoteId: "id"
-});
+**Tileset ≠ Style**: A tileset is the raw data (coordinates, properties). A style (edited in the Style Editor) controls how that data looks (colors, sizes, labels). When updating data, you only touch tilesets.
+
+Current tileset references in `app/javascript/controllers/mapbox_controller.js`:
+- **Problems + Boulders**: `mapbox://dgtlntv.2z1qw2uw` (source-layer: `problems_4-85vzl0`)
+
+## Updating Problem Locations & Boulder Outlines
+
+### Step 1: Import updated GeoJSON via Admin UI
+
+Go to **Admin > Imports** and upload your GeoJSON file.
+
+**Required properties for the importer to pick up features:**
+- **Problems** (Point features): must have `problemId`
+- **Boulders** (LineString/Polygon features): must have `boulderId` key
+
+Features missing these property keys will be **silently ignored** by the importer.
+
+**Updating vs. creating:**
+- `"boulderId": 123` — updates existing boulder #123
+- `"boulderId": ""` or `"boulderId": null` — creates a **new** boulder
+- No `boulderId` key at all — feature is ignored
+
+Same logic applies to `problemId`, `clusterId`, and `regionId`.
+
+Example — update existing problem:
+```json
+{
+  "type": "Feature",
+  "properties": { "name": "Crimp Pimp", "problemId": 123 },
+  "geometry": { "type": "Point", "coordinates": [13.446, 47.003] }
+}
 ```
 
-## When to Update the Tileset
+Example — update existing boulder:
+```json
+{
+  "type": "Feature",
+  "properties": { "name": "Ficki Ficki", "boulderId": 42 },
+  "geometry": { "type": "LineString", "coordinates": [[13.446, 47.003], ...] }
+}
+```
 
-You need to regenerate and upload the tileset whenever:
-- Problem locations are added or updated in the database
-- Boulder polygons are created or modified
-- You want new data to appear on the public map
+Example — create new boulder:
+```json
+{
+  "type": "Feature",
+  "properties": { "name": "New Boulder", "boulderId": "" },
+  "geometry": { "type": "LineString", "coordinates": [[13.446, 47.003], ...] }
+}
+```
 
-## Step 1: Export Data from Database
+**Note on conflicts**: The importer flags changes as "Conflict" when the feature includes an `updatedAt` property that doesn't match the database record's `updated_at`. If your GeoJSON doesn't include `updatedAt`, no conflicts will be flagged and you can apply freely.
 
-First, export your problem and boulder data to GeoJSON format:
+### Step 2: Export problems.geojson
 
+After the import is applied to the database, export the data for Mapbox:
+
+**Option A — Admin UI**: Go to **Admin > Problems** and click **"Export problems.geojson (with boulders)"**.
+
+**Option B — Rake task**:
 ```bash
-# Export problems with boulders
 rake mapbox:problems include_boulders=true
-
-# This creates: ../boolder-maps/mapbox/problems.geojson
 ```
 
-**Note**: You may need to create the `boolder-maps/mapbox/` directory structure first:
-```bash
-mkdir -p ../boolder-maps/mapbox
-```
-
-The export task generates a GeoJSON file with:
-- All problems that have locations (Point geometries)
-- All boulder polygons (Polygon geometries)
-- Problem properties: grade, steepness, etc.
-
-## Step 2: Create a Mapbox Account
-
-If you don't already have one:
-
-1. Go to https://www.mapbox.com
-2. Sign up for a free account
-3. Note your username (you'll need this for tileset IDs)
-
-## Step 3: Upload Tileset via Mapbox Studio
-
-### Creating a New Tileset
-
-1. **Navigate to Tilesets**:
-   - Go to https://studio.mapbox.com/tilesets/
-   - You'll see a list of your existing tilesets (if any)
-
-2. **Upload Your GeoJSON**:
-   - Click the **"New tileset"** button (top right)
-   - Click **"Select a file"** or drag and drop your `problems.geojson` file
-   - Wait for the upload to complete (this may take a few minutes for large files)
-
-3. **Tileset Processing**:
-   - Mapbox will automatically process your GeoJSON into a vector tileset
-   - You'll see a progress indicator
-   - Once complete, you'll get a tileset ID in the format: `your-username.random-id`
-   - Example: `yourname.abc123xyz`
-
-4. **Note the Tileset ID**:
-   - Copy the full tileset ID (you'll need this in Step 4)
-   - The tileset ID appears at the top of the tileset details page
-
-### Updating an Existing Tileset
-
-If you already have a tileset and want to update it:
+### Step 3: Upload tileset to Mapbox Studio
 
 1. Go to https://studio.mapbox.com/tilesets/
-2. Find your tileset in the list
-3. Click on it to open the details page
-4. Click **"Replace"** button (top right)
-5. Upload your new `problems.geojson` file
-6. Wait for processing to complete
+2. Find the problems tileset (currently `dgtlntv.2z1qw2uw`)
+3. Click on it, then click **"Replace"**
+4. Upload the exported `problems.geojson`
+5. Wait for processing to complete
 
-**Important**: Replacing a tileset keeps the same tileset ID, so you don't need to update your code.
+Replacing keeps the same tileset ID — no code changes needed.
 
-## Step 4: Update Your Application Code
+**If you can't replace and have to create a new tileset**: upload via "New tileset", then update two values in `mapbox_controller.js`:
+- The tileset URL: `url: "mapbox://dgtlntv.<new-id>"`
+- The source-layer name (find it on the tileset details page under "Source layers")
 
-If you created a **new** tileset (rather than replacing an existing one), you need to update the tileset reference in your code:
+### Step 4: Deploy
 
-1. Open `app/javascript/controllers/mapbox_controller.js`
+If you changed any code (tileset ID/source-layer), deploy for it to take effect.
 
-2. Find the problems source definition (around line 84):
-   ```javascript
-   this.map.addSource('problems', {
-     type: 'vector',
-     url: 'mapbox://nmondollot.4xsv235p',  // <-- Replace this
-     promoteId: "id"
-   });
-   ```
+## Other Tilesets
 
-3. Replace the tileset ID with your new one:
-   ```javascript
-   this.map.addSource('problems', {
-     type: 'vector',
-     url: 'mapbox://your-username.your-tileset-id',
-     promoteId: "id"
-   });
-   ```
+The same export → upload flow applies to other map layers:
 
-4. You also need to update the source-layer name in the layer definitions (around lines 94 and 238):
-   ```javascript
-   'source-layer': 'problems-ayes3a',  // <-- May need to change this
-   ```
-
-   The source layer name is automatically generated by Mapbox based on your filename. To find it:
-   - Go to your tileset in Mapbox Studio
-   - Look for "Source layers" section
-   - Copy the exact layer name shown there
-
-## Step 5: Update Your Access Token
-
-Make sure your `.env` file has a valid Mapbox access token:
-
-```
-MAPBOX_DEV_ACCESS_KEY=pk.your_token_here
-```
-
-To create or manage tokens:
-1. Go to https://account.mapbox.com/access-tokens/
-2. Create a new public token or use the default one
-3. Copy it to your `.env` file
-
-## Step 6: Test Your Changes
-
-1. Restart your Rails server: `bin/dev`
-2. Navigate to the map page: http://localhost:3000/en/map
-3. Zoom in to an area where you added problems
-4. Verify that your problems appear on the map
-
-## Tileset Limits and Pricing
-
-Mapbox free tier includes:
-- 50 GB of tileset storage
-- 200,000 tileset requests per month
-
-For this application, the free tier should be sufficient for development.
-
-## Alternative: Dynamic GeoJSON (No Tileset Needed)
-
-If you want to avoid the tileset upload process entirely, you can switch to dynamic GeoJSON sources like the "contribute" layer uses. This means:
-- Changes appear immediately (no upload step)
-- Data is served directly from your Rails app
-- May be slower with thousands of points
-
-To implement this, you'd need to:
-1. Create a Rails endpoint that returns GeoJSON
-2. Change the map source from `type: 'vector'` to `type: 'geojson'`
-3. Point the data to your endpoint
-
-Contact the development team if you want to explore this option.
+| Layer | Admin Export | Rake Task | Notes |
+|-------|-------------|-----------|-------|
+| Problems + Boulders | Admin > Problems > Export (with boulders) | `rake mapbox:problems include_boulders=true` | Most common update |
+| Areas | Admin > Areas > Export | `rake mapbox:areas` | |
+| Clusters | Admin > Clusters > Export | `rake mapbox:clusters` | |
+| Regions | Admin > Regions > Export | `rake mapbox:regions` | |
 
 ## Troubleshooting
 
-### My problems don't appear on the map
+### Problems don't appear on the map after import
+- The import only updates the **database**. You still need to export and re-upload the tileset (Steps 2-3).
 
-1. Check that the tileset uploaded successfully in Mapbox Studio
-2. Verify the tileset ID in your code matches the one in Mapbox Studio
-3. Check the source-layer name matches what's shown in Mapbox Studio
-4. Open browser DevTools Console and look for Mapbox errors
-5. Verify your problems have valid coordinates in the database
+### Boulder outlines not updating via import
+- Make sure each boulder LineString/Polygon feature has a `boulderId` property. Without it, the importer ignores the feature.
 
-### Upload fails
+### Import shows all changes as "Conflict"
+- This happens when `updatedAt` is missing from the GeoJSON features. Fixed as of April 2026 — conflicts are now only flagged when `updatedAt` is present and doesn't match.
 
-- Check your GeoJSON is valid (use https://geojson.io to validate)
-- Ensure file size is under Mapbox's limit (200 MB)
-- Check you have storage space available in your Mapbox account
-
-### Data looks wrong on the map
-
-- Verify the exported GeoJSON contains the correct data
-- Check coordinate order (should be [longitude, latitude], not [latitude, longitude])
-- Make sure the coordinate reference system is WGS84 (EPSG:4326)
-
-## Related Documentation
-
-- [Mapbox Tilesets API Documentation](https://docs.mapbox.com/api/maps/tilesets/)
-- [Mapbox Studio Manual](https://docs.mapbox.com/studio-manual/overview/)
-- [GeoJSON Specification](https://geojson.org/)
+### Tileset ID or source-layer changed
+- If you had to create a new tileset instead of replacing, update both `url` and `source-layer` in `mapbox_controller.js`.
