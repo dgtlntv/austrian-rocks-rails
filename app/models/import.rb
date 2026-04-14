@@ -103,24 +103,25 @@ class ImportParser
   end
 
   # some editors use LineString and some use Polygon => we need to handle both
+  # Key present (even if empty) = include. Key absent = ignore.
   def boulder_features
     @boulder_features ||= @features.select { |f|
       f.geometry.geometry_type.in?([ ::RGeo::Feature::LineString, ::RGeo::Feature::Polygon ]) &&
-      f["boulderId"].present?
+      f.keys.include?("boulderId")
     }
   end
 
   def cluster_features
     @cluster_features ||= @features.select { |f|
       f.geometry.geometry_type == ::RGeo::Feature::Polygon &&
-      f["clusterId"].present?
+      f.keys.include?("clusterId")
     }
   end
 
   def region_features
     @region_features ||= @features.select { |f|
       f.geometry.geometry_type == ::RGeo::Feature::Polygon &&
-      f["regionId"].present?
+      f.keys.include?("regionId")
     }
   end
 
