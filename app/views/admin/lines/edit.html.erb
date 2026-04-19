@@ -11,9 +11,23 @@
 </div>
 
 <div data-controller="topo-editor">
-  <div style="" data-topo-editor-target="container">
-    <%= cdn_image_tag(@line.topo.photo.variant(:medium), data: { "topo-editor-target": "image" }, style: "position:absolute;z-index:1;") %>
-    <canvas data-topo-editor-target="canvas" data-action="click->topo-editor#createPoint" style="position:relative;z-index:20;"></canvas>
+  <div class="topo-editor-toolbar my-2" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-action="topo-editor#zoomOut">−</button>
+    <span data-topo-editor-target="zoomLabel" style="min-width:4ch;text-align:center;">100%</span>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-action="topo-editor#zoomIn">+</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-action="topo-editor#reset">Fit</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-action="topo-editor#undo">Undo</button>
+    <button type="button" class="btn btn-sm btn-outline-danger" data-action="topo-editor#clearAll">Clear</button>
+    <small class="text-muted">Click to add · drag point to move · shift/right-click to delete · wheel/pinch to zoom · drag empty area to pan</small>
+  </div>
+
+  <div data-topo-editor-target="viewport"
+       data-action="pointerdown->topo-editor#onPointerDown pointermove->topo-editor#onPointerMove pointerup->topo-editor#onPointerUp pointercancel->topo-editor#onPointerUp wheel->topo-editor#onWheel contextmenu->topo-editor#onContextMenu"
+       style="position:relative;width:100%;height:70vh;overflow:hidden;background:#222;touch-action:none;user-select:none;cursor:crosshair;">
+    <div data-topo-editor-target="wrapper" style="position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;">
+      <%= cdn_image_tag(@line.topo.photo.variant(:medium), data: { "topo-editor-target": "image" }, style: "position:absolute;top:0;left:0;pointer-events:none;user-select:none;") %>
+      <canvas data-topo-editor-target="canvas" style="position:absolute;top:0;left:0;pointer-events:none;"></canvas>
+    </div>
   </div>
 
   <div class="my-3">
