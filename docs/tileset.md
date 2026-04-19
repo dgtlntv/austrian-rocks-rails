@@ -7,7 +7,7 @@ The map displays data from **Mapbox vector tilesets** — static, pre-processed 
 **Tileset ≠ Style**: A tileset is the raw data (coordinates, properties). A style (edited in the Style Editor) controls how that data looks (colors, sizes, labels). When updating data, you only touch tilesets.
 
 Current tileset references in `app/javascript/controllers/mapbox_controller.js`:
-- **Problems + Boulders**: `mapbox://dgtlntv.d9vitsn9` (source-layer: `problems_6-1cay0i`)
+- **Problems + Boulders**: `mapbox://dgtlntv.95ifk802` (source-layer: `problems_8-85f5eq`)
 
 ## Updating Problem Locations & Boulder Outlines
 
@@ -71,7 +71,7 @@ rake mapbox:problems include_boulders=true
 ### Step 3: Upload tileset to Mapbox Studio
 
 1. Go to https://studio.mapbox.com/tilesets/
-2. Find the problems tileset (currently `dgtlntv.d9vitsn9`)
+2. Find the problems tileset (currently `dgtlntv.95ifk802`)
 3. Click on it, then click **"Replace"**
 4. Upload the exported `problems.geojson`
 5. Wait for processing to complete
