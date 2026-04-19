@@ -1,5 +1,4 @@
-<% add_breadcrumb "Clusters", admin_clusters_path %>
-<% add_breadcrumb "#{@cluster.name} ##{@cluster.id}", edit_admin_cluster_path(@cluster) %>
+<% admin_cluster_breadcrumbs(@cluster) %>
 <% add_breadcrumb "Edit", nil, class: "active" %>
 
 <div class="flex justify-end mb-4">

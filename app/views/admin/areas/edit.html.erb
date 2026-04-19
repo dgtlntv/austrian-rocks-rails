@@ -1,5 +1,4 @@
-<% add_breadcrumb "Fontainebleau", admin_areas_path %>
-<% add_breadcrumb "#{@area.name} ##{@area.id}", admin_area_problems_path(area_slug: @area.slug) %>
+<% admin_area_breadcrumbs(@area) %>
 <% add_breadcrumb "Edit", nil, class: "active" %>
 
 <div class="mt-10 sm:mt-0">

@@ -1,6 +1,13 @@
 class Admin::RegionsController < Admin::BaseController
   def index
-    @regions = Region.order(:id)
+    @regions = Region.order(:name)
+    @orphan_clusters = Cluster.where(region_id: nil).order(:name)
+    @orphan_areas = Area.where(cluster_id: nil).order(:name)
+  end
+
+  def show
+    set_region
+    @clusters = @region.clusters.order(:name)
   end
 
   def new

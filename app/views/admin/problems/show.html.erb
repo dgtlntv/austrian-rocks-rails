@@ -1,5 +1,4 @@
-<% add_breadcrumb "Fontainebleau", admin_areas_path %>
-<% add_breadcrumb @problem.area.name, admin_area_problems_path(area_slug: @problem.area.slug) %>
+<% admin_area_breadcrumbs(@problem.area) %>
 <% add_breadcrumb "Problem ##{@problem.id}", nil, class: "active" %>
 
 <% content_for :options do %>

@@ -1,0 +1,49 @@
+<% add_breadcrumb "Regions", admin_regions_path %>
+<% if @cluster.region %>
+  <% add_breadcrumb @cluster.region.name, admin_region_path(@cluster.region) %>
+<% end %>
+<% add_breadcrumb @cluster.name, nil, class: "active" %>
+
+<div class="flex justify-between items-baseline">
+  <h1 class="text-2xl font-bold text-gray-900"><%= @cluster.name %></h1>
+  <% items = [] %>
+  <% items << { text: "Edit cluster", link: edit_admin_cluster_path(@cluster) } %>
+  <% items << { text: "New area", link: new_admin_area_path(cluster_id: @cluster.id) } %>
+  <%= render "shared/dropdown_menu", items: items %>
+</div>
+
+<div class="flex flex-col my-6">
+  <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+    <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+      <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Id</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Problems</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% @areas.each do |area| %>
+              <tr class="h-16 align-top">
+                <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500"><%= link_to area.id, admin_area_problems_path(area_slug: area.slug) %></td>
+                <td class="px-6 py-2 whitespace-nowrap">
+                  <span class="text-sm font-bold text-gray-900"><%= link_to area.name, admin_area_problems_path(area_slug: area.slug) %></span>
+                  <% unless area.published? %>
+                    <div class="text-yellow-500 text-sm">not published</div>
+                  <% end %>
+                </td>
+                <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500"><%= area.problems.with_location.count %></td>
+                <td class="px-6 py-2 whitespace-nowrap"><%= link_to "Edit", edit_admin_area_path(area), class: "text-sm text-blue-600" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p><%= "#{@areas.count} areas" %></p>

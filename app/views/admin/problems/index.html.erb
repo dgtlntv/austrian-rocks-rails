@@ -1,4 +1,4 @@
-<% add_breadcrumb "Fontainebleau", admin_areas_path %>
+<% admin_cluster_breadcrumbs(@area.cluster) %>
 <% add_breadcrumb "#{@area.name} ##{@area.id}", nil, class: "active" %>
 
 <% content_for :options do %>

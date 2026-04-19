@@ -1,5 +1,4 @@
-<% add_breadcrumb "Fontainebleau", admin_areas_path %>
-<% add_breadcrumb @line.problem.area.name, admin_area_problems_path(area_slug: @line.problem.area.slug) %>
+<% admin_area_breadcrumbs(@line.problem.area) %>
 <% add_breadcrumb "Problem ##{@line.problem.id}", admin_problem_path(@line.problem) %>
 <% add_breadcrumb "Line ##{@line.id}", nil, class: "active" %>
 

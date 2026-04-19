@@ -1,6 +1,11 @@
 class Admin::ClustersController < Admin::BaseController
   def index
-    @clusters = Cluster.order(:id)
+    @clusters = Cluster.order(:name)
+  end
+
+  def show
+    set_cluster
+    @areas = @cluster.areas.order(:name)
   end
 
   def new

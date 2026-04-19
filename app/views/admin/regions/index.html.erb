@@ -1,3 +1,5 @@
+<% add_breadcrumb "Regions", nil, class: "active" %>
+
 <div class="flex justify-end">
   <% items = [] %>
   <% items << { text: "Export regions.geojson", link: export_admin_regions_path(format: :geojson) } %>
@@ -12,21 +14,10 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Id
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Main Cluster
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Clusters
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Bounds
-              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Id</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clusters</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bounds</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
             </tr>
           </thead>
@@ -34,29 +25,22 @@
             <% @regions.each do |region| %>
               <tr class="place-content-start align-top h-16">
                 <td class="px-6 py-2 whitespace-nowrap">
-                  <div class="text-sm text-gray-500">
-                    <%= link_to region.id, edit_admin_region_path(region) %>
-                  </div>
+                  <div class="text-sm text-gray-500"><%= link_to region.id, admin_region_path(region) %></div>
                 </td>
                 <td class="px-6 py-2 whitespace-nowrap">
                   <span class="text-sm text-gray-900 font-bold">
-                    <%= link_to region.name, edit_admin_region_path(region) %>
-                  </span>
-                </td>
-                <td class="px-6 py-2 whitespace-nowrap">
-                  <span class="text-sm text-gray-500">
-                    <%= region.main_cluster_id ? Cluster.find(region.main_cluster_id).name : "—" %>
+                    <%= link_to region.name, admin_region_path(region) %>
                   </span>
                 </td>
                 <td class="px-6 py-2 whitespace-nowrap">
                   <span class="text-sm text-gray-500"><%= region.clusters.count %></span>
                 </td>
                 <td class="px-6 py-2 whitespace-nowrap">
-                  <span class="text-sm text-gray-500">
-                    <%= region.sw && region.ne ? "✓" : "—" %>
-                  </span>
+                  <span class="text-sm text-gray-500"><%= region.sw && region.ne ? "✓" : "—" %></span>
                 </td>
-                <td class="px-6 py-2 whitespace-nowrap"></td>
+                <td class="px-6 py-2 whitespace-nowrap">
+                  <%= link_to "Edit", edit_admin_region_path(region), class: "text-sm text-blue-600" %>
+                </td>
               </tr>
             <% end %>
           </tbody>
@@ -66,4 +50,68 @@
   </div>
 </div>
 
-<p><%= "#{@regions.count} results" %></p>
+<p><%= "#{@regions.count} regions" %></p>
+
+<% if @orphan_clusters.any? %>
+  <h2 class="mt-10 mb-3 text-lg font-semibold text-gray-800">Unassigned clusters (no region)</h2>
+  <div class="flex flex-col">
+    <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+      <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+        <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Id</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Areas</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <% @orphan_clusters.each do |cluster| %>
+                <tr class="h-16 align-top">
+                  <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500"><%= link_to cluster.id, admin_cluster_path(cluster) %></td>
+                  <td class="px-6 py-2 whitespace-nowrap text-sm font-bold text-gray-900"><%= link_to cluster.name, admin_cluster_path(cluster) %></td>
+                  <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500"><%= cluster.areas.count %></td>
+                  <td class="px-6 py-2 whitespace-nowrap"><%= link_to "Edit", edit_admin_cluster_path(cluster), class: "text-sm text-blue-600" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<% if @orphan_areas.any? %>
+  <h2 class="mt-10 mb-3 text-lg font-semibold text-gray-800">Unassigned areas (no cluster)</h2>
+  <div class="flex flex-col">
+    <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+      <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+        <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Id</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Problems</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <% @orphan_areas.each do |area| %>
+                <tr class="h-16 align-top">
+                  <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500"><%= link_to area.id, admin_area_problems_path(area_slug: area.slug) %></td>
+                  <td class="px-6 py-2 whitespace-nowrap text-sm font-bold text-gray-900"><%= link_to area.name, admin_area_problems_path(area_slug: area.slug) %></td>
+                  <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500"><%= area.problems.with_location.count %></td>
+                  <td class="px-6 py-2 whitespace-nowrap"><%= link_to "Edit", edit_admin_area_path(area), class: "text-sm text-blue-600" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

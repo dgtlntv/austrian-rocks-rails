@@ -1,6 +1,7 @@
-<% add_breadcrumb "Fontainebleau", admin_areas_path %>
 <% if area = @topo.problems.first&.area %>
-  <% add_breadcrumb area.name, admin_area_problems_path(area_slug: area.slug) %>
+  <% admin_area_breadcrumbs(area) %>
+<% else %>
+  <% add_breadcrumb "Regions", admin_regions_path %>
 <% end %>
 <% add_breadcrumb "Topo ##{@topo.id}", nil, class: "active" %>
 

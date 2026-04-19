@@ -41,7 +41,7 @@ Rails.application.routes.draw do
 
       get "mapping", to: "mapping#dashboard"
 
-      root "areas#index"
+      root "regions#index"
     end
 
     scope "articles" do
