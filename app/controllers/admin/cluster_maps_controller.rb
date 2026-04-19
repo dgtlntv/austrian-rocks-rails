@@ -1,6 +1,6 @@
 class Admin::ClusterMapsController < Admin::BaseController
   def show
-    cluster = Cluster.find(params[:cluster_id])
+    cluster = Cluster.find_by(slug: params[:cluster_id]) || Cluster.find(params[:cluster_id])
     factory = RGeo::GeoJSON::EntityFactory.instance
 
     features = []

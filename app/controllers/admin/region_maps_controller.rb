@@ -1,6 +1,6 @@
 class Admin::RegionMapsController < Admin::BaseController
   def show
-    region = Region.find(params[:region_id])
+    region = Region.find_by(slug: params[:region_id]) || Region.find(params[:region_id])
     factory = RGeo::GeoJSON::EntityFactory.instance
 
     features = []
