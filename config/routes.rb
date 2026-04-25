@@ -32,12 +32,14 @@ Rails.application.routes.draw do
       resources :audits
       resources :redirects, only: :new
 
-      resource :exports, only: [:index] do
-        get :db
-        get :areas_geojson
-        get :clusters_geojson
-        get :regions_geojson
-        get :problems_geojson
+      resources :exports, only: [:index] do
+        collection do
+          get :db
+          get :areas_geojson
+          get :clusters_geojson
+          get :regions_geojson
+          get :problems_geojson
+        end
       end
 
       get "mapping", to: "mapping#dashboard"

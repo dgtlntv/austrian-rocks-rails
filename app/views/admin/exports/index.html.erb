@@ -15,28 +15,28 @@
           <span class="text-sm font-medium text-gray-900">SQLite Database</span>
           <span class="ml-2 text-sm text-gray-500"><%= BRAND_CONFIG[:slug] %>.db</span>
         </div>
-        <%= link_to "Download", admin_exports_db_path(format: :db), class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500" %>
+        <%= link_to "Download", db_admin_exports_path(format: :db), class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500" %>
       </li>
       <li class="px-4 py-4 sm:px-6 flex items-center justify-between">
         <div>
           <span class="text-sm font-medium text-gray-900">Areas</span>
           <span class="ml-2 text-sm text-gray-500">areas.geojson</span>
         </div>
-        <%= link_to "Download", admin_exports_areas_geojson_path(format: :geojson), class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500" %>
+        <%= link_to "Download", areas_geojson_admin_exports_path(format: :geojson), class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500" %>
       </li>
       <li class="px-4 py-4 sm:px-6 flex items-center justify-between">
         <div>
           <span class="text-sm font-medium text-gray-900">Clusters</span>
           <span class="ml-2 text-sm text-gray-500">clusters.geojson</span>
         </div>
-        <%= link_to "Download", admin_exports_clusters_geojson_path(format: :geojson), class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500" %>
+        <%= link_to "Download", clusters_geojson_admin_exports_path(format: :geojson), class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500" %>
       </li>
       <li class="px-4 py-4 sm:px-6 flex items-center justify-between">
         <div>
           <span class="text-sm font-medium text-gray-900">Regions</span>
           <span class="ml-2 text-sm text-gray-500">regions.geojson</span>
         </div>
-        <%= link_to "Download", admin_exports_regions_geojson_path(format: :geojson), class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500" %>
+        <%= link_to "Download", regions_geojson_admin_exports_path(format: :geojson), class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500" %>
       </li>
     </ul>
   </div>
@@ -52,7 +52,7 @@
     <ul class="divide-y divide-gray-200">
       <!-- Problems GeoJSON -->
       <li class="px-4 py-4 sm:px-6">
-        <%= form_with url: admin_exports_problems_geojson_path(format: :geojson), method: :get, local: true do |f| %>
+        <%= form_with url: problems_geojson_admin_exports_path(format: :geojson), method: :get, local: true do |f| %>
           <div class="flex items-center justify-between">
             <div>
               <span class="text-sm font-medium text-gray-900">Problems</span>
