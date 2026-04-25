@@ -1,6 +1,5 @@
 <div class="flex justify-end">
   <% items = [] %>
-  <% items << { text: "Export areas.geojson", link: export_admin_areas_path(format: :geojson) } %>
   <% items << { text: "New area", link: new_admin_area_path } %>
   <%= render "shared/dropdown_menu", items: items %>
 </div>

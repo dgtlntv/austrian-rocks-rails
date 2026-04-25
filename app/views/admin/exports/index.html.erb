@@ -1,0 +1,77 @@
+<% add_breadcrumb "Exports", nil, class: "active" %>
+
+<h1 class="text-2xl font-bold text-gray-900 mb-6">Exports</h1>
+
+<!-- Global Exports -->
+<div class="bg-white shadow sm:rounded-lg mb-8">
+  <div class="px-4 py-5 sm:px-6">
+    <h2 class="text-lg font-medium text-gray-900">Global Exports</h2>
+    <p class="mt-1 text-sm text-gray-500">Download pre-built exports with no configuration needed.</p>
+  </div>
+  <div class="border-t border-gray-200">
+    <ul class="divide-y divide-gray-200">
+      <li class="px-4 py-4 sm:px-6 flex items-center justify-between">
+        <div>
+          <span class="text-sm font-medium text-gray-900">SQLite Database</span>
+          <span class="ml-2 text-sm text-gray-500"><%= BRAND_CONFIG[:slug] %>.db</span>
+        </div>
+        <%= link_to "Download", admin_exports_db_path(format: :db), class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500" %>
+      </li>
+      <li class="px-4 py-4 sm:px-6 flex items-center justify-between">
+        <div>
+          <span class="text-sm font-medium text-gray-900">Areas</span>
+          <span class="ml-2 text-sm text-gray-500">areas.geojson</span>
+        </div>
+        <%= link_to "Download", admin_exports_areas_geojson_path(format: :geojson), class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500" %>
+      </li>
+      <li class="px-4 py-4 sm:px-6 flex items-center justify-between">
+        <div>
+          <span class="text-sm font-medium text-gray-900">Clusters</span>
+          <span class="ml-2 text-sm text-gray-500">clusters.geojson</span>
+        </div>
+        <%= link_to "Download", admin_exports_clusters_geojson_path(format: :geojson), class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500" %>
+      </li>
+      <li class="px-4 py-4 sm:px-6 flex items-center justify-between">
+        <div>
+          <span class="text-sm font-medium text-gray-900">Regions</span>
+          <span class="ml-2 text-sm text-gray-500">regions.geojson</span>
+        </div>
+        <%= link_to "Download", admin_exports_regions_geojson_path(format: :geojson), class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500" %>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- Parameterized Exports -->
+<div class="bg-white shadow sm:rounded-lg">
+  <div class="px-4 py-5 sm:px-6">
+    <h2 class="text-lg font-medium text-gray-900">Parameterized Exports</h2>
+    <p class="mt-1 text-sm text-gray-500">Configure options before downloading.</p>
+  </div>
+  <div class="border-t border-gray-200">
+    <ul class="divide-y divide-gray-200">
+      <!-- Problems GeoJSON -->
+      <li class="px-4 py-4 sm:px-6">
+        <%= form_with url: admin_exports_problems_geojson_path(format: :geojson), method: :get, local: true do |f| %>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-sm font-medium text-gray-900">Problems</span>
+              <span class="ml-2 text-sm text-gray-500">problems.geojson</span>
+            </div>
+          </div>
+          <div class="mt-3 flex items-center gap-4">
+            <div class="flex items-center">
+              <%= f.check_box :include_boulders, { id: "include_boulders", class: "h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded" }, "true", "false" %>
+              <%= f.label :include_boulders, "Include boulders", class: "ml-2 text-sm text-gray-700" %>
+            </div>
+            <%= f.submit "Download", class: "inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 cursor-pointer" %>
+          </div>
+        <% end %>
+      </li>
+
+      <!-- Topos -->
+      <!-- TODO: implement topo ZIP export once rubyzip is available -->
+
+    </ul>
+  </div>
+</div>

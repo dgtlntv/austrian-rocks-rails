@@ -51,59 +51,6 @@ class Admin::AreasController < Admin::BaseController
     end
   end
 
-  def export
-    factory = RGeo::GeoJSON::EntityFactory.instance
-
-    area_features = []
-    hull_features = []
-
-    Area.published.each do |area|
-      result = area.boulders.where(ignore_for_area_hull: false).
-        select("st_buffer(st_convexhull(st_collect(polygon::geometry)),0.00007) as hull",
-               "st_centroid(st_buffer(st_convexhull(st_collect(polygon::geometry)),0.00007)) as centroid").to_a.first
-
-      # Skip areas with no boulders
-      next unless result&.hull
-
-      hull = result.hull
-      centroid = result.centroid
-
-      hash = {}.with_indifferent_access
-      hash[:area_id] = area.id
-      # we store lat/lon as strings to make it easier to edit the geojson in tools like JOSM
-      hash[:south_west_lat] = area.bounds[:south_west].lat.to_s
-      hash[:south_west_lon] = area.bounds[:south_west].lon.to_s
-      hash[:north_east_lat] = area.bounds[:north_east].lat.to_s
-      hash[:north_east_lon] = area.bounds[:north_east].lon.to_s
-      hash.deep_transform_keys! { |key| key.camelize(:lower) }
-      hull_features << factory.feature(hull, nil, hash)
-
-      hash = {}.with_indifferent_access
-      hash[:name] = area.short_name || area.name
-      hash[:area_id] = area.id
-      hash[:priority] = area.priority
-      # we store lat/lon as strings to make it easier to edit the geojson in tools like JOSM
-      hash[:south_west_lat] = area.bounds[:south_west].lat.to_s
-      hash[:south_west_lon] = area.bounds[:south_west].lon.to_s
-      hash[:north_east_lat] = area.bounds[:north_east].lat.to_s
-      hash[:north_east_lon] = area.bounds[:north_east].lon.to_s
-      hash.deep_transform_keys! { |key| key.camelize(:lower) }
-      area_features << factory.feature(centroid, nil, hash)
-    end
-
-    feature_collection = factory.feature_collection(
-      area_features + hull_features
-    )
-
-    geo_json = JSON.pretty_generate(RGeo::GeoJSON.encode(feature_collection))
-
-    respond_to do |format|
-      format.geojson do
-        send_data geo_json, filename: "areas.geojson", type: "application/geo+json"
-      end
-    end
-  end
-
   private
   def area_params
     params.require(:area).
