@@ -18,26 +18,18 @@
 <% end %>
 
 <div 
-data-controller="mapbox"
-data-action="gotoproblem@window->mapbox#gotoproblem gotoarea@window->mapbox#gotoarea"
+data-controller="maplibre"
+data-action="gotoproblem@window->maplibre#gotoproblem gotoarea@window->maplibre#gotoarea"
 class="h-screen w-full relative"
-data-mapbox-target="map"
-data-mapbox-locale-value="<%= I18n.locale %>"
-
-data-mapbox-contribute-source-value="<%= mapping_requests_path(format: :geojson) %>"
-data-mapbox-contribute-value="<%= params[:contribute] ? "true" : "false" %>"
-
+data-maplibre-locale-value="<%= I18n.locale %>"
+data-maplibre-style-url-value="/map_styles/basemap-at-farbe.json"
 <% if @problem %> 
-data-mapbox-problem-value="<%= @problem.to_json %>" 
+data-maplibre-problem-value="<%= @problem.to_json %>" 
 <% end %>
 
 <% if @bounds %> 
-data-mapbox-bounds-value="<%= @bounds.to_json %>"
+data-maplibre-bounds-value="<%= @bounds.to_json %>"
 <% end %>
-
-data-mapbox-token-value="<%= Rails.env.local? ? ENV['MAPBOX_DEV_ACCESS_KEY'] : Rails.application.credentials.dig(:mapbox, :access_token) %>"
 >
-  <div id="map"></div>
-  <%= render "filters" %>
-
+  <div id="map" data-maplibre-target="map"></div>
 </div>

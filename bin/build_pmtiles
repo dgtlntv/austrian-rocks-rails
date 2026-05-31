@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+if ! command -v tippecanoe >/dev/null 2>&1; then
+  echo "tippecanoe is required. Install with: brew install tippecanoe" >&2
+  exit 1
+fi
+
+mkdir -p tmp/map_tiles public/maps
+
+echo "Exporting GeoJSON layers from Rails/PostGIS..."
+if command -v docker >/dev/null 2>&1 && docker compose ps web --status running >/dev/null 2>&1; then
+  docker compose exec web bin/rails map_tiles:geojson
+else
+  bin/rails map_tiles:geojson
+fi
+
+FEATURE_COUNT=$(python3 - <<'PY'
+import glob, json
+print(sum(len(json.load(open(path)).get('features', [])) for path in glob.glob('tmp/map_tiles/*.geojson')))
+PY
+)
+
+if [ "$FEATURE_COUNT" -eq 0 ]; then
+  echo "No map features were exported. Load/import data first, then run bin/build_pmtiles again." >&2
+  exit 1
+fi
+
+echo "Building PMTiles from $FEATURE_COUNT features..."
+tippecanoe \
+  --force \
+  --output=public/maps/austrian-rocks.pmtiles \
+  --name="Austrian Rocks overlays" \
+  --attribution="© Austrian Rocks" \
+  --minimum-zoom=0 \
+  --maximum-zoom=15 \
+  --drop-densest-as-needed \
+  --extend-zooms-if-still-dropping \
+  --detect-shared-borders \
+  --full-detail=14 \
+  --low-detail=12 \
+  --no-line-simplification \
+  --no-tiny-polygon-reduction-at-maximum-zoom \
+  --named-layer=regions:tmp/map_tiles/regions.geojson \
+  --named-layer=region_hulls:tmp/map_tiles/region_hulls.geojson \
+  --named-layer=clusters:tmp/map_tiles/clusters.geojson \
+  --named-layer=cluster_hulls:tmp/map_tiles/cluster_hulls.geojson \
+  --named-layer=areas:tmp/map_tiles/areas.geojson \
+  --named-layer=area_hulls:tmp/map_tiles/area_hulls.geojson \
+  --named-layer=boulders:tmp/map_tiles/boulders.geojson \
+  --named-layer=problems:tmp/map_tiles/problems.geojson \
+  --named-layer=pois:tmp/map_tiles/pois.geojson
+
+echo "Built public/maps/austrian-rocks.pmtiles"
+ls -lh public/maps/austrian-rocks.pmtiles

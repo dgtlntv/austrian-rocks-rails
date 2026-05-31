@@ -24,6 +24,7 @@
 
 # Ignore exported files
 /export/*
+/public/maps/*.pmtiles
 
 /public/assets
 .byebug_history
