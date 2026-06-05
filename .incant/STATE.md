@@ -1,9 +1,9 @@
 # State
-- Updated: <date> (commit <short-sha>)
-- Current focus: none yet
+- Updated: 2026-06-05 (commit aeedbb66)
+- Current focus: 0001 move-object-storage-to-bunny-storage — spec awaiting approval
 
 ## Active
-<!-- One line per active item: <id> <slug> — <stage> (Pn/total) -->
+- 0001 move-object-storage-to-bunny-storage — spec
 
 ## Cross-cutting notes / blockers
 - none
