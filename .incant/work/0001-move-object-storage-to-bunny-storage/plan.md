@@ -3,8 +3,8 @@ id: "0001"
 slug: move-object-storage-to-bunny-storage
 branch: incant/0001-move-object-storage-to-bunny-storage
 title: Move Object Storage To Bunny Storage
-stage: plan
-status: awaiting-approval
+stage: implement
+status: phase-0001-P1-complete-awaiting-review
 created: 2026-06-05
 commit: 3c86d3c7
 updated: 2026-06-05
@@ -14,11 +14,13 @@ updated: 2026-06-05
 
 ## Status
 - Work item: `0001` / `move-object-storage-to-bunny-storage`
-- Stage: plan awaiting human approval
+- Stage: implement
 - Branch: `incant/0001-move-object-storage-to-bunny-storage`
-- Current phase: none started
-- Next step: human approves this plan, then run `/incant:implement 0001`
+- Current phase: `0001-P1` complete, awaiting review
+- Next step: run `/incant:review 0001`
 - Blockers: none
+- Verification evidence:
+  - 2026-06-05: Phase 0001-P1 gate passed with installed local Ruby 3.3.11 after temporarily changing `.ruby-version`, `Gemfile`, and `Gemfile.lock` to 3.3.11, then reverting them to 3.3.5. Rails storage verification used `ActiveStorage::Blob.services.instance_variable_get(:@configurations).fetch(:bunny)` because the originally planned `Rails.application.config_for(:storage).fetch(:bunny)` returns nil for Active Storage service configuration in this app.
 - Key decisions:
   - Use a new production Active Storage service named `bunny`, not the old `amazon` service name.
   - Use separate environment variable and Kamal secret names for Rails uploads and backup storage credentials.
@@ -40,8 +42,8 @@ updated: 2026-06-05
 ## Phase 0001-P1 — Bunny runtime configuration
 Goal: Rails uploads and database backups are configured for Bunny Storage without committed R2 endpoints or fallback credentials.
 
-- [ ] Read `config/storage.yml`, `config/environments/production.rb`, `config/initializers/active_storage.rb`, and `config/deploy.yml` before editing.
-- [ ] In `config/storage.yml`, rename the production S3-compatible service from `amazon` to `bunny` and define it as:
+- [x] Read `config/storage.yml`, `config/environments/production.rb`, `config/initializers/active_storage.rb`, and `config/deploy.yml` before editing.
+- [x] In `config/storage.yml`, rename the production S3-compatible service from `amazon` to `bunny` and define it as:
   - `service: S3`
   - `endpoint: <%= ENV.fetch("BUNNY_STORAGE_ENDPOINT") %>`
   - `access_key_id: <%= ENV.fetch("BUNNY_STORAGE_ACCESS_KEY_ID") %>`
@@ -49,16 +51,16 @@ Goal: Rails uploads and database backups are configured for Bunny Storage withou
   - `region: <%= ENV.fetch("BUNNY_STORAGE_REGION") %>`
   - `bucket: <%= ENV.fetch("BUNNY_STORAGE_BUCKET") %>`
   - `force_path_style: true`
-- [ ] Remove the committed Cloudflare R2 endpoint, bucket, `auto` region comment, `S3_READONLY_KEY`, and `S3_READONLY_SECRET` references from `config/storage.yml`.
-- [ ] In `config/environments/production.rb`, change `config.active_storage.service = :amazon` to `config.active_storage.service = :bunny` and update the nearby comment to state that production uploads use the Bunny S3-compatible service from `config/storage.yml`.
-- [ ] In `config/initializers/active_storage.rb`, keep `Rails.application.config.active_storage.resolve_model_to_route = :rails_storage_proxy` and delete the `S3_READONLY_KEY` and `S3_READONLY_SECRET` constants plus their R2 fallback comment.
-- [ ] In `config/deploy.yml` under top-level `env.clear`, add non-secret Rails upload settings `BUNNY_STORAGE_ENDPOINT: <%= ENV.fetch("BUNNY_STORAGE_ENDPOINT") %>`, `BUNNY_STORAGE_REGION: <%= ENV.fetch("BUNNY_STORAGE_REGION") %>`, and `BUNNY_STORAGE_BUCKET: <%= ENV.fetch("BUNNY_STORAGE_BUCKET") %>`.
-- [ ] In `config/deploy.yml` under top-level `env.secret`, add `BUNNY_STORAGE_ACCESS_KEY_ID` and `BUNNY_STORAGE_SECRET_ACCESS_KEY` for Rails upload credentials.
-- [ ] In `config/deploy.yml` under `accessories.db_backup.env.clear`, replace the R2 values with backup image S3 variables fed by Bunny backup-zone deployment environment values: `S3_REGION: <%= ENV.fetch("BUNNY_BACKUP_REGION") %>`, `S3_BUCKET: <%= ENV.fetch("BUNNY_BACKUP_BUCKET") %>`, and `S3_ENDPOINT: <%= ENV.fetch("BUNNY_BACKUP_ENDPOINT") %>`; keep `S3_PREFIX: backups`.
-- [ ] In `config/deploy.yml` under `accessories.db_backup.env.secret`, keep the image-required `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` names and ensure the Kamal secrets with those names contain the backup-zone credentials, separate from the Rails `BUNNY_STORAGE_ACCESS_KEY_ID` and `BUNNY_STORAGE_SECRET_ACCESS_KEY` credentials.
-- [ ] Run a repository search and remove any Cloudflare R2 endpoint or committed `S3_READONLY_` credential fallback that remains in the changed runtime configuration files.
+- [x] Remove the committed Cloudflare R2 endpoint, bucket, `auto` region comment, `S3_READONLY_KEY`, and `S3_READONLY_SECRET` references from `config/storage.yml`.
+- [x] In `config/environments/production.rb`, change `config.active_storage.service = :amazon` to `config.active_storage.service = :bunny` and update the nearby comment to state that production uploads use the Bunny S3-compatible service from `config/storage.yml`.
+- [x] In `config/initializers/active_storage.rb`, keep `Rails.application.config.active_storage.resolve_model_to_route = :rails_storage_proxy` and delete the `S3_READONLY_KEY` and `S3_READONLY_SECRET` constants plus their R2 fallback comment.
+- [x] In `config/deploy.yml` under top-level `env.clear`, add non-secret Rails upload settings `BUNNY_STORAGE_ENDPOINT: <%= ENV.fetch("BUNNY_STORAGE_ENDPOINT") %>`, `BUNNY_STORAGE_REGION: <%= ENV.fetch("BUNNY_STORAGE_REGION") %>`, and `BUNNY_STORAGE_BUCKET: <%= ENV.fetch("BUNNY_STORAGE_BUCKET") %>`.
+- [x] In `config/deploy.yml` under top-level `env.secret`, add `BUNNY_STORAGE_ACCESS_KEY_ID` and `BUNNY_STORAGE_SECRET_ACCESS_KEY` for Rails upload credentials.
+- [x] In `config/deploy.yml` under `accessories.db_backup.env.clear`, replace the R2 values with backup image S3 variables fed by Bunny backup-zone deployment environment values: `S3_REGION: <%= ENV.fetch("BUNNY_BACKUP_REGION") %>`, `S3_BUCKET: <%= ENV.fetch("BUNNY_BACKUP_BUCKET") %>`, and `S3_ENDPOINT: <%= ENV.fetch("BUNNY_BACKUP_ENDPOINT") %>`; keep `S3_PREFIX: backups`.
+- [x] In `config/deploy.yml` under `accessories.db_backup.env.secret`, keep the image-required `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` names and ensure the Kamal secrets with those names contain the backup-zone credentials, separate from the Rails `BUNNY_STORAGE_ACCESS_KEY_ID` and `BUNNY_STORAGE_SECRET_ACCESS_KEY` credentials.
+- [x] Run a repository search and remove any Cloudflare R2 endpoint or committed `S3_READONLY_` credential fallback that remains in the changed runtime configuration files.
 
-**Quality gate:** `BUNNY_STORAGE_ENDPOINT=https://example.bunnycdn.test BUNNY_STORAGE_ACCESS_KEY_ID=test-key BUNNY_STORAGE_SECRET_ACCESS_KEY=test-secret BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test-zone bin/rails runner 'Rails.application.config_for(:storage).fetch(:bunny); Rails.application.config_for(:storage).fetch(:bunny).fetch(:endpoint); Rails.application.config_for(:storage).fetch(:bunny).fetch(:bucket)' && ! grep -R "cloudflarestorage.com\|S3_READONLY_KEY\|S3_READONLY_SECRET" config/storage.yml config/environments/production.rb config/initializers/active_storage.rb config/deploy.yml` → Rails loads the Bunny storage configuration with dummy local values and the changed runtime configuration files contain no R2 endpoint or committed R2 fallback credential names.
+**Quality gate:** `BUNNY_STORAGE_ENDPOINT=https://example.bunnycdn.test BUNNY_STORAGE_ACCESS_KEY_ID=test-key BUNNY_STORAGE_SECRET_ACCESS_KEY=test-secret BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test-zone bin/rails runner 'config = ActiveStorage::Blob.services.instance_variable_get(:@configurations).fetch(:bunny); config.fetch(:endpoint); config.fetch(:bucket)' && ! grep -R "cloudflarestorage.com\|S3_READONLY_KEY\|S3_READONLY_SECRET" config/storage.yml config/environments/production.rb config/initializers/active_storage.rb config/deploy.yml` → Rails loads the Bunny storage configuration with dummy local values and the changed runtime configuration files contain no R2 endpoint or committed R2 fallback credential names.
 
 ## Phase 0001-P2 — Local runbook and repository verification
 Goal: The operational migration checklist exists locally, `/docs/` is ignored, and the full automated verification passes without live Bunny credentials.
@@ -72,7 +74,7 @@ Goal: The operational migration checklist exists locally, `/docs/` is ignored, a
 - [ ] Run the Phase 0001-P1 quality gate again after the runbook and `.gitignore` changes.
 - [ ] Run the full Rails test suite.
 
-**Quality gate:** `BUNNY_STORAGE_ENDPOINT=https://example.bunnycdn.test BUNNY_STORAGE_ACCESS_KEY_ID=test-key BUNNY_STORAGE_SECRET_ACCESS_KEY=test-secret BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test-zone bin/rails runner 'Rails.application.config_for(:storage).fetch(:bunny)' && ! grep -R "cloudflarestorage.com\|S3_READONLY_KEY\|S3_READONLY_SECRET" config/storage.yml config/environments/production.rb config/initializers/active_storage.rb config/deploy.yml && git status --short --ignored docs | grep '^!! docs/bunny-storage-migration.md$' && bin/rails test` → storage config loads without live Bunny credentials, R2 endpoint/fallback credential names are absent from changed runtime config files, the runbook is ignored, and all Rails tests pass.
+**Quality gate:** `BUNNY_STORAGE_ENDPOINT=https://example.bunnycdn.test BUNNY_STORAGE_ACCESS_KEY_ID=test-key BUNNY_STORAGE_SECRET_ACCESS_KEY=test-secret BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test-zone bin/rails runner 'ActiveStorage::Blob.services.instance_variable_get(:@configurations).fetch(:bunny)' && ! grep -R "cloudflarestorage.com\|S3_READONLY_KEY\|S3_READONLY_SECRET" config/storage.yml config/environments/production.rb config/initializers/active_storage.rb config/deploy.yml && git status --short --ignored docs | grep '^!! docs/bunny-storage-migration.md$' && bin/rails test` → storage config loads without live Bunny credentials, R2 endpoint/fallback credential names are absent from changed runtime config files, the runbook is ignored, and all Rails tests pass.
 
 ## Coverage self-review
 - Requirement 1: Phase 0001-P1 changes `config/storage.yml` to a `bunny` S3-compatible service and Phase 0001-P1 switches production to `:bunny`.
