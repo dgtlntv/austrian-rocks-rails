@@ -25,6 +25,9 @@
 # Ignore exported files
 /export/*
 
+# Ignore local operational runbooks.
+/docs/
+
 /public/assets
 .byebug_history
 

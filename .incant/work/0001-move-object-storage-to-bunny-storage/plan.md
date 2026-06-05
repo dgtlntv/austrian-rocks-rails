@@ -4,7 +4,7 @@ slug: move-object-storage-to-bunny-storage
 branch: incant/0001-move-object-storage-to-bunny-storage
 title: Move Object Storage To Bunny Storage
 stage: implement
-status: phase-0001-P1-complete-awaiting-review
+status: phase-0001-P2-complete-awaiting-review
 created: 2026-06-05
 commit: 3c86d3c7
 updated: 2026-06-05
@@ -16,11 +16,12 @@ updated: 2026-06-05
 - Work item: `0001` / `move-object-storage-to-bunny-storage`
 - Stage: implement
 - Branch: `incant/0001-move-object-storage-to-bunny-storage`
-- Current phase: `0001-P1` complete, awaiting review
+- Current phase: `0001-P2` complete, awaiting review
 - Next step: run `/incant:review 0001`
 - Blockers: none
 - Verification evidence:
   - 2026-06-05: Phase 0001-P1 gate passed with installed local Ruby 3.3.11 after temporarily changing `.ruby-version`, `Gemfile`, and `Gemfile.lock` to 3.3.11, then reverting them to 3.3.5. Rails storage verification used `ActiveStorage::Blob.services.instance_variable_get(:@configurations).fetch(:bunny)` because the originally planned `Rails.application.config_for(:storage).fetch(:bunny)` returns nil for Active Storage service configuration in this app.
+  - 2026-06-05: Phase 0001-P2 storage/runbook checks passed with installed local Ruby 3.3.11 after temporarily changing `.ruby-version`, `Gemfile`, and `Gemfile.lock` to 3.3.11, then reverting them to 3.3.5: `bin/rails runner 'ActiveStorage::Blob.services.instance_variable_get(:@configurations).fetch(:bunny)'`, R2 endpoint/fallback credential grep, and `git status --short --ignored --untracked-files=all docs | grep '^!! docs/bunny-storage-migration.md$'`. `bin/rails test` was not run to completion after the human explicitly said it is not needed for now; the attempted run failed before tests because no local PostgreSQL server was available at `/tmp/.s.PGSQL.5432`.
 - Key decisions:
   - Use a new production Active Storage service named `bunny`, not the old `amazon` service name.
   - Use separate environment variable and Kamal secret names for Rails uploads and backup storage credentials.
@@ -65,14 +66,14 @@ Goal: Rails uploads and database backups are configured for Bunny Storage withou
 ## Phase 0001-P2 — Local runbook and repository verification
 Goal: The operational migration checklist exists locally, `/docs/` is ignored, and the full automated verification passes without live Bunny credentials.
 
-- [ ] Read `.gitignore` before editing.
-- [ ] Add `/docs/` to `.gitignore` under a clear comment such as `# Ignore local operational runbooks.`.
-- [ ] Create `docs/bunny-storage-migration.md` locally with sections for prerequisites, Bunny upload zone setup, Bunny backup zone setup, S3-compatible key placement in Kamal secrets, `rclone` R2-to-Bunny copy commands, copy verification, deployment, upload/download/variant checks, database backup checks, R2 read-only fallback window, rollback by re-copy/redeploy, and final R2 credential removal.
-- [ ] Ensure `docs/bunny-storage-migration.md` names the Rails upload credentials as `BUNNY_STORAGE_ACCESS_KEY_ID` and `BUNNY_STORAGE_SECRET_ACCESS_KEY` and the backup credentials according to the final `config/deploy.yml` backup secret names.
-- [ ] Ensure `docs/bunny-storage-migration.md` explicitly states that R2 remains read-only outside Rails only during the fallback window and that Rails has no automatic R2 fallback path.
-- [ ] Run `git status --short --ignored docs` and confirm `docs/bunny-storage-migration.md` is ignored and will not be committed.
-- [ ] Run the Phase 0001-P1 quality gate again after the runbook and `.gitignore` changes.
-- [ ] Run the full Rails test suite.
+- [x] Read `.gitignore` before editing.
+- [x] Add `/docs/` to `.gitignore` under a clear comment such as `# Ignore local operational runbooks.`.
+- [x] Create `docs/bunny-storage-migration.md` locally with sections for prerequisites, Bunny upload zone setup, Bunny backup zone setup, S3-compatible key placement in Kamal secrets, `rclone` R2-to-Bunny copy commands, copy verification, deployment, upload/download/variant checks, database backup checks, R2 read-only fallback window, rollback by re-copy/redeploy, and final R2 credential removal.
+- [x] Ensure `docs/bunny-storage-migration.md` names the Rails upload credentials as `BUNNY_STORAGE_ACCESS_KEY_ID` and `BUNNY_STORAGE_SECRET_ACCESS_KEY` and the backup credentials according to the final `config/deploy.yml` backup secret names.
+- [x] Ensure `docs/bunny-storage-migration.md` explicitly states that R2 remains read-only outside Rails only during the fallback window and that Rails has no automatic R2 fallback path.
+- [x] Run `git status --short --ignored docs` and confirm `docs/bunny-storage-migration.md` is ignored and will not be committed.
+- [x] Run the Phase 0001-P1 quality gate again after the runbook and `.gitignore` changes.
+- [x] Run the full Rails test suite. Not run to completion: human explicitly waived it for now; attempted run failed before tests because local PostgreSQL was unavailable.
 
 **Quality gate:** `BUNNY_STORAGE_ENDPOINT=https://example.bunnycdn.test BUNNY_STORAGE_ACCESS_KEY_ID=test-key BUNNY_STORAGE_SECRET_ACCESS_KEY=test-secret BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test-zone bin/rails runner 'ActiveStorage::Blob.services.instance_variable_get(:@configurations).fetch(:bunny)' && ! grep -R "cloudflarestorage.com\|S3_READONLY_KEY\|S3_READONLY_SECRET" config/storage.yml config/environments/production.rb config/initializers/active_storage.rb config/deploy.yml && git status --short --ignored docs | grep '^!! docs/bunny-storage-migration.md$' && bin/rails test` → storage config loads without live Bunny credentials, R2 endpoint/fallback credential names are absent from changed runtime config files, the runbook is ignored, and all Rails tests pass.
 
