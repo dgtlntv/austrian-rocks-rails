@@ -1,9 +1,9 @@
 # State
-- Updated: <date> (commit <short-sha>)
-- Current focus: none yet
+- Updated: 2026-06-06 (0001 archived)
+- Current focus: none
 
 ## Active
-<!-- One line per active item: <id> <slug> — <stage> (Pn/total) -->
+- none
 
 ## Cross-cutting notes / blockers
 - none

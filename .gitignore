@@ -25,6 +25,9 @@
 # Ignore exported files
 /export/*
 
+# Ignore local operational runbooks.
+/docs/
+
 /public/assets
 .byebug_history
 
@@ -33,6 +36,11 @@
 
 # Ignore dotenv file
 /.env
+
+# Ignore local rclone migration credentials/config.
+/.env.rclone
+/rclone.conf
+/.rclone.conf
 
 /public/packs
 /public/packs-test

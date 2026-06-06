@@ -22,8 +22,8 @@ Rails.application.configure do
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   config.asset_host = BRAND_CONFIG[:domains][:assets]
 
-  # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :amazon
+  # Store uploaded files using the Bunny S3-compatible service from config/storage.yml.
+  config.active_storage.service = :bunny
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = true
