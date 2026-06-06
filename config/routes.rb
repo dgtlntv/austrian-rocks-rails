@@ -134,7 +134,15 @@ Rails.application.routes.draw do
   # General solution
   direct :cdn_image do |model, options|
     expires_in = options.delete(:expires_in) { ActiveStorage.urls_expire_in }
-    options = options.merge(host: Rails.application.config.asset_host) unless Rails.env.local?
+    unless Rails.env.local?
+      asset_host = Rails.application.config.asset_host
+      if asset_host&.match?(%r{\Ahttps?://})
+        protocol, host = asset_host.split("://", 2)
+        options = options.merge(host: host, protocol: "#{protocol}://")
+      else
+        options = options.merge(host: asset_host)
+      end
+    end
 
     if model.respond_to?(:signed_id)
       route_for(

@@ -20,7 +20,7 @@ Rails.application.configure do
   config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}" }
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
-  config.asset_host = BRAND_CONFIG[:domains][:assets]
+  config.asset_host = "https://#{BRAND_CONFIG[:domains][:assets]}"
 
   # Store uploaded files using the Bunny S3-compatible service from config/storage.yml.
   config.active_storage.service = :bunny
