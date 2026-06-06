@@ -6,7 +6,7 @@ title: Austrian Rocks PMTiles Overlay Contract And Bunny Delivery
 stage: spec
 status: in-progress
 created: 2026-06-06
-commit: 5f120b9a
+commit: 7ad83370
 updated: 2026-06-06
 ---
 
@@ -23,7 +23,7 @@ A previous exploratory branch, `feature/maplibre-render`, prototyped `lib/tasks/
 The iOS app lives outside this repo at `/Users/maximilianblazek/Documents/GitHub/austrian-rocks-ios`. Its current Mapbox implementation is context for consumer needs: stable feature IDs, problem/area/cluster selection, POI actions, filters, and offline/download behavior. This Rails repo owns the shared PMTiles contract and delivery artifact, but not the iOS implementation.
 
 ## Requirements
-1. Define a committed PMTiles consumer contract document at `docs/map_tiles.md` that lists every layer, geometry type, required property, optional property, naming convention, native max zoom, and Bunny/CDN URL rule.
+1. Define a committed PMTiles consumer contract artifact at `.incant/work/0004-pmtiles-overlay-contract/contract.md` that lists every layer, geometry type, required property, optional property, naming convention, native max zoom, and Bunny/CDN URL rule. Keep `/docs/` gitignored for now and do not commit `docs/map_tiles.md` in this item.
 2. Generate a PMTiles overlay with exactly these initial source layers: `problems`, `boulders`, `areas`, `area_hulls`, `clusters`, `cluster_hulls`, `regions`, `region_hulls`, `walking_paths`, and `pois`.
 3. Add a Rails/PostGIS data model for published walking paths so the PMTiles pipeline has a first-class source for path LineString/MultiLineString geometry. Walking paths represent approach/connector paths between bouldering places and may span multiple areas or clusters; the model must not force a single-area ownership assumption.
 4. Use camelCase feature property names in the PMTiles contract, while leaving Rails/database internals in their existing snake_case style.
@@ -41,16 +41,19 @@ The iOS app lives outside this repo at `/Users/maximilianblazek/Documents/GitHub
 16. Provide an explicit relaxed smoke-check mode for local/test fixtures where one or more expected layers may legitimately have zero features, while production/export mode fails on zero-feature expected layers.
 17. Verify Bunny delivery by checking that both the versioned object and latest object are uploaded and reachable via HTTP `HEAD`.
 
+18. Provide an admin UI for walking paths so maintainers can list, create, edit, publish/unpublish, and delete paths, including uploading or pasting GeoJSON LineString/MultiLineString geometry for the path. The UI should validate geometry clearly and store only the first-class `WalkingPath` records used by the PMTiles pipeline.
+
 ## In scope / Out of scope
 **In scope:**
 - A production-ready Rails-side exporter/build command for Austrian Rocks overlay GeoJSON and PMTiles.
 - A stable PMTiles layer/property contract for web and external iOS consumption.
 - A minimal Rails/PostGIS `WalkingPath` data model and export path for published walking path line geometries.
+- Admin UI management for walking paths, including metadata editing, publish/unpublish controls, deletion, and GeoJSON LineString/MultiLineString geometry upload or paste.
 - Tippecanoe-based PMTiles generation with native max zoom `16`.
 - Smoke checks for artifact structure, expected layers, sampled properties, bounds, feature counts, and Bunny reachability.
 - Bunny/CDN upload of immutable versioned and stable latest PMTiles objects.
 - Map-specific configuration for public CDN host, Bunny object prefix, and artifact version naming.
-- Documentation in `docs/map_tiles.md` for consumers and maintainers.
+- A committed contract artifact in `.incant/work/0004-pmtiles-overlay-contract/contract.md` for consumers and maintainers; `/docs/` remains gitignored for now.
 
 **Out of scope:**
 - Rails web MapLibre rendering — reason: handled by backlog item `0005` after the overlay contract exists.
@@ -78,7 +81,7 @@ Rejected alternatives:
 Map tile delivery values are configuration, not hardcoded behavior. The implementation should introduce map-specific configuration for at least the public CDN host, Bunny object prefix, and version/latest naming rules. Existing Bunny S3-compatible credentials may be reused where appropriate, but map tile public URLs and object names must not be coupled to Active Storage blob paths. Defaults should support local development using `tmp/` build output, while production/export mode requires explicit Bunny/CDN destination config before upload.
 
 ### Security
-The exporter trusts Rails database records as application data but must treat filesystem paths, environment variables, and Bunny responses carefully. Bunny credentials remain in environment variables or the existing secret-management path and must not be committed or written into `.incant/`, docs, logs, or generated metadata. Upload code must avoid path traversal by constructing object keys from fixed prefixes and generated version strings, not arbitrary user input. Generated PMTiles are public artifacts; only public map properties belong in the contract. Sensitive internal fields, credentials, private notes, unpublished data, or unpublished walking paths must not be exported.
+The exporter trusts Rails database records as application data but must treat filesystem paths, environment variables, and Bunny responses carefully. Bunny credentials remain in environment variables or the existing secret-management path and must not be committed or written into `.incant/`, ignored docs, logs, or generated metadata. Upload code must avoid path traversal by constructing object keys from fixed prefixes and generated version strings, not arbitrary user input. Generated PMTiles are public artifacts; only public map properties belong in the contract. Sensitive internal fields, credentials, private notes, unpublished data, or unpublished walking paths must not be exported.
 
 ### Testability
 The pipeline should have automated checks around both the data contract and delivery behavior. Unit or task-level tests should cover layer/property definitions and exporter behavior against fixtures where practical. Smoke checks should be runnable as a command after generation and should fail with clear messages when expected layers/properties/counts/bounds are missing. Bunny upload reachability can be verified with HTTP `HEAD` in export mode; tests should isolate network calls or use a dry-run/fake client seam so normal local test runs do not require Bunny credentials. Relevant commands should include the existing project gates `bin/rubocop`, `bin/brakeman --no-pager`, and targeted Rails tests or smoke-check commands introduced by this work.
@@ -87,7 +90,7 @@ The pipeline should have automated checks around both the data contract and deli
 New exporter, smoke-check, and upload entry points should be documented at their module or command boundaries: what data they export, why layer/property names are stable, how version/latest upload works, and what failures mean. JavaScript is not expected to be touched in this item. Documentation should be concise and useful, avoiding comments that merely restate obvious code.
 
 ## Acceptance criteria
-- [ ] `docs/map_tiles.md` exists and documents the PMTiles source layers, geometry types, required/optional properties, POI relationship metadata representation, walking path layer semantics, expected derived style-layer usage for labels/fills/outlines/lines, native max zoom `16`, and Bunny URL/versioning rules.
+- [ ] `.incant/work/0004-pmtiles-overlay-contract/contract.md` exists and documents the PMTiles source layers, geometry types, required/optional properties, POI relationship metadata representation, walking path layer semantics, expected derived style-layer usage for labels/fills/outlines/lines, native max zoom `16`, and Bunny URL/versioning rules; `docs/map_tiles.md` is not committed while `/docs/` remains gitignored.
 - [ ] Rails has a first-class walking-path model/table with published line geometry suitable for approach/connector paths that may span areas or clusters.
 - [ ] A Rails-side command can generate intermediate GeoJSON and build a PMTiles artifact with the expected layer names using Tippecanoe.
 - [ ] The build fails clearly with install guidance when Tippecanoe is unavailable.
@@ -98,6 +101,7 @@ New exporter, smoke-check, and upload entry points should be documented at their
 - [ ] The PMTiles contract contains no circuit layers/properties and no app-local canonical URLs.
 - [ ] POI features are included with documented area access relationship metadata derived from `poi_routes`.
 - [ ] Walking path features are included as the `walking_paths` PMTiles source layer and rendered later from the same contract as line style layers.
+- [ ] Admin users can list, create, edit, publish/unpublish, delete, and upload or paste GeoJSON LineString/MultiLineString geometry for walking paths, with clear validation errors for invalid geometry.
 - [ ] The implementation provides fresh passing evidence for relevant automated tests, `bin/rubocop`, and `bin/brakeman --no-pager` before review.
 
 ## Risks & open questions
