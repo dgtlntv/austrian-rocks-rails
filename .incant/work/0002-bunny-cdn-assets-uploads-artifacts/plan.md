@@ -16,10 +16,15 @@ updated: 2026-06-06
 - Work item: `0002` / `bunny-cdn-assets-uploads-artifacts`
 - Stage: implement
 - Branch: `incant/0002-bunny-cdn-assets-uploads-artifacts`
-- Current phase: `0002-P1` complete; awaiting phase review
+- Current phase: `0002-P2` complete; awaiting phase review
 - Next step: run `/incant:review 0002`
 - Blockers: none
-- Verification evidence: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.invalid -e BUNNY_STORAGE_ACCESS_KEY_ID=dummy -e BUNNY_STORAGE_SECRET_ACCESS_KEY=dummy -e BUNNY_STORAGE_REGION=dummy -e BUNNY_STORAGE_BUCKET=dummy web bash -lc 'bin/rails test test/helpers/cdn_url_generation_test.rb'` passed: 4 runs, 4 assertions, 0 failures, 0 errors, 0 skips. Earlier local attempts failed on missing PostgreSQL/PostGIS; the temporary local `austrian-rocks-test` database was dropped and Homebrew PostgreSQL was stopped afterward.
+- Verification evidence:
+  - P1 gate retained: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.invalid -e BUNNY_STORAGE_ACCESS_KEY_ID=dummy -e BUNNY_STORAGE_SECRET_ACCESS_KEY=dummy -e BUNNY_STORAGE_REGION=dummy -e BUNNY_STORAGE_BUCKET=dummy web bash -lc 'bin/rails test test/helpers/cdn_url_generation_test.rb'` passed: 4 runs, 4 assertions, 0 failures, 0 errors, 0 skips. Earlier local attempts failed on missing PostgreSQL/PostGIS; the temporary local `austrian-rocks-test` database was dropped and Homebrew PostgreSQL was stopped afterward.
+  - P2 gate passed in Docker: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.invalid -e BUNNY_STORAGE_ACCESS_KEY_ID=dummy -e BUNNY_STORAGE_SECRET_ACCESS_KEY=dummy -e BUNNY_STORAGE_REGION=dummy -e BUNNY_STORAGE_BUCKET=dummy web bash -lc 'bin/rails test test/helpers/cdn_url_generation_test.rb && bin/rails test test/controllers/proxy_controller_test.rb && git ls-files -o -i --exclude-standard docs/bunny-cdn-checklist.md | grep "^docs/bunny-cdn-checklist.md$" && bin/rails test'` passed: helper tests 4 runs/4 assertions/0 failures, proxy tests 2 runs/6 assertions/0 failures, ignored checklist path verified, full suite 7 runs/11 assertions/0 failures.
+- Review fixes:
+  - Addressed open major finding for missing P2 implementation by adding topo proxy tests and the ignored Bunny checklist.
+  - Addressed open major finding for missing release gate by rerunning the helper gate, proxy controller test, ignored-checklist verification, and full Rails test suite.
 - Key decisions:
   - Keep `BRAND_CONFIG[:domains][:assets]` as the single source for the CDN hostname and derive the production asset host as explicit HTTPS.
   - Keep Active Storage on Rails proxy routes; Bunny is configured operationally as a Pull Zone/custom hostname in the ignored local checklist.
@@ -32,6 +37,8 @@ updated: 2026-06-06
 - `config/routes.rb` — parse an explicit `https://...` asset host into separate route helper `host` and `protocol` options for Active Storage proxy URLs while preserving local/test route behavior.
 - `test/helpers/cdn_url_generation_test.rb` — add production-style URL generation tests for Rails static assets, `cdn_image_url` blob proxy URLs, `cdn_image_url` variant proxy URLs, and test-environment local URL behavior without Bunny credentials.
 - `test/controllers/proxy_controller_test.rb` — add integration coverage for `/proxy/topos/:id` success cacheability and missing-topo `404 Not Found` behavior.
+- `test/controllers/welcome_controller_test.rb` — update the existing smoke test to use the current localized root route so the full suite reaches the CDN-related tests cleanly.
+- `test/fixtures/pois.yml`, `test/fixtures/problems.yml`, `test/fixtures/topos.yml` — clear stale scaffold fixture columns/associations that no longer match the schema; tests that need these records create explicit data.
 - `docs/bunny-cdn-checklist.md` — create an ignored local operations checklist for Bunny Pull Zone/custom hostname setup, SSL, origin, scoped cache rules, out-of-scope domains/paths, and header-based verification.
 - `.incant/backlog.md` — update work item `0002` from `status:spec` to `status:plan` after writing the plan.
 - `.incant/STATE.md` — update the session orientation to show `0002` in planning.
@@ -60,25 +67,25 @@ Goal: Production-style URL generation emits `https://assets.austrian.rocks` for 
 ## Phase 0002-P2 — Topo proxy coverage and local Bunny checklist
 Goal: `/proxy/topos/:id` behavior is verified, the local Bunny Pull Zone checklist documents the required cache policy, and the full Rails test suite passes.
 
-- [ ] Read `app/controllers/proxy_controller.rb`, `app/models/topo.rb`, `test/test_helper.rb`, `.gitignore`, and `config/routes.rb` before editing.
-- [ ] Create `test/controllers/proxy_controller_test.rb` with `require "test_helper"` and a `ProxyControllerTest < ActionDispatch::IntegrationTest` class.
-- [ ] In `test/controllers/proxy_controller_test.rb`, add setup that creates a published `Topo`, attaches the same explicit in-memory PNG fixture used by `test/helpers/cdn_url_generation_test.rb` to `topo.photo` with filename `topo-test.png` and content type `image/png`, and stores it in `@topo`.
-- [ ] In teardown of `test/controllers/proxy_controller_test.rb`, purge `@topo.photo` if attached and destroy `@topo` if persisted.
-- [ ] Add a `/proxy/topos/:id` success test in `test/controllers/proxy_controller_test.rb` that calls `get topo_proxy_path(@topo)`, asserts `:success`, asserts the response `Cache-Control` header includes `public`, and asserts the header includes either `max-age=` or `immutable` from `http_cache_forever public: true`.
-- [ ] Add a missing-topo test in `test/controllers/proxy_controller_test.rb` that calls `get topo_proxy_path(Topo.maximum(:id).to_i + 1000)` and asserts `:not_found`.
-- [ ] Confirm `.gitignore` already contains `/docs/`; do not change `.gitignore` unless `/docs/` is no longer ignored.
-- [ ] Create `docs/bunny-cdn-checklist.md` locally with sections for prerequisites, Bunny Pull Zone creation, custom hostname `assets.austrian.rocks`, SSL enablement, DNS CNAME target, Rails origin target, cache rules, out-of-scope traffic, verification, and rollback/disable notes.
-- [ ] In `docs/bunny-cdn-checklist.md`, specify that CDN delivery is through an explicit Pull Zone/custom hostname for `assets.austrian.rocks` and that Bunny DNS CDN Acceleration for `www.austrian.rocks` or `austrian.rocks` must not be enabled by this item.
-- [ ] In `docs/bunny-cdn-checklist.md`, document cache rules for `/assets/*` as long-lived immutable public caching, `/rails/active_storage/blobs/proxy/*` as long-lived public caching, `/rails/active_storage/representations/proxy/*` as long-lived public caching, and `/proxy/topos/*` as public caching.
-- [ ] In `docs/bunny-cdn-checklist.md`, state that `www.austrian.rocks`, `austrian.rocks`, `/admin/*`, contribution flows, signed-in/session-dependent Rails traffic, and all other dynamic app paths are out of scope and must not be cached by this item.
-- [ ] In `docs/bunny-cdn-checklist.md`, state that generated artifact paths such as PMTiles, MapLibre styles, mobile OTA databases, manifests, and purge behavior are intentionally deferred and must not be invented or renamed by this item.
-- [ ] In `docs/bunny-cdn-checklist.md`, add verification commands using representative production URLs for one fingerprinted `/assets/*` file, one `/rails/active_storage/blobs/proxy/*` URL, one `/rails/active_storage/representations/proxy/*` URL, and one `/proxy/topos/*` URL, with expected Bunny response headers including `cdn-pullzone` and `cdn-cache`.
-- [ ] Run `git status --short --ignored docs` and confirm `docs/bunny-cdn-checklist.md` appears as ignored (`!! docs/bunny-cdn-checklist.md`) and is not staged or committed.
-- [ ] Run the Phase 0002-P1 quality gate again after the controller tests and checklist work.
-- [ ] Run the new proxy controller test directly.
-- [ ] Run the full Rails test suite.
+- [x] Read `app/controllers/proxy_controller.rb`, `app/models/topo.rb`, `test/test_helper.rb`, `.gitignore`, and `config/routes.rb` before editing.
+- [x] Create `test/controllers/proxy_controller_test.rb` with `require "test_helper"` and a `ProxyControllerTest < ActionDispatch::IntegrationTest` class.
+- [x] In `test/controllers/proxy_controller_test.rb`, add setup that creates a published `Topo`, attaches the same explicit in-memory PNG fixture used by `test/helpers/cdn_url_generation_test.rb` to `topo.photo` with filename `topo-test.png` and content type `image/png`, and stores it in `@topo`.
+- [x] In teardown of `test/controllers/proxy_controller_test.rb`, purge `@topo.photo` if attached and destroy `@topo` if persisted.
+- [x] Add a `/proxy/topos/:id` success test in `test/controllers/proxy_controller_test.rb` that calls `get topo_proxy_path(@topo)`, asserts `:success`, asserts the response `Cache-Control` header includes `public`, and asserts the header includes either `max-age=` or `immutable` from `http_cache_forever public: true`.
+- [x] Add a missing-topo test in `test/controllers/proxy_controller_test.rb` that calls `get topo_proxy_path(Topo.maximum(:id).to_i + 1000)` and asserts `:not_found`.
+- [x] Confirm `.gitignore` already contains `/docs/`; do not change `.gitignore` unless `/docs/` is no longer ignored.
+- [x] Create `docs/bunny-cdn-checklist.md` locally with sections for prerequisites, Bunny Pull Zone creation, custom hostname `assets.austrian.rocks`, SSL enablement, DNS CNAME target, Rails origin target, cache rules, out-of-scope traffic, verification, and rollback/disable notes.
+- [x] In `docs/bunny-cdn-checklist.md`, specify that CDN delivery is through an explicit Pull Zone/custom hostname for `assets.austrian.rocks` and that Bunny DNS CDN Acceleration for `www.austrian.rocks` or `austrian.rocks` must not be enabled by this item.
+- [x] In `docs/bunny-cdn-checklist.md`, document cache rules for `/assets/*` as long-lived immutable public caching, `/rails/active_storage/blobs/proxy/*` as long-lived public caching, `/rails/active_storage/representations/proxy/*` as long-lived public caching, and `/proxy/topos/*` as public caching.
+- [x] In `docs/bunny-cdn-checklist.md`, state that `www.austrian.rocks`, `austrian.rocks`, `/admin/*`, contribution flows, signed-in/session-dependent Rails traffic, and all other dynamic app paths are out of scope and must not be cached by this item.
+- [x] In `docs/bunny-cdn-checklist.md`, state that generated artifact paths such as PMTiles, MapLibre styles, mobile OTA databases, manifests, and purge behavior are intentionally deferred and must not be invented or renamed by this item.
+- [x] In `docs/bunny-cdn-checklist.md`, add verification commands using representative production URLs for one fingerprinted `/assets/*` file, one `/rails/active_storage/blobs/proxy/*` URL, one `/rails/active_storage/representations/proxy/*` URL, and one `/proxy/topos/*` URL, with expected Bunny response headers including `cdn-pullzone` and `cdn-cache`.
+- [x] Run `git ls-files -o -i --exclude-standard docs/bunny-cdn-checklist.md` and confirm `docs/bunny-cdn-checklist.md` appears as ignored and is not staged or committed.
+- [x] Run the Phase 0002-P1 quality gate again after the controller tests and checklist work.
+- [x] Run the new proxy controller test directly.
+- [x] Run the full Rails test suite.
 
-**Quality gate:** `bin/rails test test/helpers/cdn_url_generation_test.rb && bin/rails test test/controllers/proxy_controller_test.rb && git status --short --ignored docs | grep '^!! docs/bunny-cdn-checklist.md$' && bin/rails test` → CDN URL tests pass, topo proxy tests pass, the Bunny checklist is ignored locally, and all Rails tests pass without real Bunny credentials or Bunny network access.
+**Quality gate:** `bin/rails test test/helpers/cdn_url_generation_test.rb && bin/rails test test/controllers/proxy_controller_test.rb && git ls-files -o -i --exclude-standard docs/bunny-cdn-checklist.md | grep '^docs/bunny-cdn-checklist.md$' && bin/rails test` → CDN URL tests pass, topo proxy tests pass, the Bunny checklist is ignored locally, and all Rails tests pass without real Bunny credentials or Bunny network access.
 
 ## Coverage self-review
 - Requirement 1: Phase 0002-P1 updates `config/environments/production.rb` to derive `config.asset_host` as explicit `https://#{BRAND_CONFIG[:domains][:assets]}` and tests Rails static asset URLs.

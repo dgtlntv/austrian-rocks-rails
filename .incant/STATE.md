@@ -1,5 +1,5 @@
 # State
-- Updated: 2026-06-06 (0002 P1 implemented; awaiting review)
+- Updated: 2026-06-06 (0002 P2 implemented; awaiting review)
 - Current focus: 0002 — Put assets, uploads, and generated data artifacts behind Bunny CDN
 
 ## Active

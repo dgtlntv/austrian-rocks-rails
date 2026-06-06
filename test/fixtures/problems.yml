@@ -1,9 +1,1 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-one:
-  name: MyString
-  grade: MyString
-
-two:
-  name: MyString
-  grade: MyString
+# Empty fixture set; tests that need problems create explicit records.
