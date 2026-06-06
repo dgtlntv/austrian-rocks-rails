@@ -37,6 +37,11 @@
 # Ignore dotenv file
 /.env
 
+# Ignore local rclone migration credentials/config.
+/.env.rclone
+/rclone.conf
+/.rclone.conf
+
 /public/packs
 /public/packs-test
 /node_modules
