@@ -1,5 +1,7 @@
 class Boulder < ApplicationRecord
   belongs_to :area
+  has_many :problems
+  has_many :topos
 
   validates :name, length: { maximum: 255 }, allow_blank: true
 

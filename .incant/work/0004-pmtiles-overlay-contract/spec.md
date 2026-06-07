@@ -7,7 +7,7 @@ stage: spec
 status: in-progress
 created: 2026-06-06
 commit: 7ad83370
-updated: 2026-06-06
+updated: 2026-06-07
 ---
 
 # Austrian Rocks PMTiles Overlay Contract And Bunny Delivery
@@ -25,7 +25,7 @@ The iOS app lives outside this repo at `/Users/maximilianblazek/Documents/GitHub
 ## Requirements
 1. Define a committed PMTiles consumer contract artifact at `.incant/work/0004-pmtiles-overlay-contract/contract.md` that lists every layer, geometry type, required property, optional property, naming convention, native max zoom, and Bunny/CDN URL rule. Keep `/docs/` gitignored for now and do not commit `docs/map_tiles.md` in this item.
 2. Generate a PMTiles overlay with exactly these initial source layers: `problems`, `boulders`, `areas`, `area_hulls`, `clusters`, `cluster_hulls`, `regions`, `region_hulls`, `walking_paths`, and `pois`.
-3. Depend on completed backlog item `0007` for database relationship cleanup and the published `WalkingPath` model/admin source data; do not implement `0004` until `0007` is done.
+3. Consume the database relationship cleanup and published `WalkingPath` model/admin source data delivered by completed backlog item `0007`; do not add or recreate those foundations in `0004`.
 4. Use camelCase feature property names in the PMTiles contract, while leaving Rails/database internals in their existing snake_case style.
 5. Expose stable scalar identifiers and metadata needed by web and iOS consumers; do not encode app-local canonical URLs in PMTiles features. Consumers must build app navigation from IDs/slugs. POI features may include their external `googleUrl`.
 6. Include localized feature labels as `name` plus optional `nameEn` where an English value exists and differs from the default name.
@@ -53,7 +53,7 @@ The iOS app lives outside this repo at `/Users/maximilianblazek/Documents/GitHub
 - A committed contract artifact in `.incant/work/0004-pmtiles-overlay-contract/contract.md` for consumers and maintainers; `/docs/` remains gitignored for now.
 
 **Out of scope:**
-- Database relationship cleanup, `problems.boulder_id`, `WalkingPath` model/table, and walking path admin UI — reason: prerequisite backlog item `0007` owns those foundations before this PMTiles pipeline is implemented.
+- Database relationship cleanup, `problems.boulder_id`, `WalkingPath` model/table, and walking path admin UI — reason: completed backlog item `0007` already owns and delivered those foundations.
 - Rails web MapLibre rendering — reason: handled by backlog item `0005` after the overlay contract exists.
 - Rails web map tap/preview/card interactions — reason: handled by backlog item `0006` after rendering is stable.
 - iOS MapLibre implementation — reason: the iOS app is outside this repository.
@@ -63,7 +63,7 @@ The iOS app lives outside this repo at `/Users/maximilianblazek/Documents/GitHub
 - Real route/path geometry for POI access — reason: `walking_paths` are general approach/connector map overlays, while the current `poi_routes` schema stores access metadata rather than per-POI route geometries.
 
 ## Approach
-Create a small, documented map-tile export subsystem rather than extending the old Mapbox-specific task in place. This work starts only after `0007` has delivered the relational cleanup and first-class walking-path source data. The exporter should query published Rails/PostGIS data, write deterministic intermediate GeoJSON under `tmp/`, build a single PMTiles artifact with Tippecanoe named layers, smoke-check the artifact, and upload it to Bunny/CDN using map-specific destination config.
+Create a small, documented map-tile export subsystem rather than extending the old Mapbox-specific task in place. Completed backlog item `0007` has already delivered the relational cleanup and first-class walking-path source data that this exporter consumes. The exporter should query published Rails/PostGIS data, write deterministic intermediate GeoJSON under `tmp/`, build a single PMTiles artifact with Tippecanoe named layers, smoke-check the artifact, and upload it to Bunny/CDN using map-specific destination config.
 
 The PMTiles contract should use stable, human-readable layer names instead of Mapbox-generated source-layer names. Feature properties should be deliberately chosen, documented, and kept scalar where vector-tile tooling requires it. Walking paths should be line features with stable IDs and optional editorial metadata, not attached to a single area when they can span areas or clusters. POI-to-area access metadata should be represented as documented scalar metadata, not as fake geometry.
 
@@ -89,7 +89,7 @@ New exporter, smoke-check, and upload entry points should be documented at their
 
 ## Acceptance criteria
 - [ ] `.incant/work/0004-pmtiles-overlay-contract/contract.md` exists and documents the PMTiles source layers, geometry types, required/optional properties, POI relationship metadata representation, walking path layer semantics, expected derived style-layer usage for labels/fills/outlines/lines, native max zoom `16`, and Bunny URL/versioning rules; `docs/map_tiles.md` is not committed while `/docs/` remains gitignored.
-- [ ] Backlog item `0007` is done before `0004` implementation begins, and this exporter reads published walking paths from the `WalkingPath` source delivered there.
+- [ ] The exporter reads published walking paths from the `WalkingPath` source delivered by `0007`, without adding new walking-path schema/admin code.
 - [ ] A Rails-side command can generate intermediate GeoJSON and build a PMTiles artifact with the expected layer names using Tippecanoe.
 - [ ] The build fails clearly with install guidance when Tippecanoe is unavailable.
 - [ ] Generated PMTiles are ignored/not committed and the production path uploads to Bunny/CDN instead of relying on `public/maps/austrian-rocks.pmtiles`.
@@ -105,4 +105,4 @@ New exporter, smoke-check, and upload entry points should be documented at their
 - PMTiles metadata inspection may require an additional helper/tool if Tippecanoe alone does not expose everything needed for smoke checks; the plan should choose the smallest reliable inspection approach.
 - Production feature-count thresholds beyond “non-zero” may need tuning after the first dataful export; the initial contract should keep exact counts observable without making them brittle.
 - Bunny bucket/pull-zone cache behavior may require operational configuration outside this repo; this work should document any required external setup without storing secrets.
-- `0004` must be re-validated after `0007` lands in case final `WalkingPath` or `problems.boulder_id` naming differs from this contract.
+- `0004` implementation should run on a branch that includes `0007`'s final merged changes so exporter code compiles against `WalkingPath`, optional `problems.boulder_id`, and corrected POI associations.

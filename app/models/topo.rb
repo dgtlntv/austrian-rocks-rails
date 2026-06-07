@@ -3,6 +3,7 @@ class Topo < ApplicationRecord
     attachable.variant :medium, resize_to_fill: [ 1200, 900 ], saver: { quality: 50, strip: true, interlace: true }, preprocessed: true
   end
 
+  belongs_to :boulder, optional: true
   has_many :lines, dependent: :destroy
   has_many :problems, through: :lines
 

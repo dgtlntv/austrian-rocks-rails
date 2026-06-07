@@ -1,9 +1,9 @@
-require 'csv'
+require "csv"
 
 namespace :import do
   desc "Import problems from route-import.csv"
   task problems: :environment do
-    csv_path = Rails.root.join('route-import.csv')
+    csv_path = Rails.root.join("route-import.csv")
 
     unless File.exist?(csv_path)
       puts "ERROR: route-import.csv not found in #{Rails.root}"
@@ -19,7 +19,7 @@ namespace :import do
     # Check which areas are required by the CSV
     required_areas = Set.new
     CSV.foreach(csv_path, headers: true) do |row|
-      area_name = row['Area']&.strip
+      area_name = row["Area"]&.strip
       required_areas.add(area_name) if area_name.present?
     end
 
@@ -47,11 +47,11 @@ namespace :import do
     CSV.foreach(csv_path, headers: true) do |row|
       begin
         # Parse name - if it's a dash, leave it empty
-        name = row['Name']&.strip
-        name = nil if name == '-'
+        name = row["Name"]&.strip
+        name = nil if name == "-"
 
         # Find area by name
-        area_name = row['Area']&.strip
+        area_name = row["Area"]&.strip
         area_id = area_lookup[area_name]
 
         unless area_id
@@ -61,8 +61,8 @@ namespace :import do
         end
 
         # Parse grade - convert to lowercase and handle "?" as empty
-        grade = row['Grade']&.strip&.downcase
-        grade = nil if grade.blank? || grade == '?'
+        grade = row["Grade"]&.strip&.downcase
+        grade = nil if grade.blank? || grade == "?"
 
         # Validate grade if present
         if grade.present? && !Problem::GRADE_VALUES.include?(grade)
@@ -72,7 +72,7 @@ namespace :import do
         end
 
         # Parse steepness - convert to lowercase
-        steepness = row['Steepness']&.strip&.downcase
+        steepness = row["Steepness"]&.strip&.downcase
 
         # Validate steepness
         unless Problem::STEEPNESS_VALUES.include?(steepness)
@@ -82,7 +82,7 @@ namespace :import do
         end
 
         # Parse sit start (SD column) - convert TRUE/FALSE to boolean
-        sit_start = row['SD']&.strip&.upcase == 'TRUE'
+        sit_start = row["SD"]&.strip&.upcase == "TRUE"
 
         # Create the problem
         problem = Problem.create!(

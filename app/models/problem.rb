@@ -4,6 +4,7 @@ class Problem < ApplicationRecord
   init_pg_searchable
 
   belongs_to :area
+  belongs_to :boulder, optional: true
   has_many :lines, dependent: :destroy
   has_many :topos, through: :lines
   has_many :children, class_name: "Problem", foreign_key: "parent_id"

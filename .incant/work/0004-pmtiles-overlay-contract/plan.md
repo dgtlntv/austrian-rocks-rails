@@ -7,7 +7,7 @@ stage: plan
 status: in-progress
 created: 2026-06-06
 commit: 1bf0c5ca
-updated: 2026-06-06
+updated: 2026-06-07
 ---
 
 # Plan — Austrian Rocks PMTiles Overlay Contract And Bunny Delivery
@@ -16,8 +16,8 @@ updated: 2026-06-06
 - Phase: planning complete; awaiting human approval before implementation.
 - Stage: plan.
 - Branch: `incant/0004-pmtiles-overlay-contract`.
-- Next step: wait for prerequisite `0007` to finish; after plan approval and unblocking, run `/incant:implement 0004` and begin `0004-P1`.
-- Blockers: prerequisite `0007` database relationships and walking path admin foundations must be done before implementation.
+- Next step: after plan approval, ensure the branch includes completed `0007` changes, then run `/incant:implement 0004` and begin `0004-P1`.
+- Blockers: none; `0007` is complete, but implementation should be on top of its final merged changes.
 - Key decisions:
   - Build a new `MapTiles` subsystem in `lib/map_tiles/` instead of extending the Mapbox-era rake task.
   - Keep generated GeoJSON and PMTiles under `tmp/map_tiles/`; never rely on `public/maps/austrian-rocks.pmtiles`.
@@ -40,18 +40,18 @@ updated: 2026-06-06
 - `test/lib/map_tiles/tippecanoe_builder_test.rb` — tests missing-Tippecanoe failure messaging and command construction without invoking the binary.
 - `test/lib/map_tiles/smoke_check_test.rb` — tests strict production counts, relaxed zero-feature mode, property checks, bounds checks, and artifact non-empty failures.
 - `test/lib/map_tiles/bunny_publisher_test.rb` — tests object key construction, version/latest uploads, credential handling, and HTTP `HEAD` verification through fakes.
-- `.incant/backlog.md` — move item `0004` from `spec` to `plan`.
-- `.incant/STATE.md` — update current focus to the plan stage.
+- `.incant/backlog.md` — keep item `0004` at `status:plan` after removing the stale `0007` blocker.
+- `.incant/STATE.md` — update current focus to the unblocked plan stage.
 - `.incant/work/0004-pmtiles-overlay-contract/plan.md` — this implementation plan.
 
-## Phase 0004-P1 — contract and prerequisite validation
-Goal: land the committed PMTiles contract artifact outside `/docs/` and confirm prerequisite `0007` has delivered the database and walking-path foundations this exporter depends on.
+## Phase 0004-P1 — contract and source alignment
+Goal: land the committed PMTiles contract artifact outside `/docs/` and document source assumptions against the database and walking-path foundations delivered by completed item `0007`.
 
-- [ ] Confirm backlog item `0007` is done and the current branch contains its database relationship and walking path admin foundation changes before editing any implementation code.
+- [ ] Confirm the implementation branch contains completed `0007` changes (`WalkingPath`, optional `problems.boulder_id`, corrected POI associations, and relationship foreign keys) before editing exporter code.
 - [ ] Read `db/schema.rb`, `app/models/application_record.rb`, `app/models/problem.rb`, `app/models/boulder.rb`, `app/models/walking_path.rb`, `app/models/area.rb`, `app/models/cluster.rb`, `app/models/region.rb`, `app/models/poi.rb`, `app/models/poi_route.rb`, and `lib/tasks/mapbox.rake` before editing.
 - [ ] Add `.incant/work/0004-pmtiles-overlay-contract/contract.md` documenting native max zoom `16`, the difference between PMTiles source layers and later MapLibre style layers, no circuit layers/properties, no app-local canonical URLs, Bunny public URL rules, immutable/latest object names, and all ten source layers: `problems`, `boulders`, `areas`, `area_hulls`, `clusters`, `cluster_hulls`, `regions`, `region_hulls`, `walking_paths`, and `pois`.
 - [ ] In `.incant/work/0004-pmtiles-overlay-contract/contract.md`, document for every source layer its geometry type, required properties, optional properties, stable identifier property, localized `name`/optional `nameEn` rule, and consumer navigation guidance from IDs/slugs.
-- [ ] In `.incant/work/0004-pmtiles-overlay-contract/contract.md`, document that `problems` may include `boulderId` when present from `0007`, and that `walking_paths` reads published line geometry from the `WalkingPath` model delivered by `0007`.
+- [ ] In `.incant/work/0004-pmtiles-overlay-contract/contract.md`, document that `problems` may include `boulderId` from the `0007` relationship cleanup, and that `walking_paths` reads published line geometry from the `WalkingPath` model delivered by `0007`.
 - [ ] In `.incant/work/0004-pmtiles-overlay-contract/contract.md`, document `pois.accessAreasJson` as a scalar JSON string derived from `poi_routes`, with entries containing `areaId`, `areaSlug`, `transport`, `distance`, and `minutes`, and explicitly state that it is metadata rather than route geometry.
 
 **Quality gate:** `test -f .incant/work/0004-pmtiles-overlay-contract/contract.md && grep -q "walking_paths" .incant/work/0004-pmtiles-overlay-contract/contract.md && grep -q "native max zoom" .incant/work/0004-pmtiles-overlay-contract/contract.md` → the committed contract artifact exists and covers walking paths plus native zoom before exporter code starts.
@@ -107,7 +107,7 @@ Goal: publish both immutable and latest artifacts to Bunny/CDN, verify reachabil
 ## Coverage self-review
 - [x] Requirement 1 maps to P1 committed contract steps and P2 `LayerContract` tests.
 - [x] Requirement 2 maps to P1 contract and P2 exporter/build steps for all ten layers.
-- [x] Requirement 3 maps to P1 prerequisite validation that `0007` is done before implementation.
+- [x] Requirement 3 maps to P1 source-alignment documentation and P2 exporter consumption of `0007`-delivered models/relationships.
 - [x] Requirement 4 maps to P1 contract, P2 `LayerContract`, and exporter camelCase transformation tests.
 - [x] Requirement 5 maps to P1 contract and P2 exporter tests for stable IDs/slugs and no canonical URLs.
 - [x] Requirement 6 maps to P1 contract and P2 localized `name`/`nameEn` exporter tests.

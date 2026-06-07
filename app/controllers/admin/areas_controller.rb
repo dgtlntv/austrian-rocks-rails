@@ -20,7 +20,7 @@ class Admin::AreasController < Admin::BaseController
     area.save!
 
     flash[:notice] = "Area created"
-    redirect_to [:admin, area]
+    redirect_to [ :admin, area ]
   end
 
   def edit

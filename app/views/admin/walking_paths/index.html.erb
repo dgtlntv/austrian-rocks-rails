@@ -1,0 +1,55 @@
+<div class="flex justify-end">
+  <%= link_to "New walking path", new_admin_walking_path_path, class: "btn" %>
+</div>
+
+<div class="flex flex-col my-6">
+  <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+    <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+      <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Id</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Label</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slug</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">State</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Groupings</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% @walking_paths.each do |walking_path| %>
+              <tr class="place-content-start align-top h-16">
+                <td class="px-6 py-2 whitespace-nowrap w-1/12">
+                  <div class="text-sm text-gray-500"><%= link_to walking_path.id, edit_admin_walking_path_path(walking_path) %></div>
+                </td>
+                <td class="px-6 py-2 whitespace-nowrap w-2/12">
+                  <span class="text-sm text-gray-900 font-bold">
+                    <%= link_to walking_path.label.presence || "Walking path ##{walking_path.id}", edit_admin_walking_path_path(walking_path) %>
+                  </span>
+                </td>
+                <td class="px-6 py-2 whitespace-nowrap w-2/12 text-sm text-gray-500"><%= walking_path.slug %></td>
+                <td class="px-6 py-2 whitespace-nowrap w-1/12 text-sm text-gray-500"><%= walking_path.published? ? "Published" : "Draft" %></td>
+                <td class="px-6 py-2 w-3/12 text-sm text-gray-500">
+                  <div>Areas: <%= walking_path.areas.map(&:name).presence&.join(", ") || "None" %></div>
+                  <div>Clusters: <%= walking_path.clusters.map(&:name).presence&.join(", ") || "None" %></div>
+                </td>
+                <td class="px-6 py-2 whitespace-nowrap w-3/12 text-sm text-gray-500 space-x-3">
+                  <%= link_to "Edit", edit_admin_walking_path_path(walking_path), class: "text-brand-600 font-semibold" %>
+                  <% if walking_path.published? %>
+                    <%= button_to "Unpublish", unpublish_admin_walking_path_path(walking_path), method: :patch, class: "text-brand-600 font-semibold", form: { class: "inline" } %>
+                  <% else %>
+                    <%= button_to "Publish", publish_admin_walking_path_path(walking_path), method: :patch, class: "text-brand-600 font-semibold", form: { class: "inline" } %>
+                  <% end %>
+                  <%= button_to "Delete", admin_walking_path_path(walking_path), method: :delete, class: "text-red-600 font-semibold", form: { class: "inline", data: { turbo_confirm: "Delete this walking path?" } } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p><%= "#{@walking_paths.count} results" %></p>
