@@ -13,16 +13,17 @@ updated: 2026-06-07
 # Plan — Austrian Rocks PMTiles Overlay Contract And Bunny Delivery
 
 ## Status
-- Phase: `0004-P2` review fixes complete; awaiting phase re-review.
+- Phase: `0004-P3` implementation in progress.
 - Stage: implement.
 - Branch: `incant/0004-pmtiles-overlay-contract`.
-- Next step: run `/incant:review 0004` before starting `0004-P3`.
-- Blockers: none remaining from implementation; pending re-review confirmation.
+- Next step: implement smoke checks for local relaxed mode and production strict mode.
+- Blockers: none.
 - Review fixes:
   - 2026-06-07: addressed P2 review blocker by preserving required problem `grade` with an `unknown` fallback for blank-but-valid grades, adding required-name fallbacks for exported labels that could otherwise be compacted away, documenting the grade fallback in the ignored contract, and adding regression coverage.
   - 2026-06-07: addressed review major by changing the ignored contract and P2 exporter plan from the missing walking-path published scope shorthand to `WalkingPath` records where `published` is true.
   - 2026-06-07: addressed review minor by updating stale Files touched notes so backlog/state tracking points to the P1 review handoff, not the earlier plan stage.
 - Verification evidence:
+  - 2026-06-07: P2 re-review at commit `33a3d76a` found no open blocker or major findings; proceeding to `0004-P3`.
   - 2026-06-07: merged `main` into this branch and verified `main` is an ancestor of `HEAD`, bringing completed `0007` changes into the implementation branch.
   - 2026-06-07: `test -f docs/map_tiles.md && git check-ignore -q docs/map_tiles.md && grep -q "walking_paths" docs/map_tiles.md && grep -q "native max zoom" docs/map_tiles.md` → `P1 quality gate passed: ignored docs contract exists, includes walking_paths, and documents native max zoom`.
   - 2026-06-07: `test -f docs/map_tiles.md && git check-ignore -q docs/map_tiles.md && grep -q "walking_paths" docs/map_tiles.md && grep -q "native max zoom" docs/map_tiles.md && ! rg -q 'WalkingPath\\.published' docs/map_tiles.md .incant/work/0004-pmtiles-overlay-contract/plan.md` → `P1 review-fix gate passed: ignored docs contract exists, covers walking_paths/native max zoom, and no longer references the missing published scope shorthand`.
