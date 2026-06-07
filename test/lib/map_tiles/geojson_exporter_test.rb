@@ -78,6 +78,36 @@ class MapTiles::GeojsonExporterTest < ActiveSupport::TestCase
     } ], access_areas
   end
 
+  test "keeps required properties when valid source labels or grades are blank" do
+    @problem.update!(name: nil, grade: nil)
+    @area.update!(name: nil)
+    @cluster.update!(name: nil)
+    @region.update!(name: nil)
+    @walking_path.update!(label: nil)
+    @poi.update!(name: nil)
+
+    paths = MapTiles::GeojsonExporter.new(configuration: @configuration).export
+
+    problem = feature_properties(paths.fetch("problems"), "problemId", @problem.id)
+    assert_equal I18n.with_locale(:de) { I18n.t("problem.no_name") }, problem.fetch("name")
+    assert_equal "unknown", problem.fetch("grade")
+
+    area = feature_properties(paths.fetch("areas"), "areaId", @area.id)
+    assert_equal @area.slug, area.fetch("name")
+
+    cluster = feature_properties(paths.fetch("clusters"), "clusterId", @cluster.id)
+    assert_equal @cluster.slug, cluster.fetch("name")
+
+    region = feature_properties(paths.fetch("regions"), "regionId", @region.id)
+    assert_equal @region.slug, region.fetch("name")
+
+    walking_path = feature_properties(paths.fetch("walking_paths"), "walkingPathId", @walking_path.id)
+    assert_equal @walking_path.slug, walking_path.fetch("name")
+
+    poi = feature_properties(paths.fetch("pois"), "poiId", @poi.id)
+    assert_equal @poi.short_name, poi.fetch("name")
+  end
+
   test "exports published walking paths only" do
     draft = WalkingPath.create!(label: "Draft connector", slug: nil, published: false)
 

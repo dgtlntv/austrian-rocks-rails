@@ -76,7 +76,7 @@ module MapTiles
           areaId: area.id,
           areaSlug: area.slug,
           name: name,
-          grade: problem.grade.to_s,
+          grade: problem_grade(problem),
           steepness: problem.steepness,
           featured: problem.featured?,
           boulderId: problem.boulder_id,
@@ -174,7 +174,7 @@ module MapTiles
         feature(walking_path.geometry, {
           walkingPathId: walking_path.id,
           slug: walking_path.slug,
-          name: walking_path.label,
+          name: display_label(walking_path, :label, :slug, fallback_prefix: "Walking path"),
           description: walking_path.description
         })
       end
@@ -185,7 +185,7 @@ module MapTiles
         feature(poi.location, {
           poiId: poi.id,
           poiType: poi.poi_type,
-          name: poi.name,
+          name: display_label(poi, :name, :short_name, fallback_prefix: "POI"),
           accessAreasJson: JSON.generate(access_area_entries(poi)),
           shortName: poi.short_name,
           googleUrl: poi.google_url
@@ -233,7 +233,7 @@ module MapTiles
       {
         areaId: area.id,
         areaSlug: area.slug,
-        name: include_name ? area.name : nil,
+        name: include_name ? display_label(area, :name, :slug, fallback_prefix: "Area") : nil,
         priority: area.priority,
         shortName: area.short_name,
         clusterId: cluster&.id,
@@ -248,7 +248,7 @@ module MapTiles
       {
         clusterId: cluster.id,
         clusterSlug: cluster.slug,
-        name: include_name ? cluster.name : nil,
+        name: include_name ? display_label(cluster, :name, :slug, fallback_prefix: "Cluster") : nil,
         regionId: region&.id,
         regionSlug: region&.slug,
         mainAreaId: main_area&.id,
@@ -262,7 +262,7 @@ module MapTiles
       {
         regionId: region.id,
         regionSlug: region.slug,
-        name: include_name ? region.name : nil,
+        name: include_name ? display_label(region, :name, :slug, fallback_prefix: "Region") : nil,
         mainClusterId: main_cluster&.id,
         mainClusterSlug: main_cluster&.slug
       }.merge(bounds_properties(bounds))
@@ -332,6 +332,19 @@ module MapTiles
 
     def localized_problem_name(problem, locale)
       I18n.with_locale(locale) { problem.name_with_fallback }
+    end
+
+    def problem_grade(problem)
+      problem.grade.presence || "unknown"
+    end
+
+    def display_label(record, *attributes, fallback_prefix:)
+      attributes.each do |attribute|
+        value = record.public_send(attribute)
+        return value if value.present?
+      end
+
+      "#{fallback_prefix} #{record.id}"
     end
 
     def different_label(default_label, localized_label)
