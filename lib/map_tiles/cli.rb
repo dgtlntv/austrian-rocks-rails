@@ -4,6 +4,8 @@ require "map_tiles/layer_contract"
 require "map_tiles/configuration"
 require "map_tiles/geojson_exporter"
 require "map_tiles/tippecanoe_builder"
+require "map_tiles/smoke_check"
+require "map_tiles/bunny_publisher"
 
 module MapTiles
   class CLI
@@ -37,7 +39,7 @@ module MapTiles
         err.puts "Usage: bin/build_pmtiles [export|build|smoke|publish]"
         1
       end
-    rescue TippecanoeBuilder::Error, KeyError, ArgumentError => e
+    rescue TippecanoeBuilder::Error, SmokeCheck::Error, BunnyPublisher::Error, KeyError, ArgumentError => e
       err.puts e.message
       1
     end
@@ -58,21 +60,22 @@ module MapTiles
     end
 
     def smoke
-      require "map_tiles/smoke_check"
       MapTiles::SmokeCheck.new(configuration: configuration, argv: argv, out: out).run
       0
-    rescue MapTiles::SmokeCheck::Error => e
-      err.puts e.message
-      1
     end
 
     def publish
-      require "map_tiles/bunny_publisher"
-      MapTiles::BunnyPublisher.new(configuration: configuration).publish
+      unless skip_smoke?
+        out.puts "running production PMTiles smoke check before publish"
+        MapTiles::SmokeCheck.new(configuration: configuration, argv: [ "--mode=production" ], out: out).run
+      end
+
+      MapTiles::BunnyPublisher.new(configuration: configuration, out: out).publish
       0
-    rescue LoadError
-      err.puts "map_tiles publish is implemented in phase 0004-P4"
-      1
+    end
+
+    def skip_smoke?
+      %w[1 true yes on].include?(configuration.env["MAP_TILES_SKIP_SMOKE"].to_s.strip.downcase)
     end
   end
 end

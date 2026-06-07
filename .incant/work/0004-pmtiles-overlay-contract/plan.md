@@ -13,10 +13,10 @@ updated: 2026-06-07
 # Plan — Austrian Rocks PMTiles Overlay Contract And Bunny Delivery
 
 ## Status
-- Phase: `0004-P3` Tippecanoe metadata blocker fix complete; awaiting phase re-review.
+- Phase: `0004-P4` Bunny publication, end-to-end contract notes, and release gates complete; awaiting final review.
 - Stage: implement.
 - Branch: `incant/0004-pmtiles-overlay-contract`.
-- Next step: run `/incant:review 0004` before starting `0004-P4`.
+- Next step: run `/incant:review 0004` before finalizing.
 - Blockers: none.
 - Review fixes:
   - 2026-06-07: addressed P2 review blocker by preserving required problem `grade` with an `unknown` fallback for blank-but-valid grades, adding required-name fallbacks for exported labels that could otherwise be compacted away, documenting the grade fallback in the ignored contract, and adding regression coverage.
@@ -38,6 +38,10 @@ updated: 2026-06-07
   - 2026-06-07: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/smoke_check_test.rb` → `9 runs, 41 assertions, 0 failures, 0 errors, 0 skips`.
   - 2026-06-07: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/tippecanoe_builder_test.rb test/lib/map_tiles/smoke_check_test.rb && bin/rubocop lib/map_tiles/smoke_check.rb lib/map_tiles/tippecanoe_builder.rb test/lib/map_tiles/smoke_check_test.rb` → `12 runs, 78 assertions, 0 failures, 0 errors, 0 skips`; `3 files inspected, no offenses detected`.
   - 2026-06-07: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/smoke_check_test.rb && bin/rubocop lib/map_tiles/smoke_check.rb test/lib/map_tiles/smoke_check_test.rb` → `10 runs, 50 assertions, 0 failures, 0 errors, 0 skips`; `2 files inspected, no offenses detected`.
+  - 2026-06-07: P3 re-review at reviewed commit `f615a740` found no open blocker or major findings; proceeding to `0004-P4`.
+  - 2026-06-07: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/bunny_publisher_test.rb && bin/rubocop lib/map_tiles/bunny_publisher.rb test/lib/map_tiles/bunny_publisher_test.rb` → `6 runs, 31 assertions, 0 failures, 0 errors, 0 skips`; `2 files inspected, no offenses detected`.
+  - 2026-06-07: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/layer_contract_test.rb test/lib/map_tiles/geojson_exporter_test.rb test/lib/map_tiles/tippecanoe_builder_test.rb test/lib/map_tiles/smoke_check_test.rb test/lib/map_tiles/bunny_publisher_test.rb` → `28 runs, 793 assertions, 0 failures, 0 errors, 0 skips`.
+  - 2026-06-07: default parallel `bin/rails test` aborted with a Ruby/native crash dump, so the full suite gate was rerun single-process: `eval "$(rbenv init - bash)" && PARALLEL_WORKERS=1 DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test && bin/rubocop && bin/brakeman --no-pager` → `68 runs, 930 assertions, 0 failures, 0 errors, 0 skips`; `261 files inspected, no offenses detected`; `Security Warnings: 0`.
 - Key decisions:
   - Build a new `MapTiles` subsystem in `lib/map_tiles/` instead of extending the Mapbox-era rake task.
   - Keep generated GeoJSON and PMTiles under `tmp/map_tiles/`; never rely on `public/maps/austrian-rocks.pmtiles`.
@@ -60,8 +64,9 @@ updated: 2026-06-07
 - `test/lib/map_tiles/tippecanoe_builder_test.rb` — tests missing-Tippecanoe failure messaging and command construction without invoking the binary.
 - `test/lib/map_tiles/smoke_check_test.rb` — tests strict production counts, relaxed zero-feature mode, property checks, bounds checks, and artifact non-empty failures.
 - `test/lib/map_tiles/bunny_publisher_test.rb` — tests object key construction, version/latest uploads, credential handling, and HTTP `HEAD` verification through fakes.
-- `.incant/backlog.md` — track item `0004` through phase implementation and review status; currently `status:review phase:0004-P3` while awaiting P3 re-review after blocker fixes.
-- `.incant/STATE.md` — update current focus to the current P3 phase-review handoff.
+- `Gemfile.lock` — update Brakeman from `7.0.0` to `8.0.4` so the existing `bin/brakeman --ensure-latest` binstub can pass the final security gate.
+- `.incant/backlog.md` — track item `0004` through phase implementation and review status; currently `status:review phase:0004-P4` while awaiting final review.
+- `.incant/STATE.md` — update current focus to the current P4 final-review handoff.
 - `.incant/work/0004-pmtiles-overlay-contract/plan.md` — this implementation plan.
 
 ## Phase 0004-P1 — contract and source alignment
@@ -112,15 +117,15 @@ Goal: prove generated artifacts match the contract and fail clearly when the art
 ## Phase 0004-P4 — Bunny publication, end-to-end contract notes, and release gates
 Goal: publish both immutable and latest artifacts to Bunny/CDN, verify reachability, and prove all acceptance criteria are covered.
 
-- [ ] Read `config/storage.yml`, `lib/map_tiles/configuration.rb`, `lib/map_tiles/tippecanoe_builder.rb`, and `lib/map_tiles/smoke_check.rb` before editing.
-- [ ] Add `lib/map_tiles/bunny_publisher.rb` that reuses `BUNNY_STORAGE_ENDPOINT`, `BUNNY_STORAGE_REGION`, `BUNNY_STORAGE_BUCKET`, `BUNNY_STORAGE_ACCESS_KEY_ID`, and `BUNNY_STORAGE_SECRET_ACCESS_KEY` for S3-compatible upload, while requiring map-specific `MAP_TILES_PUBLIC_CDN_HOST`, `MAP_TILES_BUNNY_PREFIX`, and `MAP_TILES_VERSION` for publication.
-- [ ] In `BunnyPublisher`, construct object keys only from sanitized config values and fixed artifact naming, upload `austrian-rocks-<version>.pmtiles` and `austrian-rocks-latest.pmtiles`, set an appropriate PMTiles content type such as `application/octet-stream`, and never log credentials.
-- [ ] In `BunnyPublisher`, verify both versioned and latest public URLs with HTTP `HEAD`, requiring a 2xx status and reporting the exact URL/status for failures.
-- [ ] Wire `bin/build_pmtiles publish` and `rails map_tiles:publish` so they run production smoke checks before upload unless `MAP_TILES_SKIP_SMOKE` is explicitly false-by-default and documented as only for emergency operator use.
-- [ ] Update ignored `docs/map_tiles.md` with maintainer commands for local relaxed export/build/smoke, production export/build/smoke/publish, required environment variables, Tippecanoe install guidance, Bunny external setup notes, generated artifact ignore policy, and a note that `/docs/` and its contents remain gitignored for now.
-- [ ] Add `test/lib/map_tiles/bunny_publisher_test.rb` covering required configuration failures, object key construction, dual upload calls, latest overwrite behavior, successful HEAD checks, failed HEAD checks, and no credential leakage in errors.
-- [ ] Run a coverage self-review against this plan and update ignored `docs/map_tiles.md` or tests if any spec requirement lacks an implementation or gate.
-- [ ] Run the final verification commands and paste the fresh outputs into the implementation status before review: targeted map tile tests, `bin/rails test`, `bin/rubocop`, and `bin/brakeman --no-pager`.
+- [x] Read `config/storage.yml`, `lib/map_tiles/configuration.rb`, `lib/map_tiles/tippecanoe_builder.rb`, and `lib/map_tiles/smoke_check.rb` before editing.
+- [x] Add `lib/map_tiles/bunny_publisher.rb` that reuses `BUNNY_STORAGE_ENDPOINT`, `BUNNY_STORAGE_REGION`, `BUNNY_STORAGE_BUCKET`, `BUNNY_STORAGE_ACCESS_KEY_ID`, and `BUNNY_STORAGE_SECRET_ACCESS_KEY` for S3-compatible upload, while requiring map-specific `MAP_TILES_PUBLIC_CDN_HOST`, `MAP_TILES_BUNNY_PREFIX`, and `MAP_TILES_VERSION` for publication.
+- [x] In `BunnyPublisher`, construct object keys only from sanitized config values and fixed artifact naming, upload `austrian-rocks-<version>.pmtiles` and `austrian-rocks-latest.pmtiles`, set an appropriate PMTiles content type such as `application/octet-stream`, and never log credentials.
+- [x] In `BunnyPublisher`, verify both versioned and latest public URLs with HTTP `HEAD`, requiring a 2xx status and reporting the exact URL/status for failures.
+- [x] Wire `bin/build_pmtiles publish` and `rails map_tiles:publish` so they run production smoke checks before upload unless `MAP_TILES_SKIP_SMOKE` is explicitly false-by-default and documented as only for emergency operator use.
+- [x] Update ignored `docs/map_tiles.md` with maintainer commands for local relaxed export/build/smoke, production export/build/smoke/publish, required environment variables, Tippecanoe install guidance, Bunny external setup notes, generated artifact ignore policy, and a note that `/docs/` and its contents remain gitignored for now.
+- [x] Add `test/lib/map_tiles/bunny_publisher_test.rb` covering required configuration failures, object key construction, dual upload calls, latest overwrite behavior, successful HEAD checks, failed HEAD checks, and no credential leakage in errors.
+- [x] Run a coverage self-review against this plan and update ignored `docs/map_tiles.md` or tests if any spec requirement lacks an implementation or gate.
+- [x] Run the final verification commands and paste the fresh outputs into the implementation status before review: targeted map tile tests, `bin/rails test`, `bin/rubocop`, and `bin/brakeman --no-pager`.
 
 **Quality gate:** `bin/rails test test/lib/map_tiles/bunny_publisher_test.rb && bin/rails test && bin/rubocop && bin/brakeman --no-pager` → all tests, lint, and security checks pass locally with Bunny network calls faked in tests.
 
