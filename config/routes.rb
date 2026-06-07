@@ -27,6 +27,12 @@ Rails.application.routes.draw do
       end
       resources :pois
       resources :poi_routes
+      resources :walking_paths do
+        member do
+          patch :publish
+          patch :unpublish
+        end
+      end
       resources :contribution_requests
       resources :contributions
       resources :audits

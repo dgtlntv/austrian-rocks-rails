@@ -12,10 +12,10 @@ updated: 2026-06-07
 # Plan — Database Relationships And Walking Path Admin Foundations
 
 ## Status
-- Current phase: `0007-P2` review major addressed; awaiting re-review.
+- Current phase: `0007-P3` complete; awaiting review.
 - Stage: implement
 - Branch: `incant/0007-db-relationships-walking-paths`
-- Next step: run `/incant:review 0007` for Phase 0007-P2.
+- Next step: run `/incant:review 0007` for Phase 0007-P3.
 - Blockers: none. Relationship verification against the Docker-hosted `dump-prod` database reported every candidate relationship clean before adding foreign keys.
 - Review fixes:
   - Addressed P2 major finding in `review.md`: `WalkingPathGeojsonParser` now rejects unsupported sibling geometries in `FeatureCollection` input instead of accepting a mixed collection with one line plus Point/Polygon geometry.
@@ -30,6 +30,8 @@ updated: 2026-06-07
   - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails test test/models/walking_path_test.rb` → 11 runs, 29 assertions, 0 failures, 0 errors, 0 skips.
   - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails test test/models/walking_path_test.rb` → 12 runs, 33 assertions, 0 failures, 0 errors, 0 skips (P2 review-fix regression).
   - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bundle exec rubocop app/services/walking_path_geojson_parser.rb test/models/walking_path_test.rb` → 2 files inspected, no offenses detected.
+  - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails test test/controllers/admin/walking_paths_controller_test.rb test/models/walking_path_test.rb` → 25 runs, 97 assertions, 0 failures, 0 errors, 0 skips.
+  - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bundle exec rubocop app/controllers/admin/walking_paths_controller.rb test/controllers/admin/walking_paths_controller_test.rb` → 2 files inspected, no offenses detected.
 - Key decisions:
   - The spec was approved by the human. `spec.md` frontmatter `commit: 3cd48232` is behind current `HEAD` (`6952d912`), but `HEAD` is the spec commit itself and code files have not changed since the spec was written; no spec rewrite is needed before planning.
   - `problems.boulder_id` remains optional; ambiguous and unmatched legacy rows are reported, not guessed.
@@ -126,16 +128,16 @@ Goal: create the first-class Rails/PostGIS walking-path source with draft/publis
 ## Phase 0007-P3 — Admin walking-path CRUD and geometry input UX
 Goal: let maintainers manage walking paths under `/admin`, including publish/unpublish, delete, pasted GeoJSON, and uploaded `.geojson` files without partial saves.
 
-- [ ] Read `config/routes.rb`, then add `resources :walking_paths` inside the existing localized `admin` namespace with member `patch :publish` and `patch :unpublish` routes.
-- [ ] Read `app/controllers/admin/pois_controller.rb` and `app/controllers/admin/poi_routes_controller.rb` before creating `app/controllers/admin/walking_paths_controller.rb`; follow the existing admin style while using non-bang persistence for user-submitted invalid geometry so clear errors render with `status: :unprocessable_entity`.
-- [ ] Implement `Admin::WalkingPathsController#index`, `new`, `create`, `edit`, `update`, `destroy`, `publish`, and `unpublish`; wrap attribute updates plus GeoJSON parse/application in a transaction so invalid geometry cannot partially save metadata or groupings.
-- [ ] In strong params, permit label, slug, description, published, pasted GeoJSON text, uploaded GeoJSON file, `area_ids: []`, and `cluster_ids: []`; never use uploaded filenames for filesystem paths.
-- [ ] Read `app/views/admin/pois/index.html.erb`, `new.html.erb`, `edit.html.erb`, and `_form.html.erb` before adding walking-path views that match the existing admin layout and Tailwind classes.
-- [ ] Add `app/views/admin/walking_paths/index.html.erb` with ID, label, slug, published/draft state, area/cluster grouping summary, edit link, publish/unpublish actions, delete action, and a new-record link.
-- [ ] Add `app/views/admin/walking_paths/new.html.erb`, `edit.html.erb`, and `_form.html.erb` with fields for label, slug, description, published flag, optional area/cluster multi-selects, pasted GeoJSON textarea, uploaded `.geojson` file input, and clear help text listing accepted GeoJSON shapes.
-- [ ] Read `app/views/layouts/admin.html.erb`, then add a `Walking paths` navigation link without removing existing navigation.
-- [ ] Add `test/controllers/admin/walking_paths_controller_test.rb` covering index, new, create from pasted LineString, create from uploaded `.geojson`, edit/update, publish, unpublish, destroy, invalid malformed JSON, unsupported Point/Polygon JSON, multi-line FeatureCollection rejection, and no partial save on invalid input.
-- [ ] Add `test/fixtures/files/valid_walking_path.geojson` and `test/fixtures/files/invalid_walking_path.geojson` for upload tests.
+- [x] Read `config/routes.rb`, then add `resources :walking_paths` inside the existing localized `admin` namespace with member `patch :publish` and `patch :unpublish` routes.
+- [x] Read `app/controllers/admin/pois_controller.rb` and `app/controllers/admin/poi_routes_controller.rb` before creating `app/controllers/admin/walking_paths_controller.rb`; follow the existing admin style while using non-bang persistence for user-submitted invalid geometry so clear errors render with `status: :unprocessable_entity`.
+- [x] Implement `Admin::WalkingPathsController#index`, `new`, `create`, `edit`, `update`, `destroy`, `publish`, and `unpublish`; wrap attribute updates plus GeoJSON parse/application in a transaction so invalid geometry cannot partially save metadata or groupings.
+- [x] In strong params, permit label, slug, description, published, pasted GeoJSON text, uploaded GeoJSON file, `area_ids: []`, and `cluster_ids: []`; never use uploaded filenames for filesystem paths.
+- [x] Read `app/views/admin/pois/index.html.erb`, `new.html.erb`, `edit.html.erb`, and `_form.html.erb` before adding walking-path views that match the existing admin layout and Tailwind classes.
+- [x] Add `app/views/admin/walking_paths/index.html.erb` with ID, label, slug, published/draft state, area/cluster grouping summary, edit link, publish/unpublish actions, delete action, and a new-record link.
+- [x] Add `app/views/admin/walking_paths/new.html.erb`, `edit.html.erb`, and `_form.html.erb` with fields for label, slug, description, published flag, optional area/cluster multi-selects, pasted GeoJSON textarea, uploaded `.geojson` file input, and clear help text listing accepted GeoJSON shapes.
+- [x] Read `app/views/layouts/admin.html.erb`, then add a `Walking paths` navigation link without removing existing navigation.
+- [x] Add `test/controllers/admin/walking_paths_controller_test.rb` covering index, new, create from pasted LineString, create from uploaded `.geojson`, edit/update, publish, unpublish, destroy, invalid malformed JSON, unsupported Point/Polygon JSON, multi-line FeatureCollection rejection, and no partial save on invalid input.
+- [x] Add `test/fixtures/files/valid_walking_path.geojson` and `test/fixtures/files/invalid_walking_path.geojson` for upload tests.
 
 **Quality gate:** `bin/rails test test/controllers/admin/walking_paths_controller_test.rb test/models/walking_path_test.rb` → all admin walking-path and walking-path validation tests pass.
 

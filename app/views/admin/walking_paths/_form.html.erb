@@ -1,0 +1,60 @@
+<% if @walking_path.errors.any? %>
+  <div class="col-span-6 rounded-md bg-red-50 p-4 text-sm text-red-700">
+    <p class="font-semibold">Could not save walking path:</p>
+    <ul class="list-disc pl-5">
+      <% @walking_path.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<div class="col-span-6 sm:col-span-3">
+  <%= form.label :label %>
+  <%= form.text_field :label, autocomplete: "off" %>
+</div>
+
+<div class="col-span-6 sm:col-span-3">
+  <%= form.label :slug %>
+  <%= form.text_field :slug, autocomplete: "off" %>
+  <p class="mt-2 text-sm text-gray-500">Required before publishing.</p>
+</div>
+
+<div class="col-span-6">
+  <%= form.label :description %>
+  <%= form.text_area :description, rows: 4 %>
+</div>
+
+<div class="col-span-6 sm:col-span-2 flex items-center space-x-3">
+  <%= form.check_box :published, class: "h-4 w-4 text-brand-600 border-gray-300 rounded" %>
+  <%= form.label :published, "Published" %>
+</div>
+<div class="col-span-6 sm:col-span-4"></div>
+
+<div class="col-span-6 sm:col-span-3">
+  <%= form.label :area_ids, "Area groupings" %>
+  <%= form.collection_select :area_ids, @areas, :id, :name, {}, multiple: true, size: 8 %>
+  <p class="mt-2 text-sm text-gray-500">Optional editorial grouping; publishing does not require an area.</p>
+</div>
+
+<div class="col-span-6 sm:col-span-3">
+  <%= form.label :cluster_ids, "Cluster groupings" %>
+  <%= form.collection_select :cluster_ids, @clusters, :id, :name, {}, multiple: true, size: 8 %>
+  <p class="mt-2 text-sm text-gray-500">Optional editorial grouping; publishing does not require a cluster.</p>
+</div>
+
+<div class="col-span-6">
+  <%= form.label :geojson_text, "Paste GeoJSON" %>
+  <%= form.text_area :geojson_text, rows: 8, value: @walking_path.geometry_geojson %>
+  <p class="mt-2 text-sm text-gray-500">
+    Accepted input: a raw LineString or MultiLineString geometry, a Feature with one line geometry,
+    or a FeatureCollection containing exactly one line geometry. Point, Polygon, malformed JSON,
+    and mixed or multi-line collections are rejected before saving.
+  </p>
+</div>
+
+<div class="col-span-6">
+  <%= form.label :geojson_file, "Upload .geojson" %>
+  <%= form.file_field :geojson_file, accept: ".geojson,application/geo+json,application/json", class: "mt-1 block w-full text-sm text-gray-700" %>
+  <p class="mt-2 text-sm text-gray-500">Upload is read as data only; filenames are not used for storage paths.</p>
+</div>
