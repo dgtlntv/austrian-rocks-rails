@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "json"
+require "stringio"
+require "zlib"
 require "map_tiles/configuration"
 
 module MapTiles
@@ -15,6 +17,14 @@ module MapTiles
     }.freeze
 
     SCALAR_VALUE_CLASSES = [ String, Integer, Float, TrueClass, FalseClass ].freeze
+    PMTILES_MAGIC = "PMTiles"
+    PMTILES_HEADER_BYTES = 127
+    PMTILES_VERSION = 3
+    PMTILES_METADATA_OFFSET = 24
+    PMTILES_METADATA_LENGTH_OFFSET = 32
+    PMTILES_INTERNAL_COMPRESSION_OFFSET = 97
+    PMTILES_COMPRESSION_NONE = 1
+    PMTILES_COMPRESSION_GZIP = 2
 
     attr_reader :configuration, :argv, :out, :mode, :allowed_empty_layers
 
@@ -36,7 +46,7 @@ module MapTiles
     def check
       failures = []
       verify_artifact!(failures)
-      verify_metadata!(read_metadata(failures), failures)
+      verify_metadata!(read_pmtiles_metadata(failures), failures)
 
       layer_results = LayerContract.layers.map do |layer|
         inspect_geojson_layer(layer, failures)
@@ -96,17 +106,72 @@ module MapTiles
       failures << "PMTiles artifact is empty: #{artifact_path}" unless artifact_path.size.positive?
     end
 
-    def read_metadata(failures)
-      metadata_path = configuration.metadata_path
+    def read_pmtiles_metadata(failures)
+      artifact_path = configuration.artifact_path
+      return unless artifact_path.exist? && artifact_path.size.positive?
 
-      unless metadata_path.exist?
-        failures << "PMTiles metadata is missing: #{metadata_path}"
-        return
-      end
+      metadata_json = read_pmtiles_metadata_json(artifact_path, failures)
+      return if metadata_json.blank?
 
-      JSON.parse(metadata_path.read)
+      JSON.parse(metadata_json)
     rescue JSON::ParserError => e
-      failures << "PMTiles metadata is invalid JSON: #{metadata_path} (#{e.message})"
+      failures << "PMTiles artifact metadata is invalid JSON: #{artifact_path} (#{e.message})"
+      nil
+    end
+
+    def read_pmtiles_metadata_json(artifact_path, failures)
+      File.open(artifact_path, "rb") do |file|
+        header = file.read(PMTILES_HEADER_BYTES)
+        unless valid_pmtiles_header?(header)
+          failures << "PMTiles artifact is not a valid PMTiles v#{PMTILES_VERSION} archive: #{artifact_path}"
+          return
+        end
+
+        metadata_offset = read_uint64(header, PMTILES_METADATA_OFFSET)
+        metadata_length = read_uint64(header, PMTILES_METADATA_LENGTH_OFFSET)
+        internal_compression = header.getbyte(PMTILES_INTERNAL_COMPRESSION_OFFSET)
+
+        if metadata_length.zero?
+          failures << "PMTiles artifact metadata is empty: #{artifact_path}"
+          return
+        end
+
+        file.seek(metadata_offset)
+        metadata_blob = file.read(metadata_length)
+        unless metadata_blob&.bytesize == metadata_length
+          failures << "PMTiles artifact metadata could not be read from #{artifact_path}"
+          return
+        end
+
+        decompress_pmtiles_metadata(metadata_blob, internal_compression, artifact_path, failures)
+      end
+    rescue SystemCallError => e
+      failures << "PMTiles artifact metadata could not be read from #{artifact_path} (#{e.message})"
+      nil
+    end
+
+    def valid_pmtiles_header?(header)
+      header&.bytesize == PMTILES_HEADER_BYTES &&
+        header.start_with?(PMTILES_MAGIC) &&
+        header.getbyte(PMTILES_MAGIC.bytesize) == PMTILES_VERSION
+    end
+
+    def read_uint64(header, offset)
+      header.byteslice(offset, 8).unpack1("Q<")
+    end
+
+    def decompress_pmtiles_metadata(metadata_blob, internal_compression, artifact_path, failures)
+      case internal_compression
+      when PMTILES_COMPRESSION_NONE
+        metadata_blob
+      when PMTILES_COMPRESSION_GZIP
+        Zlib::GzipReader.wrap(StringIO.new(metadata_blob), &:read)
+      else
+        failures << "PMTiles artifact metadata uses unsupported internal compression #{internal_compression}: #{artifact_path}"
+        nil
+      end
+    rescue Zlib::Error => e
+      failures << "PMTiles artifact metadata could not be decompressed from #{artifact_path} (#{e.message})"
       nil
     end
 

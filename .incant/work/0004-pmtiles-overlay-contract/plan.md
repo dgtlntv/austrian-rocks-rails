@@ -13,7 +13,7 @@ updated: 2026-06-07
 # Plan — Austrian Rocks PMTiles Overlay Contract And Bunny Delivery
 
 ## Status
-- Phase: `0004-P3` implementation complete; awaiting phase review.
+- Phase: `0004-P3` blocker fix complete; awaiting phase re-review.
 - Stage: implement.
 - Branch: `incant/0004-pmtiles-overlay-contract`.
 - Next step: run `/incant:review 0004` before starting `0004-P4`.
@@ -22,6 +22,7 @@ updated: 2026-06-07
   - 2026-06-07: addressed P2 review blocker by preserving required problem `grade` with an `unknown` fallback for blank-but-valid grades, adding required-name fallbacks for exported labels that could otherwise be compacted away, documenting the grade fallback in the ignored contract, and adding regression coverage.
   - 2026-06-07: addressed review major by changing the ignored contract and P2 exporter plan from the missing walking-path published scope shorthand to `WalkingPath` records where `published` is true.
   - 2026-06-07: addressed review minor by updating stale Files touched notes so backlog/state tracking points to the P1 review handoff, not the earlier plan stage.
+  - 2026-06-07: addressed P3 review blocker by making `SmokeCheck` parse metadata from the PMTiles archive header/blob instead of trusting a generated sidecar, rejecting invalid/non-PMTiles artifacts, and removing the `TippecanoeBuilder` sidecar metadata writer.
 - Verification evidence:
   - 2026-06-07: P2 re-review at commit `33a3d76a` found no open blocker or major findings; proceeding to `0004-P3`.
   - 2026-06-07: merged `main` into this branch and verified `main` is an ancestor of `HEAD`, bringing completed `0007` changes into the implementation branch.
@@ -33,6 +34,8 @@ updated: 2026-06-07
   - 2026-06-07: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/tippecanoe_builder_test.rb test/lib/map_tiles/smoke_check_test.rb` → `11 runs, 75 assertions, 0 failures, 0 errors, 0 skips`.
   - 2026-06-07: `eval "$(rbenv init - bash)" && bin/rubocop lib/map_tiles/smoke_check.rb test/lib/map_tiles/smoke_check_test.rb lib/map_tiles/configuration.rb lib/map_tiles/tippecanoe_builder.rb lib/map_tiles/cli.rb` → `5 files inspected, no offenses detected`.
   - 2026-06-07: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/layer_contract_test.rb test/lib/map_tiles/geojson_exporter_test.rb test/lib/map_tiles/tippecanoe_builder_test.rb test/lib/map_tiles/smoke_check_test.rb` → `20 runs, 750 assertions, 0 failures, 0 errors, 0 skips`.
+  - 2026-06-07: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/smoke_check_test.rb` → `9 runs, 41 assertions, 0 failures, 0 errors, 0 skips`.
+  - 2026-06-07: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/tippecanoe_builder_test.rb test/lib/map_tiles/smoke_check_test.rb && bin/rubocop lib/map_tiles/smoke_check.rb lib/map_tiles/tippecanoe_builder.rb test/lib/map_tiles/smoke_check_test.rb` → `12 runs, 78 assertions, 0 failures, 0 errors, 0 skips`; `3 files inspected, no offenses detected`.
 - Key decisions:
   - Build a new `MapTiles` subsystem in `lib/map_tiles/` instead of extending the Mapbox-era rake task.
   - Keep generated GeoJSON and PMTiles under `tmp/map_tiles/`; never rely on `public/maps/austrian-rocks.pmtiles`.

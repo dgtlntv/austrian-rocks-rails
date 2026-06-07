@@ -15,8 +15,7 @@ class MapTiles::SmokeCheckTest < ActiveSupport::TestCase
     })
 
     FileUtils.mkdir_p(@configuration.geojson_dir)
-    @configuration.artifact_path.write("pmtiles fixture")
-    write_metadata
+    write_pmtiles_artifact
     write_geojson_layers
   end
 
@@ -51,8 +50,18 @@ class MapTiles::SmokeCheckTest < ActiveSupport::TestCase
     assert_includes error.message, "PMTiles artifact is empty"
   end
 
+  test "fails when the PMTiles artifact is not a PMTiles archive" do
+    @configuration.artifact_path.write("pmtiles fixture")
+
+    error = assert_raises(MapTiles::SmokeCheck::Error) do
+      MapTiles::SmokeCheck.new(configuration: @configuration).check
+    end
+
+    assert_includes error.message, "PMTiles artifact is not a valid PMTiles v3 archive"
+  end
+
   test "fails when PMTiles metadata layers or field names do not match the contract" do
-    write_metadata(layers: MapTiles::LayerContract.layers.reject { |layer| layer.name == "pois" })
+    write_pmtiles_artifact(layers: MapTiles::LayerContract.layers.reject { |layer| layer.name == "pois" })
 
     error = assert_raises(MapTiles::SmokeCheck::Error) do
       MapTiles::SmokeCheck.new(configuration: @configuration).check
@@ -60,7 +69,7 @@ class MapTiles::SmokeCheckTest < ActiveSupport::TestCase
 
     assert_includes error.message, "PMTiles metadata layers mismatch"
 
-    write_metadata(field_overrides: { "problems" => %w[problemId areaId unexpectedField] })
+    write_pmtiles_artifact(field_overrides: { "problems" => %w[problemId areaId unexpectedField] })
     error = assert_raises(MapTiles::SmokeCheck::Error) do
       MapTiles::SmokeCheck.new(configuration: @configuration).check
     end
@@ -137,8 +146,8 @@ class MapTiles::SmokeCheckTest < ActiveSupport::TestCase
 
   private
 
-  def write_metadata(layers: MapTiles::LayerContract.layers, field_overrides: {})
-    metadata = {
+  def write_pmtiles_artifact(layers: MapTiles::LayerContract.layers, field_overrides: {})
+    metadata_json = JSON.generate({
       "vector_layers" => layers.map do |layer|
         fields = field_overrides.fetch(layer.name, layer.properties)
         {
@@ -146,9 +155,16 @@ class MapTiles::SmokeCheckTest < ActiveSupport::TestCase
           "fields" => fields.to_h { |property| [ property, "Scalar" ] }
         }
       end
-    }
+    })
 
-    @configuration.metadata_path.write(JSON.pretty_generate(metadata))
+    header = "\0".b * 127
+    header[0, 7] = "PMTiles"
+    header.setbyte(7, 3)
+    header[24, 8] = [ 127 ].pack("Q<")
+    header[32, 8] = [ metadata_json.bytesize ].pack("Q<")
+    header.setbyte(97, 1)
+
+    @configuration.artifact_path.binwrite(header + metadata_json)
   end
 
   def write_geojson_layers

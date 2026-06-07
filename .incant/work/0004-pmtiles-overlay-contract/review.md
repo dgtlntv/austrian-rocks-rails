@@ -3,22 +3,22 @@ id: "0004"
 slug: pmtiles-overlay-contract
 stage: review
 reviewed: 2026-06-07
-commit: 33a3d76a
+commit: 8af61875
 ---
 
 # Pmtiles Overlay Contract — review
 
 ### Strengths
-- docs/map_tiles.md:9 and docs/map_tiles.md:40-docs/map_tiles.md:159 — the ignored consumer contract still documents native max zoom `16` and all ten required PMTiles source layers with geometry, identifiers, properties, and navigation guidance.
-- lib/map_tiles/layer_contract.rb:11-lib/map_tiles/layer_contract.rb:72 and lib/map_tiles/layer_contract.rb:92 — `LayerContract` centralizes the ten source layers, native max zoom, camelCase properties, and a circuit-field guard, giving exporter/tests a single contract source.
-- lib/map_tiles/geojson_exporter.rb:66-lib/map_tiles/geojson_exporter.rb:89 and lib/map_tiles/geojson_exporter.rb:337-lib/map_tiles/geojson_exporter.rb:347 — the P2 rework now preserves required problem `grade` with an explicit `unknown` fallback and keeps required labels present through source-field/fallback display labels.
-- lib/map_tiles/geojson_exporter.rb:172-lib/map_tiles/geojson_exporter.rb:190 — published walking paths and POI `accessAreasJson` are exported in the planned scalar shape without app-local canonical URL properties.
-- lib/map_tiles/configuration.rb:45-lib/map_tiles/configuration.rb:52 and lib/map_tiles/tippecanoe_builder.rb:36-lib/map_tiles/tippecanoe_builder.rb:50 — map-tile object naming and the Tippecanoe named-layer command are config-driven and match the planned version/latest artifact shape.
-- test/lib/map_tiles/geojson_exporter_test.rb:81-test/lib/map_tiles/geojson_exporter_test.rb:109 — regression coverage now exercises blank-but-valid labels/grades and confirms the exporter still emits contract-required properties.
-- Fresh P2 gate evidence: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/layer_contract_test.rb test/lib/map_tiles/geojson_exporter_test.rb test/lib/map_tiles/tippecanoe_builder_test.rb` → `12 runs, 712 assertions, 0 failures, 0 errors, 0 skips`.
+- lib/map_tiles/smoke_check.rb:60-lib/map_tiles/smoke_check.rb:81 — smoke-check options are small and explicit: production vs relaxed modes are validated, `--allow-empty` is parsed predictably, and unknown layer names fail before checks run.
+- lib/map_tiles/smoke_check.rb:153-lib/map_tiles/smoke_check.rb:224 — each exported GeoJSON layer is checked as a FeatureCollection, with geometry type, required-property, unexpected-property, circuit-field, app-local URL, and scalar-value validation against `LayerContract`.
+- lib/map_tiles/smoke_check.rb:226-lib/map_tiles/smoke_check.rb:250 — strict production mode now fails zero-feature expected layers, while relaxed mode allows only explicitly named empty layers and still enforces sane Austria-area combined bounds.
+- lib/map_tiles/cli.rb:54-lib/map_tiles/cli.rb:61 and bin/build_pmtiles:1-bin/build_pmtiles:7 — `bin/build_pmtiles smoke --mode=... --allow-empty=...` delegates to the same `SmokeCheck` implementation and returns a non-zero exit code with actionable error text on failure.
+- test/lib/map_tiles/smoke_check_test.rb:27-test/lib/map_tiles/smoke_check_test.rb:136 — P3 coverage exercises happy-path production smoke checks plus missing/empty artifact, metadata mismatch, required-property, bounds, zero-feature, relaxed-empty, circuit URL, and scalar validation failures.
+- Fresh P3 gate evidence: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/smoke_check_test.rb` → `8 runs, 38 assertions, 0 failures, 0 errors, 0 skips`.
 
 ### Blocker
-- lib/map_tiles/geojson_exporter.rb:48-lib/map_tiles/geojson_exporter.rb:51 and lib/map_tiles/geojson_exporter.rb:79 — previous P2 blocker about blank-but-valid problem grades omitting required `grade` is fixed: `problem_grade` now returns `"unknown"` for blank grades, docs/map_tiles.md:46 documents that scalar fallback, and test/lib/map_tiles/geojson_exporter_test.rb:81-test/lib/map_tiles/geojson_exporter_test.rb:109 covers the regression plus required label fallbacks. status: addressed
+- lib/map_tiles/smoke_check.rb:88-lib/map_tiles/smoke_check.rb:135, lib/map_tiles/tippecanoe_builder.rb:56-lib/map_tiles/tippecanoe_builder.rb:70, and test/lib/map_tiles/smoke_check_test.rb:17-test/lib/map_tiles/smoke_check_test.rb:19 — the smoke check does not inspect the generated PMTiles artifact for source layers or fields. It only checks that `artifact_path` exists and is non-empty, then trusts a sidecar metadata JSON file that `TippecanoeBuilder` writes directly from `LayerContract`; the test fixture proves an arbitrary text file (`"pmtiles fixture"`) can pass as the PMTiles artifact. This leaves the P3 goal and acceptance criterion unmet: a corrupt/non-PMTiles archive, or a Tippecanoe output missing layers/fields, can still pass smoke checks. Fix by deriving metadata from the actual PMTiles output with a reliable inspector/tool (or otherwise validating the archive itself) and add a regression test that an invalid/non-PMTiles artifact is rejected. status: open
+- lib/map_tiles/geojson_exporter.rb:48-lib/map_tiles/geojson_exporter.rb:51 and lib/map_tiles/geojson_exporter.rb:79 — previous P2 blocker about blank-but-valid problem grades omitting required `grade` is fixed: `problem_grade` now returns `"unknown"` for blank grades, docs/map_tiles.md documents that scalar fallback, and exporter regression coverage covers the required label/grade fallbacks. status: addressed
 
 ### Major
 - docs/map_tiles.md:112 and .incant/work/0004-pmtiles-overlay-contract/plan.md:78 — previous P1 finding about the missing `WalkingPath.published` scope shorthand remains fixed: both artifacts now describe `WalkingPath` records where `published` is true. status: addressed
@@ -30,4 +30,4 @@ commit: 33a3d76a
 - None.
 
 ### Verdict
-Ready to release? **Yes** for the `0004-P2` phase gate — no blocker or major findings remain open, and the fresh P2 quality gate passes. This is not a final item release verdict; planned `0004-P3` smoke checks and `0004-P4` Bunny publication work still need implementation before finalization.
+Ready to release? **No** for the `0004-P3` phase gate — one open blocker means the smoke check can certify a non-PMTiles file without validating the generated archive's layer/field metadata. Return to `/incant:implement 0004` to make the artifact inspection real before moving to `0004-P4`.
