@@ -3,8 +3,8 @@ id: "0007"
 slug: db-relationships-walking-paths
 branch: incant/0007-db-relationships-walking-paths
 title: Database Relationships And Walking Path Admin Foundations
-stage: plan
-status: pending-approval
+stage: implement
+status: in-progress
 created: 2026-06-07
 updated: 2026-06-07
 ---
@@ -12,11 +12,16 @@ updated: 2026-06-07
 # Plan — Database Relationships And Walking Path Admin Foundations
 
 ## Status
-- Current phase: planning complete; awaiting human approval before code changes.
-- Stage: plan
+- Current phase: `0007-P1` complete; awaiting review.
+- Stage: implement
 - Branch: `incant/0007-db-relationships-walking-paths`
-- Next step: human approves this plan, then run `/incant:implement 0007`.
-- Blockers: none for planning. Implementation must stop and report if relationship verification finds dirty production/test data that prevents a candidate foreign key.
+- Next step: run `/incant:review 0007` for Phase 0007-P1.
+- Blockers: none. Relationship verification against the Docker-hosted `dump-prod` database reported every candidate relationship clean before adding foreign keys.
+- Fresh evidence:
+  - `PATH="$(rbenv root)/shims:$PATH" DATABASE_URL=postgis://austrian-rocks:password@127.0.0.1:5432/dump-prod ... bin/rails relationship_foreign_keys:report` → all candidate relationships clean, no dirty row IDs.
+  - `PATH="$(rbenv root)/shims:$PATH" DATABASE_URL=postgis://austrian-rocks:password@127.0.0.1:5432/dump-prod ... bin/rails db:migrate` → migrations `20260607091029` and `20260607091030` applied successfully in the Docker PostgreSQL/PostGIS container.
+  - `PATH="$(rbenv root)/shims:$PATH" RAILS_ENV=test DATABASE_URL=postgis://austrian-rocks:password@127.0.0.1:5432/austrian-rocks-test ... bin/rails db:prepare` → test database prepared in the Docker PostgreSQL/PostGIS container.
+  - `PATH="$(rbenv root)/shims:$PATH" RAILS_ENV=test DATABASE_URL=postgis://austrian-rocks:password@127.0.0.1:5432/austrian-rocks-test ... bin/rails test test/models/problem_boulder_assignment_test.rb test/models/relationship_foreign_key_report_test.rb test/models/topo_test.rb test/models/boulder_test.rb test/models/poi_test.rb` → 7 runs, 19 assertions, 0 failures, 0 errors, 0 skips.
 - Key decisions:
   - The spec was approved by the human. `spec.md` frontmatter `commit: 3cd48232` is behind current `HEAD` (`6952d912`), but `HEAD` is the spec commit itself and code files have not changed since the spec was written; no spec rewrite is needed before planning.
   - `problems.boulder_id` remains optional; ambiguous and unmatched legacy rows are reported, not guessed.
@@ -77,19 +82,19 @@ If a phase quality gate or Rails test requires a database, start or reuse a Post
 ## Phase 0007-P1 — Relationship foundations and verification reports
 Goal: add safe database-backed relationship foundations for existing models and a repeatable problem-to-boulder assignment/report path.
 
-- [ ] Run `bin/rails generate migration AddBoulderIdToProblems boulder:references` and edit the generated migration so `problems.boulder_id` is nullable, indexed, references `boulders`, and is reversible.
-- [ ] Run `bin/rails generate migration AddVerifiedRelationshipForeignKeys` and edit the generated migration to add indexes where missing and add foreign keys for clean data only: `areas.cluster_id`, `clusters.region_id`, `lines.problem_id`, `lines.topo_id`, `poi_routes.area_id`, `poi_routes.poi_id`, `contribution_requests.problem_id`, `contributions.problem_id`, `problems.parent_id`, `clusters.main_area_id`, and `regions.main_cluster_id`.
-- [ ] Read `db/schema.rb` and the generated migrations before editing; keep existing Active Storage and `boulders.area_id`/`problems.area_id` constraints unchanged.
-- [ ] Read `app/models/problem.rb`, then add `belongs_to :boulder, optional: true` without changing existing `area`, `lines`, `topos`, `parent`, contribution, or validation behaviour.
-- [ ] Read `app/models/boulder.rb`, then add `has_many :problems` and `has_many :topos` associations.
-- [ ] Read `app/models/topo.rb`, then add `belongs_to :boulder, optional: true` while preserving photo, line, problem, audit, scope, and metadata behaviour.
-- [ ] Read `app/models/poi.rb`, then change `has_many :areas` to `has_many :areas, through: :poi_routes` and keep `has_many :poi_routes`.
-- [ ] Add `app/services/problem_boulder_assignment.rb` with one public report method and one backfill method. The service must classify each problem into `matched`, `missing_location`, `no_containing_boulder`, `multiple_containing_boulders`, or `area_mismatch`; matching must only assign when exactly one boulder in the same area contains the problem location using PostGIS predicates.
-- [ ] Add `app/services/relationship_foreign_key_report.rb` that checks each candidate relationship for orphan IDs and returns table, column, target table, count, and row IDs for dirty rows.
-- [ ] Add `lib/tasks/problem_boulder_assignments.rake` with `problem_boulder_assignments:report` and `problem_boulder_assignments:backfill` tasks that print counts and row IDs for every category before any update summary.
-- [ ] Add `lib/tasks/relationship_foreign_keys.rake` with `relationship_foreign_keys:report` that prints clean/deferred status and dirty row IDs for every candidate relationship.
-- [ ] Add or update model/service tests in `test/models/problem_boulder_assignment_test.rb`, `test/models/relationship_foreign_key_report_test.rb`, `test/models/topo_test.rb`, `test/models/boulder_test.rb`, and `test/models/poi_test.rb`.
-- [ ] Run migrations in the test/development database with `bin/rails db:migrate` and inspect `db/schema.rb` for expected columns, indexes, and foreign keys.
+- [x] Run `bin/rails generate migration AddBoulderIdToProblems boulder:references` and edit the generated migration so `problems.boulder_id` is nullable, indexed, references `boulders`, and is reversible.
+- [x] Run `bin/rails generate migration AddVerifiedRelationshipForeignKeys` and edit the generated migration to add indexes where missing and add foreign keys for clean data only: `areas.cluster_id`, `clusters.region_id`, `lines.problem_id`, `lines.topo_id`, `poi_routes.area_id`, `poi_routes.poi_id`, `contribution_requests.problem_id`, `contributions.problem_id`, `problems.parent_id`, `clusters.main_area_id`, and `regions.main_cluster_id`.
+- [x] Read `db/schema.rb` and the generated migrations before editing; keep existing Active Storage and `boulders.area_id`/`problems.area_id` constraints unchanged.
+- [x] Read `app/models/problem.rb`, then add `belongs_to :boulder, optional: true` without changing existing `area`, `lines`, `topos`, `parent`, contribution, or validation behaviour.
+- [x] Read `app/models/boulder.rb`, then add `has_many :problems` and `has_many :topos` associations.
+- [x] Read `app/models/topo.rb`, then add `belongs_to :boulder, optional: true` while preserving photo, line, problem, audit, scope, and metadata behaviour.
+- [x] Read `app/models/poi.rb`, then change `has_many :areas` to `has_many :areas, through: :poi_routes` and keep `has_many :poi_routes`.
+- [x] Add `app/services/problem_boulder_assignment.rb` with one public report method and one backfill method. The service must classify each problem into `matched`, `missing_location`, `no_containing_boulder`, `multiple_containing_boulders`, or `area_mismatch`; matching must only assign when exactly one boulder in the same area contains the problem location using PostGIS predicates.
+- [x] Add `app/services/relationship_foreign_key_report.rb` that checks each candidate relationship for orphan IDs and returns table, column, target table, count, and row IDs for dirty rows.
+- [x] Add `lib/tasks/problem_boulder_assignments.rake` with `problem_boulder_assignments:report` and `problem_boulder_assignments:backfill` tasks that print counts and row IDs for every category before any update summary.
+- [x] Add `lib/tasks/relationship_foreign_keys.rake` with `relationship_foreign_keys:report` that prints clean/deferred status and dirty row IDs for every candidate relationship.
+- [x] Add or update model/service tests in `test/models/problem_boulder_assignment_test.rb`, `test/models/relationship_foreign_key_report_test.rb`, `test/models/topo_test.rb`, `test/models/boulder_test.rb`, and `test/models/poi_test.rb`.
+- [x] Run migrations in the test/development database with `bin/rails db:migrate` and inspect `db/schema.rb` for expected columns, indexes, and foreign keys.
 
 **Quality gate:** `bin/rails test test/models/problem_boulder_assignment_test.rb test/models/relationship_foreign_key_report_test.rb test/models/topo_test.rb test/models/boulder_test.rb test/models/poi_test.rb` → all relationship, report, and association tests pass.
 

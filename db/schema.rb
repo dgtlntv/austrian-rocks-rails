@@ -10,11 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_06_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_07_091030) do
   create_schema "tiger"
   create_schema "tiger_data"
   create_schema "topology"
-
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
@@ -67,7 +66,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_120000) do
     t.text "description_en"
     t.text "warning_de"
     t.text "warning_en"
-    t.integer "cluster_id"
+    t.bigint "cluster_id"
+    t.index ["cluster_id"], name: "index_areas_on_cluster_id"
     t.index ["slug"], name: "index_areas_on_slug", unique: true
     t.index ["tags"], name: "index_areas_on_tags", using: :gin
   end
@@ -106,16 +106,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_120000) do
 
   create_table "clusters", force: :cascade do |t|
     t.string "name"
-    t.integer "main_area_id"
+    t.bigint "main_area_id"
     t.geography "center", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
     t.geography "sw", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
     t.geography "ne", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "region_id"
+    t.bigint "region_id"
     t.string "slug"
     t.string "tags", default: [], null: false, array: true
     t.boolean "published", default: true, null: false
+    t.index ["main_area_id"], name: "index_clusters_on_main_area_id"
+    t.index ["region_id"], name: "index_clusters_on_region_id"
     t.index ["tags"], name: "index_clusters_on_tags", using: :gin
   end
 
@@ -203,15 +205,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_120000) do
     t.boolean "has_line", default: false, null: false
     t.text "description"
     t.text "video_links", default: [], array: true
+    t.bigint "boulder_id"
     t.index ["area_id"], name: "index_problems_on_area_id"
+    t.index ["boulder_id"], name: "index_problems_on_boulder_id"
     t.index ["grade"], name: "index_problems_on_grade"
     t.index ["has_line"], name: "index_problems_on_has_line"
     t.index ["location"], name: "index_problems_on_location", using: :gist
+    t.index ["parent_id"], name: "index_problems_on_parent_id"
   end
 
   create_table "regions", force: :cascade do |t|
     t.string "name"
-    t.integer "main_cluster_id"
+    t.bigint "main_cluster_id"
     t.geography "center", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
     t.geography "sw", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
     t.geography "ne", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
@@ -220,6 +225,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_120000) do
     t.string "slug"
     t.string "tags", default: [], null: false, array: true
     t.boolean "published", default: true, null: false
+    t.index ["main_cluster_id"], name: "index_regions_on_main_cluster_id"
     t.index ["tags"], name: "index_regions_on_tags", using: :gin
   end
 
@@ -228,7 +234,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_120000) do
     t.datetime "updated_at", null: false
     t.boolean "published", default: true, null: false
     t.json "metadata"
-    t.integer "boulder_id"
+    t.bigint "boulder_id"
     t.integer "position"
     t.index ["boulder_id", "position"], name: "index_topos_on_boulder_id_and_position", unique: true
     t.index ["boulder_id"], name: "index_topos_on_boulder_id"
@@ -236,6 +242,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_120000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "areas", "clusters"
   add_foreign_key "boulders", "areas"
+  add_foreign_key "clusters", "areas", column: "main_area_id"
+  add_foreign_key "clusters", "regions"
+  add_foreign_key "contribution_requests", "problems"
+  add_foreign_key "contributions", "problems"
+  add_foreign_key "lines", "problems"
+  add_foreign_key "lines", "topos"
+  add_foreign_key "poi_routes", "areas"
+  add_foreign_key "poi_routes", "pois"
   add_foreign_key "problems", "areas"
+  add_foreign_key "problems", "boulders"
+  add_foreign_key "problems", "problems", column: "parent_id"
+  add_foreign_key "regions", "clusters", column: "main_cluster_id"
+  add_foreign_key "topos", "boulders"
 end
