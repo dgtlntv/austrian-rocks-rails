@@ -13,10 +13,10 @@ updated: 2026-06-07
 # Plan — Austrian Rocks PMTiles Overlay Contract And Bunny Delivery
 
 ## Status
-- Phase: `0004-P1` complete; review fixes applied; awaiting phase re-review.
+- Phase: `0004-P2` complete; awaiting phase review.
 - Stage: implement.
 - Branch: `incant/0004-pmtiles-overlay-contract`.
-- Next step: run `/incant:review 0004` before starting `0004-P2`.
+- Next step: run `/incant:review 0004` before starting `0004-P3`.
 - Blockers: none.
 - Review fixes:
   - 2026-06-07: addressed review major by changing the ignored contract and P2 exporter plan from the missing walking-path published scope shorthand to `WalkingPath` records where `published` is true.
@@ -25,6 +25,7 @@ updated: 2026-06-07
   - 2026-06-07: merged `main` into this branch and verified `main` is an ancestor of `HEAD`, bringing completed `0007` changes into the implementation branch.
   - 2026-06-07: `test -f docs/map_tiles.md && git check-ignore -q docs/map_tiles.md && grep -q "walking_paths" docs/map_tiles.md && grep -q "native max zoom" docs/map_tiles.md` → `P1 quality gate passed: ignored docs contract exists, includes walking_paths, and documents native max zoom`.
   - 2026-06-07: `test -f docs/map_tiles.md && git check-ignore -q docs/map_tiles.md && grep -q "walking_paths" docs/map_tiles.md && grep -q "native max zoom" docs/map_tiles.md && ! rg -q 'WalkingPath\\.published' docs/map_tiles.md .incant/work/0004-pmtiles-overlay-contract/plan.md` → `P1 review-fix gate passed: ignored docs contract exists, covers walking_paths/native max zoom, and no longer references the missing published scope shorthand`.
+  - 2026-06-07: `DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/layer_contract_test.rb test/lib/map_tiles/geojson_exporter_test.rb test/lib/map_tiles/tippecanoe_builder_test.rb` (with Ruby 3.3.5 via rbenv and Docker PostGIS) → `11 runs, 705 assertions, 0 failures, 0 errors, 0 skips`.
 - Key decisions:
   - Build a new `MapTiles` subsystem in `lib/map_tiles/` instead of extending the Mapbox-era rake task.
   - Keep generated GeoJSON and PMTiles under `tmp/map_tiles/`; never rely on `public/maps/austrian-rocks.pmtiles`.
@@ -66,20 +67,20 @@ Goal: create the PMTiles contract artifact in ignored `/docs/` and document sour
 ## Phase 0004-P2 — deterministic GeoJSON export and Tippecanoe build
 Goal: generate contract-aligned intermediate GeoJSON and build a single PMTiles artifact with Tippecanoe.
 
-- [ ] Read `config/application.rb`, `Gemfile`, `lib/tasks/mapbox.rake`, `app/models/problem.rb`, `app/models/boulder.rb`, `app/models/area.rb`, `app/models/cluster.rb`, `app/models/region.rb`, `app/models/poi.rb`, `app/models/poi_route.rb`, and `app/models/walking_path.rb` before editing.
-- [ ] Add `lib/map_tiles/layer_contract.rb` defining the ten expected layers, geometry type, required and optional camelCase properties, native max zoom `16`, and helper methods that reject layer/property names containing `circuit`.
-- [ ] Add `lib/map_tiles/configuration.rb` reading `MAP_TILES_OUTPUT_DIR` with default `tmp/map_tiles`, `MAP_TILES_PUBLIC_CDN_HOST`, `MAP_TILES_BUNNY_PREFIX`, `MAP_TILES_VERSION`, and fixed artifact basename `austrian-rocks`; expose `versioned_object_key` and `latest_object_key` as `<prefix>/austrian-rocks-<version>.pmtiles` and `<prefix>/austrian-rocks-latest.pmtiles`.
-- [ ] Add `lib/map_tiles/geojson_exporter.rb` that writes one deterministic GeoJSON FeatureCollection per source layer under `tmp/map_tiles/geojson`, orders features by stable IDs, transforms properties to camelCase, and exports only published/consumer-safe data.
-- [ ] Implement `problems` point export from published areas with required `problemId`, `areaId`, `areaSlug`, `name`, `grade`, `steepness`, `featured`, and optional `boulderId`, `nameEn`, `popularity`, `landing`, `height`, `parentProblemId`.
-- [ ] Implement `boulders` polygon export from boulders in published areas, excluding `ignore_for_area_hull` only from hull calculations rather than from boulder polygons, with required `boulderId`, `areaId`, `areaSlug` and optional `name`.
-- [ ] Implement `areas` point and `area_hulls` polygon exports from published areas with stable IDs/slugs, localized labels, priority, bounds, and hull geometries derived from non-ignored boulders.
-- [ ] Implement `clusters` point and `cluster_hulls` polygon exports from published clusters with labels, slugs, region relationship fields where present, bounds, and hull geometries derived from published child areas' non-ignored boulders.
-- [ ] Implement `regions` point and `region_hulls` polygon exports from published regions with labels, slugs, bounds, and hull geometries derived from published descendant clusters/areas.
-- [ ] Implement `walking_paths` LineString/MultiLineString export from `WalkingPath` records where `published` is true with required `walkingPathId`, `slug`, `name`, optional `nameEn`, and optional `description`.
-- [ ] Implement `pois` point export from POIs with locations, required `poiId`, `poiType`, `name`, `accessAreasJson`, optional `shortName`, `googleUrl`, and no app-local canonical URL properties.
-- [ ] Add `lib/map_tiles/tippecanoe_builder.rb` that verifies `tippecanoe` is available, fails with Homebrew and project install guidance when missing, and runs Tippecanoe with `--force`, `--output-to-directory` disabled, `--maximum-zoom=16`, `--minimum-zoom=0`, `--no-tile-compression` only if required by tests, one `--named-layer=<layer>:<path>` per GeoJSON file, and output `tmp/map_tiles/austrian-rocks-<version>.pmtiles`.
-- [ ] Add `bin/build_pmtiles` and `lib/tasks/map_tiles.rake` commands for `export`, `build`, `smoke`, and `publish`, all delegating to `MapTiles::CLI` with the same options and environment variables.
-- [ ] Add `test/lib/map_tiles/layer_contract_test.rb`, `test/lib/map_tiles/geojson_exporter_test.rb`, and `test/lib/map_tiles/tippecanoe_builder_test.rb` covering layer names/properties, fixture exports, POI metadata JSON string shape, no circuit fields, no canonical URLs, output paths, and missing-Tippecanoe errors.
+- [x] Read `config/application.rb`, `Gemfile`, `lib/tasks/mapbox.rake`, `app/models/problem.rb`, `app/models/boulder.rb`, `app/models/area.rb`, `app/models/cluster.rb`, `app/models/region.rb`, `app/models/poi.rb`, `app/models/poi_route.rb`, and `app/models/walking_path.rb` before editing.
+- [x] Add `lib/map_tiles/layer_contract.rb` defining the ten expected layers, geometry type, required and optional camelCase properties, native max zoom `16`, and helper methods that reject layer/property names containing `circuit`.
+- [x] Add `lib/map_tiles/configuration.rb` reading `MAP_TILES_OUTPUT_DIR` with default `tmp/map_tiles`, `MAP_TILES_PUBLIC_CDN_HOST`, `MAP_TILES_BUNNY_PREFIX`, `MAP_TILES_VERSION`, and fixed artifact basename `austrian-rocks`; expose `versioned_object_key` and `latest_object_key` as `<prefix>/austrian-rocks-<version>.pmtiles` and `<prefix>/austrian-rocks-latest.pmtiles`.
+- [x] Add `lib/map_tiles/geojson_exporter.rb` that writes one deterministic GeoJSON FeatureCollection per source layer under `tmp/map_tiles/geojson`, orders features by stable IDs, transforms properties to camelCase, and exports only published/consumer-safe data.
+- [x] Implement `problems` point export from published areas with required `problemId`, `areaId`, `areaSlug`, `name`, `grade`, `steepness`, `featured`, and optional `boulderId`, `nameEn`, `popularity`, `landing`, `height`, `parentProblemId`.
+- [x] Implement `boulders` polygon export from boulders in published areas, excluding `ignore_for_area_hull` only from hull calculations rather than from boulder polygons, with required `boulderId`, `areaId`, `areaSlug` and optional `name`.
+- [x] Implement `areas` point and `area_hulls` polygon exports from published areas with stable IDs/slugs, localized labels, priority, bounds, and hull geometries derived from non-ignored boulders.
+- [x] Implement `clusters` point and `cluster_hulls` polygon exports from published clusters with labels, slugs, region relationship fields where present, bounds, and hull geometries derived from published child areas' non-ignored boulders.
+- [x] Implement `regions` point and `region_hulls` polygon exports from published regions with labels, slugs, bounds, and hull geometries derived from published descendant clusters/areas.
+- [x] Implement `walking_paths` LineString/MultiLineString export from `WalkingPath` records where `published` is true with required `walkingPathId`, `slug`, `name`, optional `nameEn`, and optional `description`.
+- [x] Implement `pois` point export from POIs with locations, required `poiId`, `poiType`, `name`, `accessAreasJson`, optional `shortName`, `googleUrl`, and no app-local canonical URL properties.
+- [x] Add `lib/map_tiles/tippecanoe_builder.rb` that verifies `tippecanoe` is available, fails with Homebrew and project install guidance when missing, and runs Tippecanoe with `--force`, `--output-to-directory` disabled, `--maximum-zoom=16`, `--minimum-zoom=0`, `--no-tile-compression` only if required by tests, one `--named-layer=<layer>:<path>` per GeoJSON file, and output `tmp/map_tiles/austrian-rocks-<version>.pmtiles`.
+- [x] Add `bin/build_pmtiles` and `lib/tasks/map_tiles.rake` commands for `export`, `build`, `smoke`, and `publish`, all delegating to `MapTiles::CLI` with the same options and environment variables.
+- [x] Add `test/lib/map_tiles/layer_contract_test.rb`, `test/lib/map_tiles/geojson_exporter_test.rb`, and `test/lib/map_tiles/tippecanoe_builder_test.rb` covering layer names/properties, fixture exports, POI metadata JSON string shape, no circuit fields, no canonical URLs, output paths, and missing-Tippecanoe errors.
 
 **Quality gate:** `bin/rails test test/lib/map_tiles/layer_contract_test.rb test/lib/map_tiles/geojson_exporter_test.rb test/lib/map_tiles/tippecanoe_builder_test.rb` → all contract/export/build tests pass without requiring Tippecanoe to be installed except in explicitly skipped integration assertions.
 
