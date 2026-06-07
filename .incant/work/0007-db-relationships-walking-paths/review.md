@@ -3,7 +3,7 @@ id: "0007"
 slug: db-relationships-walking-paths
 stage: review
 reviewed: 2026-06-07
-commit: 88cd001ad6234c7953cae0269849ba4e69ff7db3
+commit: 790e4456dc7dd668f342e87d37173e50d38c9bf9
 ---
 
 # Db Relationships Walking Paths — review
@@ -15,16 +15,18 @@ commit: 88cd001ad6234c7953cae0269849ba4e69ff7db3
 - app/models/walking_path.rb:2 — `WalkingPath` uses optional many-to-many area and cluster groupings through join models, avoiding the rejected single-owner path assumption.
 - app/models/walking_path.rb:7 — Label, slug, and description normalization keeps admin-entered whitespace from becoming persisted state.
 - app/models/walking_path.rb:22 — Published/draft validation is implemented at the model boundary: published paths need a slug and valid line geometry, while drafts can remain geometry-less.
-- app/services/walking_path_geojson_parser.rb:16 — The parser gives clear errors for blank, malformed, unsupported, empty, and multi-line GeoJSON input and returns an SRID 4326 RGeo geometry for valid line input.
-- test/models/walking_path_test.rb:4 — The P2 tests cover draft saves, published requirements, LineString/MultiLineString acceptance, unsupported raw Point/Polygon rejection, malformed JSON, multi-line FeatureCollection rejection, optional groupings, and GeoJSON display.
-- Fresh gate evidence: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.test -e BUNNY_STORAGE_ACCESS_KEY_ID=test -e BUNNY_STORAGE_SECRET_ACCESS_KEY=test -e BUNNY_STORAGE_REGION=us-east-1 -e BUNNY_STORAGE_BUCKET=test web bin/rails test test/models/walking_path_test.rb` → 11 runs, 29 assertions, 0 failures, 0 errors, 0 skips.
-- Fresh regression evidence: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.test -e BUNNY_STORAGE_ACCESS_KEY_ID=test -e BUNNY_STORAGE_SECRET_ACCESS_KEY=test -e BUNNY_STORAGE_REGION=us-east-1 -e BUNNY_STORAGE_BUCKET=test web bin/rails test test/models/problem_boulder_assignment_test.rb test/models/relationship_foreign_key_report_test.rb test/models/topo_test.rb test/models/boulder_test.rb test/models/poi_test.rb test/models/walking_path_test.rb` → 18 runs, 48 assertions, 0 failures, 0 errors, 0 skips.
+- app/services/walking_path_geojson_parser.rb:24 — The P2 review fix now carries unsupported-geometry state through FeatureCollection traversal and rejects mixed line-plus-Point/Polygon input before returning a geometry.
+- app/services/walking_path_geojson_parser.rb:41 — The parser documents the one-submission/one-persisted-path boundary and why unsupported sibling shapes are rejected before model persistence.
+- test/models/walking_path_test.rb:62 — Regression coverage now proves mixed line+Point and line+Polygon FeatureCollections fail with clear validation errors.
+- Fresh gate evidence: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.test -e BUNNY_STORAGE_ACCESS_KEY_ID=test -e BUNNY_STORAGE_SECRET_ACCESS_KEY=test -e BUNNY_STORAGE_REGION=us-east-1 -e BUNNY_STORAGE_BUCKET=test web bin/rails test test/models/walking_path_test.rb` → 12 runs, 33 assertions, 0 failures, 0 errors, 0 skips.
+- Fresh regression evidence: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.test -e BUNNY_STORAGE_ACCESS_KEY_ID=test -e BUNNY_STORAGE_SECRET_ACCESS_KEY=test -e BUNNY_STORAGE_REGION=us-east-1 -e BUNNY_STORAGE_BUCKET=test web bin/rails test test/models/problem_boulder_assignment_test.rb test/models/relationship_foreign_key_report_test.rb test/models/topo_test.rb test/models/boulder_test.rb test/models/poi_test.rb test/models/walking_path_test.rb` → 19 runs, 52 assertions, 0 failures, 0 errors, 0 skips.
+- Fresh lint evidence: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.test -e BUNNY_STORAGE_ACCESS_KEY_ID=test -e BUNNY_STORAGE_SECRET_ACCESS_KEY=test -e BUNNY_STORAGE_REGION=us-east-1 -e BUNNY_STORAGE_BUCKET=test web bundle exec rubocop app/services/walking_path_geojson_parser.rb test/models/walking_path_test.rb` → 2 files inspected, no offenses detected.
 
 ### Blocker
 None.
 
 ### Major
-- app/services/walking_path_geojson_parser.rb:39 — `extract_line_geometries` silently ignores unsupported geometries inside a `FeatureCollection` as long as exactly one line geometry is present. For example, a collection containing one `LineString` plus one `Point` parses successfully, even though the spec requires unsupported Point/Polygon input to produce clear validation errors and invalid geometry input not to be partially accepted. Fix: have the traversal report unsupported sibling geometries (or require the collection to contain exactly one geometry feature) and add tests for mixed line+Point/Polygon FeatureCollections. status: open
+- app/services/walking_path_geojson_parser.rb:24 — Previously, `extract_line_geometries` silently ignored unsupported geometries inside a `FeatureCollection` as long as exactly one line geometry was present. The parser now returns `GeoJSON must contain only LineString or MultiLineString geometries` when any sibling Point/Polygon is present, and regression tests cover both mixed cases. status: addressed
 
 ### Minor
 None.
@@ -33,4 +35,4 @@ None.
 None.
 
 ### Verdict
-Ready to release? **No** — one open major finding in the strict GeoJSON parser. P1 remains sound and the P2 happy-path gate passes, but the parser should reject mixed unsupported FeatureCollection input before this phase is considered complete.
+Ready to release? **With fixes** — the open P2 major finding is addressed and Phase 0007-P2 is ready to proceed. The full item is not release-ready yet because planned Phases 0007-P3 and 0007-P4 remain to be implemented and reviewed.
