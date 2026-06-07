@@ -3,7 +3,7 @@ id: "0004"
 slug: pmtiles-overlay-contract
 branch: incant/0004-pmtiles-overlay-contract
 title: Austrian Rocks PMTiles Overlay Contract And Bunny Delivery
-stage: plan
+stage: implement
 status: in-progress
 created: 2026-06-06
 commit: 1bf0c5ca
@@ -13,11 +13,14 @@ updated: 2026-06-07
 # Plan — Austrian Rocks PMTiles Overlay Contract And Bunny Delivery
 
 ## Status
-- Phase: planning complete; awaiting human approval before implementation.
-- Stage: plan.
+- Phase: `0004-P1` complete; awaiting phase review.
+- Stage: implement.
 - Branch: `incant/0004-pmtiles-overlay-contract`.
-- Next step: after plan approval, ensure the branch includes completed `0007` changes, then run `/incant:implement 0004` and begin `0004-P1`.
-- Blockers: none; `0007` is complete, but implementation should be on top of its final merged changes.
+- Next step: run `/incant:review 0004` before starting `0004-P2`.
+- Blockers: none.
+- Verification evidence:
+  - 2026-06-07: merged `main` into this branch and verified `main` is an ancestor of `HEAD`, bringing completed `0007` changes into the implementation branch.
+  - 2026-06-07: `test -f .incant/work/0004-pmtiles-overlay-contract/contract.md && grep -q "walking_paths" .incant/work/0004-pmtiles-overlay-contract/contract.md && grep -q "native max zoom" .incant/work/0004-pmtiles-overlay-contract/contract.md` → `P1 quality gate passed: contract exists, includes walking_paths, and documents native max zoom`.
 - Key decisions:
   - Build a new `MapTiles` subsystem in `lib/map_tiles/` instead of extending the Mapbox-era rake task.
   - Keep generated GeoJSON and PMTiles under `tmp/map_tiles/`; never rely on `public/maps/austrian-rocks.pmtiles`.
@@ -47,12 +50,12 @@ updated: 2026-06-07
 ## Phase 0004-P1 — contract and source alignment
 Goal: land the committed PMTiles contract artifact outside `/docs/` and document source assumptions against the database and walking-path foundations delivered by completed item `0007`.
 
-- [ ] Confirm the implementation branch contains completed `0007` changes (`WalkingPath`, optional `problems.boulder_id`, corrected POI associations, and relationship foreign keys) before editing exporter code.
-- [ ] Read `db/schema.rb`, `app/models/application_record.rb`, `app/models/problem.rb`, `app/models/boulder.rb`, `app/models/walking_path.rb`, `app/models/area.rb`, `app/models/cluster.rb`, `app/models/region.rb`, `app/models/poi.rb`, `app/models/poi_route.rb`, and `lib/tasks/mapbox.rake` before editing.
-- [ ] Add `.incant/work/0004-pmtiles-overlay-contract/contract.md` documenting native max zoom `16`, the difference between PMTiles source layers and later MapLibre style layers, no circuit layers/properties, no app-local canonical URLs, Bunny public URL rules, immutable/latest object names, and all ten source layers: `problems`, `boulders`, `areas`, `area_hulls`, `clusters`, `cluster_hulls`, `regions`, `region_hulls`, `walking_paths`, and `pois`.
-- [ ] In `.incant/work/0004-pmtiles-overlay-contract/contract.md`, document for every source layer its geometry type, required properties, optional properties, stable identifier property, localized `name`/optional `nameEn` rule, and consumer navigation guidance from IDs/slugs.
-- [ ] In `.incant/work/0004-pmtiles-overlay-contract/contract.md`, document that `problems` may include `boulderId` from the `0007` relationship cleanup, and that `walking_paths` reads published line geometry from the `WalkingPath` model delivered by `0007`.
-- [ ] In `.incant/work/0004-pmtiles-overlay-contract/contract.md`, document `pois.accessAreasJson` as a scalar JSON string derived from `poi_routes`, with entries containing `areaId`, `areaSlug`, `transport`, `distance`, and `minutes`, and explicitly state that it is metadata rather than route geometry.
+- [x] Confirm the implementation branch contains completed `0007` changes (`WalkingPath`, optional `problems.boulder_id`, corrected POI associations, and relationship foreign keys) before editing exporter code.
+- [x] Read `db/schema.rb`, `app/models/application_record.rb`, `app/models/problem.rb`, `app/models/boulder.rb`, `app/models/walking_path.rb`, `app/models/area.rb`, `app/models/cluster.rb`, `app/models/region.rb`, `app/models/poi.rb`, `app/models/poi_route.rb`, and `lib/tasks/mapbox.rake` before editing.
+- [x] Add `.incant/work/0004-pmtiles-overlay-contract/contract.md` documenting native max zoom `16`, the difference between PMTiles source layers and later MapLibre style layers, no circuit layers/properties, no app-local canonical URLs, Bunny public URL rules, immutable/latest object names, and all ten source layers: `problems`, `boulders`, `areas`, `area_hulls`, `clusters`, `cluster_hulls`, `regions`, `region_hulls`, `walking_paths`, and `pois`.
+- [x] In `.incant/work/0004-pmtiles-overlay-contract/contract.md`, document for every source layer its geometry type, required properties, optional properties, stable identifier property, localized `name`/optional `nameEn` rule, and consumer navigation guidance from IDs/slugs.
+- [x] In `.incant/work/0004-pmtiles-overlay-contract/contract.md`, document that `problems` may include `boulderId` from the `0007` relationship cleanup, and that `walking_paths` reads published line geometry from the `WalkingPath` model delivered by `0007`.
+- [x] In `.incant/work/0004-pmtiles-overlay-contract/contract.md`, document `pois.accessAreasJson` as a scalar JSON string derived from `poi_routes`, with entries containing `areaId`, `areaSlug`, `transport`, `distance`, and `minutes`, and explicitly state that it is metadata rather than route geometry.
 
 **Quality gate:** `test -f .incant/work/0004-pmtiles-overlay-contract/contract.md && grep -q "walking_paths" .incant/work/0004-pmtiles-overlay-contract/contract.md && grep -q "native max zoom" .incant/work/0004-pmtiles-overlay-contract/contract.md` → the committed contract artifact exists and covers walking paths plus native zoom before exporter code starts.
 
