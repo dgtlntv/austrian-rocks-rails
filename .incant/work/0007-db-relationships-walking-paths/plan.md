@@ -22,6 +22,10 @@ updated: 2026-06-07
   - `problems.boulder_id` remains optional; ambiguous and unmatched legacy rows are reported, not guessed.
   - Walking paths are independent editorial records; area/cluster links are optional many-to-many groupings only.
   - GeoJSON parsing lives outside the controller so model/service tests can cover malformed JSON, unsupported geometry, Feature, FeatureCollection, LineString, and MultiLineString cases.
+  - Any quality-gate command that needs a database must run against PostgreSQL/PostGIS in a Docker container, not a database created directly on the host machine.
+
+## Quality gate database rule
+If a phase quality gate or Rails test requires a database, start or reuse a PostgreSQL/PostGIS database in a Docker container and point Rails at that container for the command. Do not create, initialize, or depend on a PostgreSQL/PostGIS database directly on the local machine.
 
 ## Files touched
 - `.incant/backlog.md` — move item `0007` from `status:spec` to `status:plan` after plan creation.
