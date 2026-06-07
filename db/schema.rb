@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_06_07_091030) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_07_092652) do
   create_schema "tiger"
   create_schema "tiger_data"
   create_schema "topology"
@@ -240,6 +240,39 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_07_091030) do
     t.index ["boulder_id"], name: "index_topos_on_boulder_id"
   end
 
+  create_table "walking_path_areas", force: :cascade do |t|
+    t.bigint "walking_path_id", null: false
+    t.bigint "area_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["area_id"], name: "index_walking_path_areas_on_area_id"
+    t.index ["walking_path_id", "area_id"], name: "index_walking_path_areas_on_walking_path_id_and_area_id", unique: true
+    t.index ["walking_path_id"], name: "index_walking_path_areas_on_walking_path_id"
+  end
+
+  create_table "walking_path_clusters", force: :cascade do |t|
+    t.bigint "walking_path_id", null: false
+    t.bigint "cluster_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cluster_id"], name: "index_walking_path_clusters_on_cluster_id"
+    t.index ["walking_path_id", "cluster_id"], name: "index_walking_path_clusters_on_walking_path_id_and_cluster_id", unique: true
+    t.index ["walking_path_id"], name: "index_walking_path_clusters_on_walking_path_id"
+  end
+
+  create_table "walking_paths", force: :cascade do |t|
+    t.string "label"
+    t.string "slug"
+    t.text "description"
+    t.boolean "published", default: false, null: false
+    t.geometry "geometry", limit: {:srid=>4326, :type=>"geometry"}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["geometry"], name: "index_walking_paths_on_geometry", using: :gist
+    t.index ["slug"], name: "index_walking_paths_on_slug", unique: true
+    t.check_constraint "geometry IS NULL OR (geometrytype(geometry::geometry) = ANY (ARRAY['LINESTRING'::text, 'MULTILINESTRING'::text]))", name: "walking_paths_geometry_line_check"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "areas", "clusters"
@@ -257,4 +290,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_07_091030) do
   add_foreign_key "problems", "problems", column: "parent_id"
   add_foreign_key "regions", "clusters", column: "main_cluster_id"
   add_foreign_key "topos", "boulders"
+  add_foreign_key "walking_path_areas", "areas"
+  add_foreign_key "walking_path_areas", "walking_paths"
+  add_foreign_key "walking_path_clusters", "clusters"
+  add_foreign_key "walking_path_clusters", "walking_paths"
 end

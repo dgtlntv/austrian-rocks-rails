@@ -12,21 +12,25 @@ updated: 2026-06-07
 # Plan — Database Relationships And Walking Path Admin Foundations
 
 ## Status
-- Current phase: `0007-P1` complete; awaiting review.
+- Current phase: `0007-P2` complete; awaiting review.
 - Stage: implement
 - Branch: `incant/0007-db-relationships-walking-paths`
-- Next step: run `/incant:review 0007` for Phase 0007-P1.
+- Next step: run `/incant:review 0007` for Phase 0007-P2.
 - Blockers: none. Relationship verification against the Docker-hosted `dump-prod` database reported every candidate relationship clean before adding foreign keys.
 - Fresh evidence:
   - `PATH="$(rbenv root)/shims:$PATH" DATABASE_URL=postgis://austrian-rocks:password@127.0.0.1:5432/dump-prod ... bin/rails relationship_foreign_keys:report` → all candidate relationships clean, no dirty row IDs.
   - `PATH="$(rbenv root)/shims:$PATH" DATABASE_URL=postgis://austrian-rocks:password@127.0.0.1:5432/dump-prod ... bin/rails db:migrate` → migrations `20260607091029` and `20260607091030` applied successfully in the Docker PostgreSQL/PostGIS container.
   - `PATH="$(rbenv root)/shims:$PATH" RAILS_ENV=test DATABASE_URL=postgis://austrian-rocks:password@127.0.0.1:5432/austrian-rocks-test ... bin/rails db:prepare` → test database prepared in the Docker PostgreSQL/PostGIS container.
   - `PATH="$(rbenv root)/shims:$PATH" RAILS_ENV=test DATABASE_URL=postgis://austrian-rocks:password@127.0.0.1:5432/austrian-rocks-test ... bin/rails test test/models/problem_boulder_assignment_test.rb test/models/relationship_foreign_key_report_test.rb test/models/topo_test.rb test/models/boulder_test.rb test/models/poi_test.rb` → 7 runs, 19 assertions, 0 failures, 0 errors, 0 skips.
+  - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails db:prepare` → migrations `20260607092647`, `20260607092651`, and `20260607092652` applied successfully in the dev container against Docker PostgreSQL/PostGIS.
+  - `docker compose run --rm ... web bin/rails db:migrate` → completed in the dev container against the Docker PostgreSQL/PostGIS development database with no pending migration output after P2 schema application.
+  - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails test test/models/walking_path_test.rb` → 11 runs, 29 assertions, 0 failures, 0 errors, 0 skips.
 - Key decisions:
   - The spec was approved by the human. `spec.md` frontmatter `commit: 3cd48232` is behind current `HEAD` (`6952d912`), but `HEAD` is the spec commit itself and code files have not changed since the spec was written; no spec rewrite is needed before planning.
   - `problems.boulder_id` remains optional; ambiguous and unmatched legacy rows are reported, not guessed.
   - Walking paths are independent editorial records; area/cluster links are optional many-to-many groupings only.
   - GeoJSON parsing lives outside the controller so model/service tests can cover malformed JSON, unsupported geometry, Feature, FeatureCollection, LineString, and MultiLineString cases.
+  - Walking-path storage uses a generic SRID 4326 PostGIS `geometry` column with a line-type check constraint because PostGIS does not allow one `geography` typmod to accept both LineString and MultiLineString.
   - Any quality-gate command that needs a database must run against PostgreSQL/PostGIS in a Docker container, not a database created directly on the host machine.
 
 ## Quality gate database rule
@@ -101,16 +105,16 @@ Goal: add safe database-backed relationship foundations for existing models and 
 ## Phase 0007-P2 — Walking-path data model and strict GeoJSON parsing
 Goal: create the first-class Rails/PostGIS walking-path source with draft/published validation rules and optional editorial groupings.
 
-- [ ] Run `bin/rails generate model WalkingPath label:string slug:string description:text published:boolean` and edit the generated migration to add `geometry` as SRID 4326 geography accepting LineString/MultiLineString, default `published: false`, timestamps, a slug index, and a spatial index.
-- [ ] Run Rails migration generators for `WalkingPathArea walking_path:references area:references` and `WalkingPathCluster walking_path:references cluster:references`, then edit them to create optional many-to-many grouping join tables with unique compound indexes and foreign keys.
-- [ ] Read `app/models/area.rb`, `app/models/cluster.rb`, and the new join models before editing; add optional `has_many :walking_path_areas`, `has_many :walking_paths, through: :walking_path_areas`, `has_many :walking_path_clusters`, and `has_many :walking_paths, through: :walking_path_clusters` associations with appropriate dependent cleanup on join records.
-- [ ] Implement `app/models/walking_path.rb` with associations, normalized label/slug/description fields, validation that published records require slug and valid line geometry, validation that draft records may omit geometry, and helper methods for GeoJSON display.
-- [ ] Implement `app/models/walking_path_area.rb` and `app/models/walking_path_cluster.rb` with required `belongs_to` associations and uniqueness validations scoped to the joined record.
-- [ ] Add `app/services/walking_path_geojson_parser.rb` that accepts a JSON string, parses raw Geometry, Feature, or FeatureCollection, extracts exactly one LineString or MultiLineString, rejects Point/Polygon and multi-feature input with more than one line geometry, and returns an SRID 4326 RGeo geometry plus a clear error message.
-- [ ] Document in the parser class why only exactly one line geometry is accepted and why invalid input is rejected before model persistence.
-- [ ] Add `test/models/walking_path_test.rb` covering published slug/geometry requirements, draft without geometry, LineString, MultiLineString, unsupported geometry, malformed JSON, multi-line FeatureCollection rejection, and optional area/cluster groupings.
-- [ ] Add `test/fixtures/walking_paths.yml`, `test/fixtures/walking_path_areas.yml`, and `test/fixtures/walking_path_clusters.yml` with valid draft and published examples.
-- [ ] Run `bin/rails db:migrate` and inspect `db/schema.rb` for walking-path table, join tables, indexes, spatial column, and foreign keys.
+- [x] Run `bin/rails generate model WalkingPath label:string slug:string description:text published:boolean` and edit the generated migration to add `geometry` as SRID 4326 geometry constrained to LineString/MultiLineString, default `published: false`, timestamps, a slug index, and a spatial index.
+- [x] Run Rails migration generators for `WalkingPathArea walking_path:references area:references` and `WalkingPathCluster walking_path:references cluster:references`, then edit them to create optional many-to-many grouping join tables with unique compound indexes and foreign keys.
+- [x] Read `app/models/area.rb`, `app/models/cluster.rb`, and the new join models before editing; add optional `has_many :walking_path_areas`, `has_many :walking_paths, through: :walking_path_areas`, `has_many :walking_path_clusters`, and `has_many :walking_paths, through: :walking_path_clusters` associations with appropriate dependent cleanup on join records.
+- [x] Implement `app/models/walking_path.rb` with associations, normalized label/slug/description fields, validation that published records require slug and valid line geometry, validation that draft records may omit geometry, and helper methods for GeoJSON display.
+- [x] Implement `app/models/walking_path_area.rb` and `app/models/walking_path_cluster.rb` with required `belongs_to` associations and uniqueness validations scoped to the joined record.
+- [x] Add `app/services/walking_path_geojson_parser.rb` that accepts a JSON string, parses raw Geometry, Feature, or FeatureCollection, extracts exactly one LineString or MultiLineString, rejects Point/Polygon and multi-feature input with more than one line geometry, and returns an SRID 4326 RGeo geometry plus a clear error message.
+- [x] Document in the parser class why only exactly one line geometry is accepted and why invalid input is rejected before model persistence.
+- [x] Add `test/models/walking_path_test.rb` covering published slug/geometry requirements, draft without geometry, LineString, MultiLineString, unsupported geometry, malformed JSON, multi-line FeatureCollection rejection, and optional area/cluster groupings.
+- [x] Add `test/fixtures/walking_paths.yml`, `test/fixtures/walking_path_areas.yml`, and `test/fixtures/walking_path_clusters.yml` with valid draft and published examples.
+- [x] Run `bin/rails db:migrate` and inspect `db/schema.rb` for walking-path table, join tables, indexes, spatial column, and foreign keys.
 
 **Quality gate:** `bin/rails test test/models/walking_path_test.rb` → all walking-path model, parser, and grouping tests pass.
 

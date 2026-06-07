@@ -1,0 +1,9 @@
+draft:
+  label: Draft approach
+  published: false
+
+published:
+  label: Published approach
+  slug: published-approach
+  published: true
+  geometry: SRID=4326;LINESTRING(16.0 48.0,16.1 48.1)

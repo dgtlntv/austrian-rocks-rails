@@ -6,6 +6,8 @@ class Area < ApplicationRecord
   has_many :boulders
   has_many :problems
   has_many :poi_routes
+  has_many :walking_path_areas, dependent: :destroy
+  has_many :walking_paths, through: :walking_path_areas
   belongs_to :cluster, optional: true
 
   has_one_attached :cover do |attachable|
