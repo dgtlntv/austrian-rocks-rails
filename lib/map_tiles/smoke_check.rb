@@ -186,7 +186,7 @@ module MapTiles
 
       actual_layer_names = vector_layers.map { |layer| layer["id"] || layer["name"] }
       expected_layer_names = LayerContract.layer_names
-      unless actual_layer_names == expected_layer_names
+      unless actual_layer_names.sort == expected_layer_names.sort
         failures << "PMTiles metadata layers mismatch: expected #{expected_layer_names.join(', ')}, got #{actual_layer_names.join(', ')}"
       end
 
@@ -195,9 +195,18 @@ module MapTiles
         next if metadata_layer.blank?
 
         actual_fields = metadata_field_names(metadata_layer)
-        expected_fields = contract_layer.properties.sort
-        unless actual_fields == expected_fields
-          failures << "PMTiles metadata fields mismatch for #{contract_layer.name}: expected #{expected_fields.join(', ')}, got #{actual_fields.join(', ')}"
+        missing_required = contract_layer.required_properties - actual_fields
+        unexpected_fields = actual_fields - contract_layer.properties
+        if missing_required.any? || unexpected_fields.any?
+          details = []
+          details << "missing required fields: #{missing_required.join(', ')}" if missing_required.any?
+          details << "unexpected fields: #{unexpected_fields.join(', ')}" if unexpected_fields.any?
+          failures << "PMTiles metadata fields mismatch for #{contract_layer.name}: #{details.join('; ')}"
+        end
+
+        actual_fields.each do |field|
+          failures << "PMTiles metadata layer #{contract_layer.name} has forbidden circuit field: #{field}" if field.match?(/circuit/i)
+          failures << "PMTiles metadata layer #{contract_layer.name} has forbidden app URL field: #{field}" if field.match?(/url/i) && field != "googleUrl"
         end
       end
     end

@@ -60,7 +60,18 @@ class MapTiles::SmokeCheckTest < ActiveSupport::TestCase
     assert_includes error.message, "PMTiles artifact is not a valid PMTiles v3 archive"
   end
 
-  test "fails when PMTiles metadata layers or field names do not match the contract" do
+  test "allows Tippecanoe metadata layer ordering and absent optional fields" do
+    write_pmtiles_artifact(
+      layers: MapTiles::LayerContract.layers.reverse,
+      field_overrides: MapTiles::LayerContract.layers.to_h { |layer| [ layer.name, layer.required_properties ] }
+    )
+
+    result = MapTiles::SmokeCheck.new(configuration: @configuration).check
+
+    assert_equal "production", result.fetch(:mode)
+  end
+
+  test "fails when PMTiles metadata layers or required field names do not match the contract" do
     write_pmtiles_artifact(layers: MapTiles::LayerContract.layers.reject { |layer| layer.name == "pois" })
 
     error = assert_raises(MapTiles::SmokeCheck::Error) do
@@ -69,12 +80,16 @@ class MapTiles::SmokeCheckTest < ActiveSupport::TestCase
 
     assert_includes error.message, "PMTiles metadata layers mismatch"
 
-    write_pmtiles_artifact(field_overrides: { "problems" => %w[problemId areaId unexpectedField] })
+    write_pmtiles_artifact(field_overrides: { "problems" => %w[problemId areaId unexpectedField canonicalUrl circuitId] })
     error = assert_raises(MapTiles::SmokeCheck::Error) do
       MapTiles::SmokeCheck.new(configuration: @configuration).check
     end
 
     assert_includes error.message, "PMTiles metadata fields mismatch for problems"
+    assert_includes error.message, "missing required fields: areaSlug, name, grade, steepness, featured"
+    assert_includes error.message, "unexpected fields: canonicalUrl, circuitId, unexpectedField"
+    assert_includes error.message, "PMTiles metadata layer problems has forbidden app URL field: canonicalUrl"
+    assert_includes error.message, "PMTiles metadata layer problems has forbidden circuit field: circuitId"
   end
 
   test "fails when sampled GeoJSON features miss required properties" do
