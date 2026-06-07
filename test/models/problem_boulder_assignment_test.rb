@@ -7,11 +7,11 @@ class ProblemBoulderAssignmentTest < ActiveSupport::TestCase
   end
 
   test "reports matched missing no-containing multiple-containing and area-mismatch cases" do
-    matched_boulder = create_boulder(@area, [[ 0, 0 ], [ 2, 0 ], [ 2, 2 ], [ 0, 2 ], [ 0, 0 ]])
-    create_boulder(@area, [[ 10, 10 ], [ 12, 10 ], [ 12, 12 ], [ 10, 12 ], [ 10, 10 ]])
-    create_boulder(@area, [[ 20, 20 ], [ 22, 20 ], [ 22, 22 ], [ 20, 22 ], [ 20, 20 ]])
-    create_boulder(@area, [[ 21, 21 ], [ 23, 21 ], [ 23, 23 ], [ 21, 23 ], [ 21, 21 ]])
-    mismatched_boulder = create_boulder(@other_area, [[ 30, 30 ], [ 32, 30 ], [ 32, 32 ], [ 30, 32 ], [ 30, 30 ]])
+    matched_boulder = create_boulder(@area, [ [ 0, 0 ], [ 2, 0 ], [ 2, 2 ], [ 0, 2 ], [ 0, 0 ] ])
+    create_boulder(@area, [ [ 10, 10 ], [ 12, 10 ], [ 12, 12 ], [ 10, 12 ], [ 10, 10 ] ])
+    create_boulder(@area, [ [ 20, 20 ], [ 22, 20 ], [ 22, 22 ], [ 20, 22 ], [ 20, 20 ] ])
+    create_boulder(@area, [ [ 21, 21 ], [ 23, 21 ], [ 23, 23 ], [ 21, 23 ], [ 21, 21 ] ])
+    mismatched_boulder = create_boulder(@other_area, [ [ 30, 30 ], [ 32, 30 ], [ 32, 32 ], [ 30, 32 ], [ 30, 30 ] ])
 
     matched = create_problem(@area, location: point(1, 1))
     missing_location = create_problem(@area, location: nil)
@@ -36,7 +36,7 @@ class ProblemBoulderAssignmentTest < ActiveSupport::TestCase
   end
 
   test "backfill assigns only unambiguous matches" do
-    boulder = create_boulder(@area, [[ 0, 0 ], [ 2, 0 ], [ 2, 2 ], [ 0, 2 ], [ 0, 0 ]])
+    boulder = create_boulder(@area, [ [ 0, 0 ], [ 2, 0 ], [ 2, 2 ], [ 0, 2 ], [ 0, 0 ] ])
     matched = create_problem(@area, location: point(1, 1))
     unmatched = create_problem(@area, location: point(50, 50))
 

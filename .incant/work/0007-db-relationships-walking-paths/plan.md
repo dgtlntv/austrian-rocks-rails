@@ -12,16 +12,17 @@ updated: 2026-06-07
 # Plan — Database Relationships And Walking Path Admin Foundations
 
 ## Status
-- Current phase: `0007-P3` review fix complete; awaiting review.
+- Current phase: `0007-P4` release-readiness verification complete; awaiting review.
 - Stage: implement
 - Branch: `incant/0007-db-relationships-walking-paths`
-- Next step: run `/incant:review 0007` for Phase 0007-P3.
+- Next step: run `/incant:review 0007` for Phase 0007-P4 / final review.
 - Blockers: none. Relationship verification against the Docker-hosted `dump-prod` database reported every candidate relationship clean before adding foreign keys.
 - Review fixes:
   - Addressed P3 major finding in `review.md`: the edit form no longer pre-fills the paste textarea with the current geometry, shows current geometry as a separate non-input preview, and preserves uploaded `.geojson` as the replacement path without a false both-inputs error.
   - Added controller regression coverage for updating an existing walking path from an uploaded `.geojson`, including proof the edit form's paste textarea is blank while current geometry is shown separately.
   - Addressed P2 major finding in `review.md`: `WalkingPathGeojsonParser` now rejects unsupported sibling geometries in `FeatureCollection` input instead of accepting a mixed collection with one line plus Point/Polygon geometry.
   - Added regression coverage for mixed line+Point and line+Polygon FeatureCollections.
+  - Addressed P4 major finding in `review.md`: completed release-readiness migration/report/backfill/test/lint gates, fixed the item-introduced RuboCop offenses in `test/models/problem_boulder_assignment_test.rb`, and cleaned existing style offenses so full `bin/rubocop` passes.
 - Fresh evidence:
   - `PATH="$(rbenv root)/shims:$PATH" DATABASE_URL=postgis://austrian-rocks:password@127.0.0.1:5432/dump-prod ... bin/rails relationship_foreign_keys:report` → all candidate relationships clean, no dirty row IDs.
   - `PATH="$(rbenv root)/shims:$PATH" DATABASE_URL=postgis://austrian-rocks:password@127.0.0.1:5432/dump-prod ... bin/rails db:migrate` → migrations `20260607091029` and `20260607091030` applied successfully in the Docker PostgreSQL/PostGIS container.
@@ -36,6 +37,12 @@ updated: 2026-06-07
   - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bundle exec rubocop app/controllers/admin/walking_paths_controller.rb test/controllers/admin/walking_paths_controller_test.rb` → 2 files inspected, no offenses detected.
   - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails test test/controllers/admin/walking_paths_controller_test.rb test/models/walking_path_test.rb` → 26 runs, 107 assertions, 0 failures, 0 errors, 0 skips (P3 review-fix regression).
   - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bundle exec rubocop test/controllers/admin/walking_paths_controller_test.rb` → 1 file inspected, no offenses detected.
+  - `docker compose run --rm -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/dump-prod web bin/rails db:migrate && docker compose run --rm -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/dump-prod web bin/rails db:migrate:status` → no migration output from `db:migrate`; every migration through `20260607092652` is `up` in `dump-prod`.
+  - `docker compose run --rm -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/dump-prod web bin/rails problem_boulder_assignments:report` → printed every required category (`matched`, `missing_location`, `no_containing_boulder`, `multiple_containing_boulders`, `area_mismatch`) with count `0` and `*_ids: none`.
+  - `docker compose run --rm -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/dump-prod web bin/rails relationship_foreign_keys:report` → every candidate relationship reported `clean`, `count: 0`, `row_ids: none`; no deferred dirty rows or follow-up foreign keys.
+  - `docker compose run --rm -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/dump-prod web bin/rails problem_boulder_assignments:backfill` → printed all categories with count `0`, `updated: 0`, `updated_ids: none`; no unmatched or ambiguous rows were changed.
+  - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails db:prepare && docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails test test/models/problem_boulder_assignment_test.rb test/models/relationship_foreign_key_report_test.rb test/models/walking_path_test.rb test/models/topo_test.rb test/models/boulder_test.rb test/models/poi_test.rb test/controllers/admin/walking_paths_controller_test.rb` → 33 runs, 126 assertions, 0 failures, 0 errors, 0 skips.
+  - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rubocop` → 248 files inspected, no offenses detected.
 - Key decisions:
   - The spec was approved by the human. `spec.md` frontmatter `commit: 3cd48232` is behind current `HEAD` (`6952d912`), but `HEAD` is the spec commit itself and code files have not changed since the spec was written; no spec rewrite is needed before planning.
   - `problems.boulder_id` remains optional; ambiguous and unmatched legacy rows are reported, not guessed.
@@ -148,14 +155,14 @@ Goal: let maintainers manage walking paths under `/admin`, including publish/unp
 ## Phase 0007-P4 — End-to-end verification and review readiness
 Goal: prove the full item meets the spec, document any deferred dirty foreign keys, and leave the branch ready for review.
 
-- [ ] Run `bin/rails db:migrate` once more and confirm no pending migrations remain with `bin/rails db:migrate:status`.
-- [ ] Run `bin/rails problem_boulder_assignments:report` and save the terminal evidence in the implementation notes; verify it prints matched, missing-location, no-containing-boulder, multiple-containing-boulders, and area-mismatch counts and row IDs.
-- [ ] Run `bin/rails relationship_foreign_keys:report` and save the terminal evidence in the implementation notes; for any deferred foreign key, record the dirty row IDs and the follow-up needed instead of deleting data.
-- [ ] Run `bin/rails problem_boulder_assignments:backfill` in the appropriate local/test context and verify matched problems receive `boulder_id` while unmatched and ambiguous rows remain unset.
-- [ ] Run the full relevant Rails test set: `bin/rails test test/models/problem_boulder_assignment_test.rb test/models/relationship_foreign_key_report_test.rb test/models/walking_path_test.rb test/models/topo_test.rb test/models/boulder_test.rb test/models/poi_test.rb test/controllers/admin/walking_paths_controller_test.rb`.
-- [ ] Run `bin/rubocop` and fix any offenses introduced by this item.
-- [ ] Review `db/schema.rb`, `config/routes.rb`, admin views, model associations, services, rake tasks, fixtures, and tests for consistency with every acceptance criterion.
-- [ ] Update `.incant/STATE.md` and `.incant/backlog.md` to `status:implement` only during implementation after plan approval; do not mark implementation complete in this planning commit.
+- [x] Run `bin/rails db:migrate` once more and confirm no pending migrations remain with `bin/rails db:migrate:status`.
+- [x] Run `bin/rails problem_boulder_assignments:report` and save the terminal evidence in the implementation notes; verify it prints matched, missing-location, no-containing-boulder, multiple-containing-boulders, and area-mismatch counts and row IDs.
+- [x] Run `bin/rails relationship_foreign_keys:report` and save the terminal evidence in the implementation notes; for any deferred foreign key, record the dirty row IDs and the follow-up needed instead of deleting data.
+- [x] Run `bin/rails problem_boulder_assignments:backfill` in the appropriate local/test context and verify matched problems receive `boulder_id` while unmatched and ambiguous rows remain unset.
+- [x] Run the full relevant Rails test set: `bin/rails test test/models/problem_boulder_assignment_test.rb test/models/relationship_foreign_key_report_test.rb test/models/walking_path_test.rb test/models/topo_test.rb test/models/boulder_test.rb test/models/poi_test.rb test/controllers/admin/walking_paths_controller_test.rb`.
+- [x] Run `bin/rubocop` and fix any offenses introduced by this item.
+- [x] Review `db/schema.rb`, `config/routes.rb`, admin views, model associations, services, rake tasks, fixtures, and tests for consistency with every acceptance criterion.
+- [x] Update `.incant/STATE.md` and `.incant/backlog.md` to `status:implement` only during implementation after plan approval; do not mark implementation complete in this planning commit.
 
 **Quality gate:** `bin/rails test test/models/problem_boulder_assignment_test.rb test/models/relationship_foreign_key_report_test.rb test/models/walking_path_test.rb test/models/topo_test.rb test/models/boulder_test.rb test/models/poi_test.rb test/controllers/admin/walking_paths_controller_test.rb && bin/rubocop` → all relevant tests and RuboCop pass with fresh evidence before review.
 

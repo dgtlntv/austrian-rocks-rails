@@ -38,7 +38,7 @@ Rails.application.routes.draw do
       resources :audits
       resources :redirects, only: :new
 
-      resources :exports, only: [:index] do
+      resources :exports, only: [ :index ] do
         collection do
           get :db
           get :areas_geojson

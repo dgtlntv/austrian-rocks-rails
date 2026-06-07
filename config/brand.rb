@@ -8,5 +8,5 @@ BRAND_CONFIG = {
   },
   contact: {
     email: "hello@austrian.rocks"
-  },
+  }
 }.freeze

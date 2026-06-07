@@ -13,10 +13,10 @@ namespace :mapbox do
       result = area.boulders.where(ignore_for_area_hull: false).
         select("st_buffer(st_convexhull(st_collect(polygon::geometry)),0.00007) as hull",
                "st_centroid(st_buffer(st_convexhull(st_collect(polygon::geometry)),0.00007)) as centroid").to_a.first
-      
+
       # Skip areas with no boulders
       next unless result&.hull
-      
+
       hull = result.hull
       centroid = result.centroid
 
