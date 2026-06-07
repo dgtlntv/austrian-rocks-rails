@@ -13,14 +13,18 @@ updated: 2026-06-07
 # Plan — Austrian Rocks PMTiles Overlay Contract And Bunny Delivery
 
 ## Status
-- Phase: `0004-P1` complete; awaiting phase review.
+- Phase: `0004-P1` complete; review fixes applied; awaiting phase re-review.
 - Stage: implement.
 - Branch: `incant/0004-pmtiles-overlay-contract`.
 - Next step: run `/incant:review 0004` before starting `0004-P2`.
 - Blockers: none.
+- Review fixes:
+  - 2026-06-07: addressed review major by changing the ignored contract and P2 exporter plan from the missing walking-path published scope shorthand to `WalkingPath` records where `published` is true.
+  - 2026-06-07: addressed review minor by updating stale Files touched notes so backlog/state tracking points to the P1 review handoff, not the earlier plan stage.
 - Verification evidence:
   - 2026-06-07: merged `main` into this branch and verified `main` is an ancestor of `HEAD`, bringing completed `0007` changes into the implementation branch.
   - 2026-06-07: `test -f docs/map_tiles.md && git check-ignore -q docs/map_tiles.md && grep -q "walking_paths" docs/map_tiles.md && grep -q "native max zoom" docs/map_tiles.md` → `P1 quality gate passed: ignored docs contract exists, includes walking_paths, and documents native max zoom`.
+  - 2026-06-07: `test -f docs/map_tiles.md && git check-ignore -q docs/map_tiles.md && grep -q "walking_paths" docs/map_tiles.md && grep -q "native max zoom" docs/map_tiles.md && ! rg -q 'WalkingPath\\.published' docs/map_tiles.md .incant/work/0004-pmtiles-overlay-contract/plan.md` → `P1 review-fix gate passed: ignored docs contract exists, covers walking_paths/native max zoom, and no longer references the missing published scope shorthand`.
 - Key decisions:
   - Build a new `MapTiles` subsystem in `lib/map_tiles/` instead of extending the Mapbox-era rake task.
   - Keep generated GeoJSON and PMTiles under `tmp/map_tiles/`; never rely on `public/maps/austrian-rocks.pmtiles`.
@@ -43,8 +47,8 @@ updated: 2026-06-07
 - `test/lib/map_tiles/tippecanoe_builder_test.rb` — tests missing-Tippecanoe failure messaging and command construction without invoking the binary.
 - `test/lib/map_tiles/smoke_check_test.rb` — tests strict production counts, relaxed zero-feature mode, property checks, bounds checks, and artifact non-empty failures.
 - `test/lib/map_tiles/bunny_publisher_test.rb` — tests object key construction, version/latest uploads, credential handling, and HTTP `HEAD` verification through fakes.
-- `.incant/backlog.md` — keep item `0004` at `status:plan` after removing the stale `0007` blocker.
-- `.incant/STATE.md` — update current focus to the unblocked plan stage.
+- `.incant/backlog.md` — track item `0004` through phase implementation and review status; currently `status:review phase:0004-P1` while awaiting re-review after P1 fixes.
+- `.incant/STATE.md` — update current focus to the current phase-review handoff rather than the earlier plan stage.
 - `.incant/work/0004-pmtiles-overlay-contract/plan.md` — this implementation plan.
 
 ## Phase 0004-P1 — contract and source alignment
@@ -71,7 +75,7 @@ Goal: generate contract-aligned intermediate GeoJSON and build a single PMTiles 
 - [ ] Implement `areas` point and `area_hulls` polygon exports from published areas with stable IDs/slugs, localized labels, priority, bounds, and hull geometries derived from non-ignored boulders.
 - [ ] Implement `clusters` point and `cluster_hulls` polygon exports from published clusters with labels, slugs, region relationship fields where present, bounds, and hull geometries derived from published child areas' non-ignored boulders.
 - [ ] Implement `regions` point and `region_hulls` polygon exports from published regions with labels, slugs, bounds, and hull geometries derived from published descendant clusters/areas.
-- [ ] Implement `walking_paths` LineString/MultiLineString export from `WalkingPath.published` with required `walkingPathId`, `slug`, `name`, optional `nameEn`, and optional `description`.
+- [ ] Implement `walking_paths` LineString/MultiLineString export from `WalkingPath` records where `published` is true with required `walkingPathId`, `slug`, `name`, optional `nameEn`, and optional `description`.
 - [ ] Implement `pois` point export from POIs with locations, required `poiId`, `poiType`, `name`, `accessAreasJson`, optional `shortName`, `googleUrl`, and no app-local canonical URL properties.
 - [ ] Add `lib/map_tiles/tippecanoe_builder.rb` that verifies `tippecanoe` is available, fails with Homebrew and project install guidance when missing, and runs Tippecanoe with `--force`, `--output-to-directory` disabled, `--maximum-zoom=16`, `--minimum-zoom=0`, `--no-tile-compression` only if required by tests, one `--named-layer=<layer>:<path>` per GeoJSON file, and output `tmp/map_tiles/austrian-rocks-<version>.pmtiles`.
 - [ ] Add `bin/build_pmtiles` and `lib/tasks/map_tiles.rake` commands for `export`, `build`, `smoke`, and `publish`, all delegating to `MapTiles::CLI` with the same options and environment variables.
