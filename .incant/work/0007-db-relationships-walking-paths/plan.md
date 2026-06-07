@@ -12,10 +12,10 @@ updated: 2026-06-07
 # Plan — Database Relationships And Walking Path Admin Foundations
 
 ## Status
-- Current phase: `0007-P4` release-readiness verification complete; awaiting review.
+- Current phase: `0007-P4` review-fix complete; awaiting re-review.
 - Stage: implement
 - Branch: `incant/0007-db-relationships-walking-paths`
-- Next step: run `/incant:review 0007` for Phase 0007-P4 / final review.
+- Next step: run `/incant:review 0007` for Phase 0007-P4 / final re-review.
 - Blockers: none. Relationship verification against the Docker-hosted `dump-prod` database reported every candidate relationship clean before adding foreign keys.
 - Review fixes:
   - Addressed P3 major finding in `review.md`: the edit form no longer pre-fills the paste textarea with the current geometry, shows current geometry as a separate non-input preview, and preserves uploaded `.geojson` as the replacement path without a false both-inputs error.
@@ -23,6 +23,7 @@ updated: 2026-06-07
   - Addressed P2 major finding in `review.md`: `WalkingPathGeojsonParser` now rejects unsupported sibling geometries in `FeatureCollection` input instead of accepting a mixed collection with one line plus Point/Polygon geometry.
   - Added regression coverage for mixed line+Point and line+Polygon FeatureCollections.
   - Addressed P4 major finding in `review.md`: completed release-readiness migration/report/backfill/test/lint gates, fixed the item-introduced RuboCop offenses in `test/models/problem_boulder_assignment_test.rb`, and cleaned existing style offenses so full `bin/rubocop` passes.
+  - Addressed P4 major finding in `review.md`: removed premature finalize-stage `.incant/work/0007-db-relationships-walking-paths/summary.md` so the active work item no longer carries placeholder archived metadata before `/incant:finalize`.
 - Fresh evidence:
   - `PATH="$(rbenv root)/shims:$PATH" DATABASE_URL=postgis://austrian-rocks:password@127.0.0.1:5432/dump-prod ... bin/rails relationship_foreign_keys:report` → all candidate relationships clean, no dirty row IDs.
   - `PATH="$(rbenv root)/shims:$PATH" DATABASE_URL=postgis://austrian-rocks:password@127.0.0.1:5432/dump-prod ... bin/rails db:migrate` → migrations `20260607091029` and `20260607091030` applied successfully in the Docker PostgreSQL/PostGIS container.
@@ -43,6 +44,7 @@ updated: 2026-06-07
   - `docker compose run --rm -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/dump-prod web bin/rails problem_boulder_assignments:backfill` → printed all categories with count `0`, `updated: 0`, `updated_ids: none`; no unmatched or ambiguous rows were changed.
   - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails db:prepare && docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails test test/models/problem_boulder_assignment_test.rb test/models/relationship_foreign_key_report_test.rb test/models/walking_path_test.rb test/models/topo_test.rb test/models/boulder_test.rb test/models/poi_test.rb test/controllers/admin/walking_paths_controller_test.rb` → 33 runs, 126 assertions, 0 failures, 0 errors, 0 skips.
   - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rubocop` → 248 files inspected, no offenses detected.
+  - `test ! -e .incant/work/0007-db-relationships-walking-paths/summary.md && git diff --cached --name-status -- .incant/work/0007-db-relationships-walking-paths/summary.md` → summary file absent from the working tree and staged as deleted (`D`).
 - Key decisions:
   - The spec was approved by the human. `spec.md` frontmatter `commit: 3cd48232` is behind current `HEAD` (`6952d912`), but `HEAD` is the spec commit itself and code files have not changed since the spec was written; no spec rewrite is needed before planning.
   - `problems.boulder_id` remains optional; ambiguous and unmatched legacy rows are reported, not guessed.
