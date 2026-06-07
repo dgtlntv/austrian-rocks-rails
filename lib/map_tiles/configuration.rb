@@ -42,6 +42,10 @@ module MapTiles
       output_dir.join("#{artifact_basename}-#{version}.pmtiles")
     end
 
+    def metadata_path
+      output_dir.join("#{artifact_basename}-#{version}.metadata.json")
+    end
+
     def versioned_object_key
       object_key("#{artifact_basename}-#{version}.pmtiles")
     end

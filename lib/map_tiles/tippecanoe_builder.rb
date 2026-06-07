@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require "json"
 require "map_tiles/configuration"
 
 module MapTiles
@@ -30,6 +31,7 @@ module MapTiles
       success = command_runner.call(command)
       raise BuildError, "Tippecanoe failed while building #{configuration.artifact_path}" unless success
 
+      write_metadata!
       configuration.artifact_path
     end
 
@@ -50,6 +52,23 @@ module MapTiles
     end
 
     private
+
+    def write_metadata!
+      metadata = {
+        "basename" => configuration.artifact_basename,
+        "version" => configuration.version,
+        "maxzoom" => LayerContract.native_max_zoom,
+        "vector_layers" => LayerContract.layers.map do |layer|
+          {
+            "id" => layer.name,
+            "geometry_type" => layer.geometry_type,
+            "fields" => layer.properties.to_h { |property| [ property, "Scalar" ] }
+          }
+        end
+      }
+
+      configuration.metadata_path.write(JSON.pretty_generate(metadata))
+    end
 
     def ensure_tippecanoe_available!
       return if executable_checker.call(executable)

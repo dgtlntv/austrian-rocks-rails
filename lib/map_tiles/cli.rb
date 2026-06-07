@@ -59,10 +59,10 @@ module MapTiles
 
     def smoke
       require "map_tiles/smoke_check"
-      MapTiles::SmokeCheck.new(configuration: configuration, argv: argv).run
+      MapTiles::SmokeCheck.new(configuration: configuration, argv: argv, out: out).run
       0
-    rescue LoadError
-      err.puts "map_tiles smoke is implemented in phase 0004-P3"
+    rescue MapTiles::SmokeCheck::Error => e
+      err.puts e.message
       1
     end
 

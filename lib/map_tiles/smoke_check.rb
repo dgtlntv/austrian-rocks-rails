@@ -1,0 +1,297 @@
+# frozen_string_literal: true
+
+require "json"
+require "map_tiles/configuration"
+
+module MapTiles
+  class SmokeCheck
+    class Error < StandardError; end
+
+    AUSTRIA_BOUNDS = {
+      min_lon: 9.0,
+      max_lon: 17.5,
+      min_lat: 46.0,
+      max_lat: 49.5
+    }.freeze
+
+    SCALAR_VALUE_CLASSES = [ String, Integer, Float, TrueClass, FalseClass ].freeze
+
+    attr_reader :configuration, :argv, :out, :mode, :allowed_empty_layers
+
+    def initialize(configuration: Configuration.new, argv: [], out: $stdout)
+      @configuration = configuration
+      @argv = argv.dup
+      @out = out
+      @mode = "production"
+      @allowed_empty_layers = []
+      parse_options!
+    end
+
+    def run
+      result = check
+      print_summary(result)
+      result
+    end
+
+    def check
+      failures = []
+      verify_artifact!(failures)
+      verify_metadata!(read_metadata(failures), failures)
+
+      layer_results = LayerContract.layers.map do |layer|
+        inspect_geojson_layer(layer, failures)
+      end
+
+      verify_layer_counts!(layer_results, failures)
+      bounds = combined_bounds(layer_results)
+      verify_bounds!(bounds, failures)
+
+      raise Error, failures.join("\n") if failures.any?
+
+      {
+        mode: mode,
+        layers: layer_results,
+        bounds: bounds
+      }
+    end
+
+    private
+
+    def parse_options!
+      until argv.empty?
+        option = argv.shift
+
+        case option
+        when /\A--mode=(.+)\z/
+          @mode = Regexp.last_match(1)
+        when "--mode"
+          @mode = argv.shift.to_s
+        when /\A--allow-empty=(.*)\z/
+          @allowed_empty_layers = split_layer_list(Regexp.last_match(1))
+        when "--allow-empty"
+          @allowed_empty_layers = split_layer_list(argv.shift.to_s)
+        else
+          raise Error, "Unknown smoke-check option: #{option}"
+        end
+      end
+
+      raise Error, "Smoke-check mode must be production or relaxed" unless %w[production relaxed].include?(mode)
+
+      unknown_layers = allowed_empty_layers - LayerContract.layer_names
+      raise Error, "Unknown --allow-empty layer(s): #{unknown_layers.join(', ')}" if unknown_layers.any?
+    end
+
+    def split_layer_list(value)
+      value.split(",").map(&:strip).reject(&:empty?)
+    end
+
+    def verify_artifact!(failures)
+      artifact_path = configuration.artifact_path
+
+      unless artifact_path.exist?
+        failures << "PMTiles artifact is missing: #{artifact_path}"
+        return
+      end
+
+      failures << "PMTiles artifact is empty: #{artifact_path}" unless artifact_path.size.positive?
+    end
+
+    def read_metadata(failures)
+      metadata_path = configuration.metadata_path
+
+      unless metadata_path.exist?
+        failures << "PMTiles metadata is missing: #{metadata_path}"
+        return
+      end
+
+      JSON.parse(metadata_path.read)
+    rescue JSON::ParserError => e
+      failures << "PMTiles metadata is invalid JSON: #{metadata_path} (#{e.message})"
+      nil
+    end
+
+    def verify_metadata!(metadata, failures)
+      return if metadata.blank?
+
+      vector_layers = metadata.fetch("vector_layers", nil)
+      unless vector_layers.is_a?(Array)
+        failures << "PMTiles metadata must contain a vector_layers array"
+        return
+      end
+
+      actual_layer_names = vector_layers.map { |layer| layer["id"] || layer["name"] }
+      expected_layer_names = LayerContract.layer_names
+      unless actual_layer_names == expected_layer_names
+        failures << "PMTiles metadata layers mismatch: expected #{expected_layer_names.join(', ')}, got #{actual_layer_names.join(', ')}"
+      end
+
+      LayerContract.layers.each do |contract_layer|
+        metadata_layer = vector_layers.find { |layer| (layer["id"] || layer["name"]) == contract_layer.name }
+        next if metadata_layer.blank?
+
+        actual_fields = metadata_field_names(metadata_layer)
+        expected_fields = contract_layer.properties.sort
+        unless actual_fields == expected_fields
+          failures << "PMTiles metadata fields mismatch for #{contract_layer.name}: expected #{expected_fields.join(', ')}, got #{actual_fields.join(', ')}"
+        end
+      end
+    end
+
+    def metadata_field_names(metadata_layer)
+      fields = metadata_layer.fetch("fields", {})
+
+      case fields
+      when Hash
+        fields.keys.sort
+      when Array
+        fields.sort
+      else
+        []
+      end
+    end
+
+    def inspect_geojson_layer(layer, failures)
+      path = configuration.geojson_dir.join("#{layer.name}.geojson")
+      layer_result = { name: layer.name, path: path, count: 0, bounds: nil }
+
+      unless path.exist?
+        failures << "GeoJSON layer file is missing for #{layer.name}: #{path}"
+        return layer_result
+      end
+
+      collection = JSON.parse(path.read)
+      unless collection["type"] == "FeatureCollection" && collection["features"].is_a?(Array)
+        failures << "GeoJSON layer #{layer.name} must be a FeatureCollection"
+        return layer_result
+      end
+
+      features = collection.fetch("features")
+      layer_result[:count] = features.length
+      all_positions = []
+
+      features.each_with_index do |feature, index|
+        properties = feature.fetch("properties", {}) || {}
+        geometry = feature.fetch("geometry", nil)
+
+        verify_feature_geometry!(layer, geometry, index, failures)
+        all_positions.concat(positions_for_geometry(geometry)) if geometry.present?
+        verify_feature_properties!(layer, properties, index, failures)
+      end
+
+      layer_result[:bounds] = bounds_for_positions(all_positions)
+      layer_result
+    rescue JSON::ParserError => e
+      failures << "GeoJSON layer #{layer.name} is invalid JSON: #{path} (#{e.message})"
+      layer_result
+    end
+
+    def verify_feature_geometry!(layer, geometry, index, failures)
+      unless geometry.is_a?(Hash) && geometry["type"].present?
+        failures << "GeoJSON layer #{layer.name} feature #{index} is missing geometry"
+        return
+      end
+
+      allowed_geometry_types = layer.geometry_type.split("/")
+      return if allowed_geometry_types.include?(geometry.fetch("type"))
+
+      failures << "GeoJSON layer #{layer.name} feature #{index} geometry #{geometry.fetch('type')} does not match #{layer.geometry_type}"
+    end
+
+    def verify_feature_properties!(layer, properties, index, failures)
+      unless properties.is_a?(Hash)
+        failures << "GeoJSON layer #{layer.name} feature #{index} properties must be an object"
+        return
+      end
+
+      missing_required = layer.required_properties.reject { |property| properties.key?(property) }
+      if missing_required.any?
+        failures << "GeoJSON layer #{layer.name} feature #{index} is missing required properties: #{missing_required.join(', ')}"
+      end
+
+      unexpected_properties = properties.keys - layer.properties
+      if unexpected_properties.any?
+        failures << "GeoJSON layer #{layer.name} feature #{index} has unexpected properties: #{unexpected_properties.join(', ')}"
+      end
+
+      properties.each do |key, value|
+        failures << "GeoJSON layer #{layer.name} feature #{index} has forbidden circuit field: #{key}" if key.match?(/circuit/i)
+        failures << "GeoJSON layer #{layer.name} feature #{index} has forbidden app URL field: #{key}" if key.match?(/url/i) && key != "googleUrl"
+
+        next if value.nil? || SCALAR_VALUE_CLASSES.any? { |klass| value.is_a?(klass) }
+
+        failures << "GeoJSON layer #{layer.name} feature #{index} property #{key} is not scalar: #{value.class}"
+      end
+    end
+
+    def verify_layer_counts!(layer_results, failures)
+      layer_results.each do |result|
+        next if result[:count].positive?
+
+        if mode == "production"
+          failures << "GeoJSON layer #{result[:name]} has zero features in production mode"
+        elsif !allowed_empty_layers.include?(result[:name])
+          failures << "GeoJSON layer #{result[:name]} has zero features but is not listed in --allow-empty"
+        end
+      end
+    end
+
+    def combined_bounds(layer_results)
+      bounds_for_positions(layer_results.filter_map { |result| result[:bounds] }.flat_map do |bounds|
+        [ [ bounds[:min_lon], bounds[:min_lat] ], [ bounds[:max_lon], bounds[:max_lat] ] ]
+      end)
+    end
+
+    def verify_bounds!(bounds, failures)
+      return if bounds.blank?
+
+      if bounds[:min_lon] < AUSTRIA_BOUNDS[:min_lon] || bounds[:max_lon] > AUSTRIA_BOUNDS[:max_lon] ||
+          bounds[:min_lat] < AUSTRIA_BOUNDS[:min_lat] || bounds[:max_lat] > AUSTRIA_BOUNDS[:max_lat]
+        failures << "Combined GeoJSON bounds are outside sane Austria bounds: lon #{bounds[:min_lon]}..#{bounds[:max_lon]}, lat #{bounds[:min_lat]}..#{bounds[:max_lat]}"
+      end
+    end
+
+    def positions_for_geometry(geometry)
+      return [] if geometry.blank?
+
+      positions_from_coordinates(geometry.fetch("coordinates", []))
+    end
+
+    def positions_from_coordinates(coordinates)
+      return [] unless coordinates.is_a?(Array)
+
+      if coordinates.length >= 2 && coordinates[0].is_a?(Numeric) && coordinates[1].is_a?(Numeric)
+        return [ coordinates ]
+      end
+
+      coordinates.flat_map { |child| positions_from_coordinates(child) }
+    end
+
+    def bounds_for_positions(positions)
+      return if positions.blank?
+
+      longitudes = positions.map { |position| position[0].to_f }
+      latitudes = positions.map { |position| position[1].to_f }
+
+      {
+        min_lon: longitudes.min,
+        max_lon: longitudes.max,
+        min_lat: latitudes.min,
+        max_lat: latitudes.max
+      }
+    end
+
+    def print_summary(result)
+      out.puts "PMTiles smoke check passed (mode=#{result.fetch(:mode)})"
+      result.fetch(:layers).each do |layer_result|
+        out.puts "#{layer_result.fetch(:name)}: #{layer_result.fetch(:count)} feature(s)"
+      end
+
+      bounds = result.fetch(:bounds)
+      if bounds.present?
+        out.puts "bounds: lon #{bounds[:min_lon]}..#{bounds[:max_lon]}, lat #{bounds[:min_lat]}..#{bounds[:max_lat]}"
+      else
+        out.puts "bounds: no features"
+      end
+    end
+  end
+end

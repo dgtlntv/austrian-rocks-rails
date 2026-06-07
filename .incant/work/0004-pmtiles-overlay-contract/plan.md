@@ -13,10 +13,10 @@ updated: 2026-06-07
 # Plan — Austrian Rocks PMTiles Overlay Contract And Bunny Delivery
 
 ## Status
-- Phase: `0004-P3` implementation in progress.
+- Phase: `0004-P3` implementation complete; awaiting phase review.
 - Stage: implement.
 - Branch: `incant/0004-pmtiles-overlay-contract`.
-- Next step: implement smoke checks for local relaxed mode and production strict mode.
+- Next step: run `/incant:review 0004` before starting `0004-P4`.
 - Blockers: none.
 - Review fixes:
   - 2026-06-07: addressed P2 review blocker by preserving required problem `grade` with an `unknown` fallback for blank-but-valid grades, adding required-name fallbacks for exported labels that could otherwise be compacted away, documenting the grade fallback in the ignored contract, and adding regression coverage.
@@ -29,6 +29,10 @@ updated: 2026-06-07
   - 2026-06-07: `test -f docs/map_tiles.md && git check-ignore -q docs/map_tiles.md && grep -q "walking_paths" docs/map_tiles.md && grep -q "native max zoom" docs/map_tiles.md && ! rg -q 'WalkingPath\\.published' docs/map_tiles.md .incant/work/0004-pmtiles-overlay-contract/plan.md` → `P1 review-fix gate passed: ignored docs contract exists, covers walking_paths/native max zoom, and no longer references the missing published scope shorthand`.
   - 2026-06-07: `DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/layer_contract_test.rb test/lib/map_tiles/geojson_exporter_test.rb test/lib/map_tiles/tippecanoe_builder_test.rb` (with Ruby 3.3.5 via rbenv and Docker PostGIS) → `11 runs, 705 assertions, 0 failures, 0 errors, 0 skips`.
   - 2026-06-07: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/layer_contract_test.rb test/lib/map_tiles/geojson_exporter_test.rb test/lib/map_tiles/tippecanoe_builder_test.rb` → `12 runs, 712 assertions, 0 failures, 0 errors, 0 skips`.
+  - 2026-06-07: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/smoke_check_test.rb` → `8 runs, 38 assertions, 0 failures, 0 errors, 0 skips`.
+  - 2026-06-07: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/tippecanoe_builder_test.rb test/lib/map_tiles/smoke_check_test.rb` → `11 runs, 75 assertions, 0 failures, 0 errors, 0 skips`.
+  - 2026-06-07: `eval "$(rbenv init - bash)" && bin/rubocop lib/map_tiles/smoke_check.rb test/lib/map_tiles/smoke_check_test.rb lib/map_tiles/configuration.rb lib/map_tiles/tippecanoe_builder.rb lib/map_tiles/cli.rb` → `5 files inspected, no offenses detected`.
+  - 2026-06-07: `eval "$(rbenv init - bash)" && DATABASE_URL=postgis://austrian-rocks:password@localhost:5432/austrian-rocks-test BUNNY_STORAGE_ENDPOINT=http://example.test BUNNY_STORAGE_ACCESS_KEY_ID=test BUNNY_STORAGE_SECRET_ACCESS_KEY=test BUNNY_STORAGE_REGION=de BUNNY_STORAGE_BUCKET=test bin/rails test test/lib/map_tiles/layer_contract_test.rb test/lib/map_tiles/geojson_exporter_test.rb test/lib/map_tiles/tippecanoe_builder_test.rb test/lib/map_tiles/smoke_check_test.rb` → `20 runs, 750 assertions, 0 failures, 0 errors, 0 skips`.
 - Key decisions:
   - Build a new `MapTiles` subsystem in `lib/map_tiles/` instead of extending the Mapbox-era rake task.
   - Keep generated GeoJSON and PMTiles under `tmp/map_tiles/`; never rely on `public/maps/austrian-rocks.pmtiles`.
@@ -90,13 +94,13 @@ Goal: generate contract-aligned intermediate GeoJSON and build a single PMTiles 
 ## Phase 0004-P3 — smoke checks for local relaxed mode and production strict mode
 Goal: prove generated artifacts match the contract and fail clearly when the artifact or data is unsuitable.
 
-- [ ] Read `lib/map_tiles/layer_contract.rb`, `lib/map_tiles/configuration.rb`, `lib/map_tiles/geojson_exporter.rb`, `lib/map_tiles/tippecanoe_builder.rb`, and `bin/build_pmtiles` before editing.
-- [ ] Add `lib/map_tiles/smoke_check.rb` that verifies the PMTiles file exists, is non-empty, and has metadata exposing exactly the expected source layers and field names from `LayerContract`.
-- [ ] In `SmokeCheck`, inspect the exported GeoJSON layer files used to build the archive and verify required properties on sampled features, scalar-only vector-tile-safe property values, no circuit fields, and no app-local canonical URL fields.
-- [ ] In `SmokeCheck`, calculate combined feature bounds and fail outside sane Austria-area bounds of longitude `9.0..17.5` and latitude `46.0..49.5`, while allowing empty fixture layers only in relaxed mode.
-- [ ] In `SmokeCheck`, implement strict production/export mode that fails when any expected layer has zero features, and relaxed mode that accepts a caller-specified comma-separated list of zero-feature layers while still requiring all layer files and properties to exist when features are present.
-- [ ] Wire `bin/build_pmtiles smoke --mode=relaxed --allow-empty=...` and `bin/build_pmtiles smoke --mode=production` to the same smoke-check implementation and print layer counts, bounds, missing fields, and actionable failures.
-- [ ] Add `test/lib/map_tiles/smoke_check_test.rb` covering non-empty artifact requirement, expected layer metadata, required property sampling, Austria bounds failures, strict zero-feature failures, relaxed allowed empty layers, and rejection of unexpected circuit fields.
+- [x] Read `lib/map_tiles/layer_contract.rb`, `lib/map_tiles/configuration.rb`, `lib/map_tiles/geojson_exporter.rb`, `lib/map_tiles/tippecanoe_builder.rb`, and `bin/build_pmtiles` before editing.
+- [x] Add `lib/map_tiles/smoke_check.rb` that verifies the PMTiles file exists, is non-empty, and has metadata exposing exactly the expected source layers and field names from `LayerContract`.
+- [x] In `SmokeCheck`, inspect the exported GeoJSON layer files used to build the archive and verify required properties on sampled features, scalar-only vector-tile-safe property values, no circuit fields, and no app-local canonical URL fields.
+- [x] In `SmokeCheck`, calculate combined feature bounds and fail outside sane Austria-area bounds of longitude `9.0..17.5` and latitude `46.0..49.5`, while allowing empty fixture layers only in relaxed mode.
+- [x] In `SmokeCheck`, implement strict production/export mode that fails when any expected layer has zero features, and relaxed mode that accepts a caller-specified comma-separated list of zero-feature layers while still requiring all layer files and properties to exist when features are present.
+- [x] Wire `bin/build_pmtiles smoke --mode=relaxed --allow-empty=...` and `bin/build_pmtiles smoke --mode=production` to the same smoke-check implementation and print layer counts, bounds, missing fields, and actionable failures.
+- [x] Add `test/lib/map_tiles/smoke_check_test.rb` covering non-empty artifact requirement, expected layer metadata, required property sampling, Austria bounds failures, strict zero-feature failures, relaxed allowed empty layers, and rejection of unexpected circuit fields.
 
 **Quality gate:** `bin/rails test test/lib/map_tiles/smoke_check_test.rb` → all smoke-check tests pass using fixture GeoJSON/PMTiles metadata fixtures and no network access.
 
