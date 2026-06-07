@@ -20,7 +20,7 @@ updated: 2026-06-07
 - Blockers: none.
 - Verification evidence:
   - 2026-06-07: merged `main` into this branch and verified `main` is an ancestor of `HEAD`, bringing completed `0007` changes into the implementation branch.
-  - 2026-06-07: `test -f .incant/work/0004-pmtiles-overlay-contract/contract.md && grep -q "walking_paths" .incant/work/0004-pmtiles-overlay-contract/contract.md && grep -q "native max zoom" .incant/work/0004-pmtiles-overlay-contract/contract.md` → `P1 quality gate passed: contract exists, includes walking_paths, and documents native max zoom`.
+  - 2026-06-07: `test -f docs/map_tiles.md && git check-ignore -q docs/map_tiles.md && grep -q "walking_paths" docs/map_tiles.md && grep -q "native max zoom" docs/map_tiles.md` → `P1 quality gate passed: ignored docs contract exists, includes walking_paths, and documents native max zoom`.
 - Key decisions:
   - Build a new `MapTiles` subsystem in `lib/map_tiles/` instead of extending the Mapbox-era rake task.
   - Keep generated GeoJSON and PMTiles under `tmp/map_tiles/`; never rely on `public/maps/austrian-rocks.pmtiles`.
@@ -28,7 +28,7 @@ updated: 2026-06-07
   - Reuse Bunny S3-compatible credentials while keeping map tile CDN host, object prefix, and version/latest naming in map-specific environment-backed config.
 
 ## Files touched
-- `.incant/work/0004-pmtiles-overlay-contract/contract.md` — committed consumer/maintainer contract for source layers, properties, zoom, style-layer expectations, and Bunny URL/versioning rules while `/docs/` stays gitignored.
+- `docs/map_tiles.md` — ignored/untracked consumer/maintainer contract for source layers, properties, zoom, style-layer expectations, and Bunny URL/versioning rules while `/docs/` and its contents stay gitignored.
 - `lib/map_tiles/configuration.rb` — map-specific configuration for build output, public CDN host, Bunny prefix, object names, version strings, and expected layers.
 - `lib/map_tiles/layer_contract.rb` — canonical layer/property definitions shared by contract checks, exporter, and smoke checks.
 - `lib/map_tiles/geojson_exporter.rb` — exports deterministic per-layer GeoJSON FeatureCollections from Rails/PostGIS data.
@@ -48,16 +48,16 @@ updated: 2026-06-07
 - `.incant/work/0004-pmtiles-overlay-contract/plan.md` — this implementation plan.
 
 ## Phase 0004-P1 — contract and source alignment
-Goal: land the committed PMTiles contract artifact outside `/docs/` and document source assumptions against the database and walking-path foundations delivered by completed item `0007`.
+Goal: create the PMTiles contract artifact in ignored `/docs/` and document source assumptions against the database and walking-path foundations delivered by completed item `0007`.
 
 - [x] Confirm the implementation branch contains completed `0007` changes (`WalkingPath`, optional `problems.boulder_id`, corrected POI associations, and relationship foreign keys) before editing exporter code.
 - [x] Read `db/schema.rb`, `app/models/application_record.rb`, `app/models/problem.rb`, `app/models/boulder.rb`, `app/models/walking_path.rb`, `app/models/area.rb`, `app/models/cluster.rb`, `app/models/region.rb`, `app/models/poi.rb`, `app/models/poi_route.rb`, and `lib/tasks/mapbox.rake` before editing.
-- [x] Add `.incant/work/0004-pmtiles-overlay-contract/contract.md` documenting native max zoom `16`, the difference between PMTiles source layers and later MapLibre style layers, no circuit layers/properties, no app-local canonical URLs, Bunny public URL rules, immutable/latest object names, and all ten source layers: `problems`, `boulders`, `areas`, `area_hulls`, `clusters`, `cluster_hulls`, `regions`, `region_hulls`, `walking_paths`, and `pois`.
-- [x] In `.incant/work/0004-pmtiles-overlay-contract/contract.md`, document for every source layer its geometry type, required properties, optional properties, stable identifier property, localized `name`/optional `nameEn` rule, and consumer navigation guidance from IDs/slugs.
-- [x] In `.incant/work/0004-pmtiles-overlay-contract/contract.md`, document that `problems` may include `boulderId` from the `0007` relationship cleanup, and that `walking_paths` reads published line geometry from the `WalkingPath` model delivered by `0007`.
-- [x] In `.incant/work/0004-pmtiles-overlay-contract/contract.md`, document `pois.accessAreasJson` as a scalar JSON string derived from `poi_routes`, with entries containing `areaId`, `areaSlug`, `transport`, `distance`, and `minutes`, and explicitly state that it is metadata rather than route geometry.
+- [x] Add ignored `docs/map_tiles.md` documenting native max zoom `16`, the difference between PMTiles source layers and later MapLibre style layers, no circuit layers/properties, no app-local canonical URLs, Bunny public URL rules, immutable/latest object names, and all ten source layers: `problems`, `boulders`, `areas`, `area_hulls`, `clusters`, `cluster_hulls`, `regions`, `region_hulls`, `walking_paths`, and `pois`.
+- [x] In ignored `docs/map_tiles.md`, document for every source layer its geometry type, required properties, optional properties, stable identifier property, localized `name`/optional `nameEn` rule, and consumer navigation guidance from IDs/slugs.
+- [x] In ignored `docs/map_tiles.md`, document that `problems` may include `boulderId` from the `0007` relationship cleanup, and that `walking_paths` reads published line geometry from the `WalkingPath` model delivered by `0007`.
+- [x] In ignored `docs/map_tiles.md`, document `pois.accessAreasJson` as a scalar JSON string derived from `poi_routes`, with entries containing `areaId`, `areaSlug`, `transport`, `distance`, and `minutes`, and explicitly state that it is metadata rather than route geometry.
 
-**Quality gate:** `test -f .incant/work/0004-pmtiles-overlay-contract/contract.md && grep -q "walking_paths" .incant/work/0004-pmtiles-overlay-contract/contract.md && grep -q "native max zoom" .incant/work/0004-pmtiles-overlay-contract/contract.md` → the committed contract artifact exists and covers walking paths plus native zoom before exporter code starts.
+**Quality gate:** `test -f docs/map_tiles.md && git check-ignore -q docs/map_tiles.md && grep -q "walking_paths" docs/map_tiles.md && grep -q "native max zoom" docs/map_tiles.md` → the ignored docs contract artifact exists, remains gitignored, and covers walking paths plus native zoom before exporter code starts.
 
 ## Phase 0004-P2 — deterministic GeoJSON export and Tippecanoe build
 Goal: generate contract-aligned intermediate GeoJSON and build a single PMTiles artifact with Tippecanoe.
@@ -100,15 +100,15 @@ Goal: publish both immutable and latest artifacts to Bunny/CDN, verify reachabil
 - [ ] In `BunnyPublisher`, construct object keys only from sanitized config values and fixed artifact naming, upload `austrian-rocks-<version>.pmtiles` and `austrian-rocks-latest.pmtiles`, set an appropriate PMTiles content type such as `application/octet-stream`, and never log credentials.
 - [ ] In `BunnyPublisher`, verify both versioned and latest public URLs with HTTP `HEAD`, requiring a 2xx status and reporting the exact URL/status for failures.
 - [ ] Wire `bin/build_pmtiles publish` and `rails map_tiles:publish` so they run production smoke checks before upload unless `MAP_TILES_SKIP_SMOKE` is explicitly false-by-default and documented as only for emergency operator use.
-- [ ] Update `.incant/work/0004-pmtiles-overlay-contract/contract.md` with maintainer commands for local relaxed export/build/smoke, production export/build/smoke/publish, required environment variables, Tippecanoe install guidance, Bunny external setup notes, generated artifact ignore policy, and a note that `/docs/` remains gitignored for now.
+- [ ] Update ignored `docs/map_tiles.md` with maintainer commands for local relaxed export/build/smoke, production export/build/smoke/publish, required environment variables, Tippecanoe install guidance, Bunny external setup notes, generated artifact ignore policy, and a note that `/docs/` and its contents remain gitignored for now.
 - [ ] Add `test/lib/map_tiles/bunny_publisher_test.rb` covering required configuration failures, object key construction, dual upload calls, latest overwrite behavior, successful HEAD checks, failed HEAD checks, and no credential leakage in errors.
-- [ ] Run a coverage self-review against this plan and update `.incant/work/0004-pmtiles-overlay-contract/contract.md` or tests if any spec requirement lacks an implementation or gate.
+- [ ] Run a coverage self-review against this plan and update ignored `docs/map_tiles.md` or tests if any spec requirement lacks an implementation or gate.
 - [ ] Run the final verification commands and paste the fresh outputs into the implementation status before review: targeted map tile tests, `bin/rails test`, `bin/rubocop`, and `bin/brakeman --no-pager`.
 
 **Quality gate:** `bin/rails test test/lib/map_tiles/bunny_publisher_test.rb && bin/rails test && bin/rubocop && bin/brakeman --no-pager` → all tests, lint, and security checks pass locally with Bunny network calls faked in tests.
 
 ## Coverage self-review
-- [x] Requirement 1 maps to P1 committed contract steps and P2 `LayerContract` tests.
+- [x] Requirement 1 maps to P1 ignored docs contract steps and P2 `LayerContract` tests.
 - [x] Requirement 2 maps to P1 contract and P2 exporter/build steps for all ten layers.
 - [x] Requirement 3 maps to P1 source-alignment documentation and P2 exporter consumption of `0007`-delivered models/relationships.
 - [x] Requirement 4 maps to P1 contract, P2 `LayerContract`, and exporter camelCase transformation tests.

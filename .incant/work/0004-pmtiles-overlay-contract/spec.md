@@ -23,7 +23,7 @@ A previous exploratory branch, `feature/maplibre-render`, prototyped `lib/tasks/
 The iOS app lives outside this repo at `/Users/maximilianblazek/Documents/GitHub/austrian-rocks-ios`. Its current Mapbox implementation is context for consumer needs: stable feature IDs, problem/area/cluster selection, POI actions, filters, and offline/download behavior. This Rails repo owns the shared PMTiles contract and delivery artifact, but not the iOS implementation.
 
 ## Requirements
-1. Define a committed PMTiles consumer contract artifact at `.incant/work/0004-pmtiles-overlay-contract/contract.md` that lists every layer, geometry type, required property, optional property, naming convention, native max zoom, and Bunny/CDN URL rule. Keep `/docs/` gitignored for now and do not commit `docs/map_tiles.md` in this item.
+1. Define a PMTiles consumer contract artifact at `docs/map_tiles.md` that lists every layer, geometry type, required property, optional property, naming convention, native max zoom, and Bunny/CDN URL rule. Keep `/docs/` and its contents gitignored for now; this docs contract is a local ignored working artifact and must not be committed in this item.
 2. Generate a PMTiles overlay with exactly these initial source layers: `problems`, `boulders`, `areas`, `area_hulls`, `clusters`, `cluster_hulls`, `regions`, `region_hulls`, `walking_paths`, and `pois`.
 3. Consume the database relationship cleanup and published `WalkingPath` model/admin source data delivered by completed backlog item `0007`; do not add or recreate those foundations in `0004`.
 4. Use camelCase feature property names in the PMTiles contract, while leaving Rails/database internals in their existing snake_case style.
@@ -50,7 +50,7 @@ The iOS app lives outside this repo at `/Users/maximilianblazek/Documents/GitHub
 - Smoke checks for artifact structure, expected layers, sampled properties, bounds, feature counts, and Bunny reachability.
 - Bunny/CDN upload of immutable versioned and stable latest PMTiles objects.
 - Map-specific configuration for public CDN host, Bunny object prefix, and artifact version naming.
-- A committed contract artifact in `.incant/work/0004-pmtiles-overlay-contract/contract.md` for consumers and maintainers; `/docs/` remains gitignored for now.
+- A PMTiles contract artifact in `docs/map_tiles.md` for consumers and maintainers; `/docs/` and its contents remain gitignored and must not be committed for now.
 
 **Out of scope:**
 - Database relationship cleanup, `problems.boulder_id`, `WalkingPath` model/table, and walking path admin UI — reason: completed backlog item `0007` already owns and delivered those foundations.
@@ -88,7 +88,7 @@ The pipeline should have automated checks around both the data contract and deli
 New exporter, smoke-check, and upload entry points should be documented at their module or command boundaries: what data they export, why layer/property names are stable, how version/latest upload works, and what failures mean. JavaScript is not expected to be touched in this item. Documentation should be concise and useful, avoiding comments that merely restate obvious code.
 
 ## Acceptance criteria
-- [ ] `.incant/work/0004-pmtiles-overlay-contract/contract.md` exists and documents the PMTiles source layers, geometry types, required/optional properties, POI relationship metadata representation, walking path layer semantics, expected derived style-layer usage for labels/fills/outlines/lines, native max zoom `16`, and Bunny URL/versioning rules; `docs/map_tiles.md` is not committed while `/docs/` remains gitignored.
+- [ ] `docs/map_tiles.md` exists locally as an ignored/untracked docs artifact and documents the PMTiles source layers, geometry types, required/optional properties, POI relationship metadata representation, walking path layer semantics, expected derived style-layer usage for labels/fills/outlines/lines, native max zoom `16`, and Bunny URL/versioning rules; `/docs/` contents are not committed.
 - [ ] The exporter reads published walking paths from the `WalkingPath` source delivered by `0007`, without adding new walking-path schema/admin code.
 - [ ] A Rails-side command can generate intermediate GeoJSON and build a PMTiles artifact with the expected layer names using Tippecanoe.
 - [ ] The build fails clearly with install guidance when Tippecanoe is unavailable.
