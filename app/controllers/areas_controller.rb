@@ -13,7 +13,7 @@ class AreasController < ApplicationController
     @cluster = @region.clusters.find_by!(slug: params[:cluster_slug])
 
     @beginner_areas = @cluster.areas.published.any_tags(:beginner_friendly)
-      .map { |area| [area, area.problems.with_location.count] }
+      .map { |area| [ area, area.problems.with_location.count ] }
       .sort_by { |a, _| I18n.transliterate(a.first.name) }
   end
 

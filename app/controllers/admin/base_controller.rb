@@ -17,7 +17,7 @@ class Admin::BaseController < ApplicationController
   def accounts
     {
       "max"  => Rails.application.credentials.dig(:admin, :max_password),
-      "max2" => Rails.application.credentials.dig(:admin, :max2_password),
+      "max2" => Rails.application.credentials.dig(:admin, :max2_password)
     }
   end
 

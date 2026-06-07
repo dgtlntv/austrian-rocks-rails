@@ -3,7 +3,7 @@ class Admin::ExportsController < Admin::BaseController
   end
 
   def db
-    tempfile = Tempfile.new([BRAND_CONFIG[:slug], ".db"])
+    tempfile = Tempfile.new([ BRAND_CONFIG[:slug], ".db" ])
     AppDbExporter.call(tempfile.path)
 
     send_file tempfile.path,

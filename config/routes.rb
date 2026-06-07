@@ -27,12 +27,18 @@ Rails.application.routes.draw do
       end
       resources :pois
       resources :poi_routes
+      resources :walking_paths do
+        member do
+          patch :publish
+          patch :unpublish
+        end
+      end
       resources :contribution_requests
       resources :contributions
       resources :audits
       resources :redirects, only: :new
 
-      resources :exports, only: [:index] do
+      resources :exports, only: [ :index ] do
         collection do
           get :db
           get :areas_geojson

@@ -1,6 +1,6 @@
 class Poi < ApplicationRecord
   has_many :poi_routes
-  has_many :areas
+  has_many :areas, through: :poi_routes
 
   include Geolocatable
   geolocatable :location
