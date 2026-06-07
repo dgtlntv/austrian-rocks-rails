@@ -3,7 +3,7 @@ id: "0007"
 slug: db-relationships-walking-paths
 stage: review
 reviewed: 2026-06-07
-commit: e553738f55fe80bc269acba2214cfc24ac6611f3
+commit: 405aa543abe144ea84ccb14b5d1d36f10e9d9d07
 ---
 
 # Db Relationships Walking Paths — review
@@ -24,14 +24,15 @@ commit: e553738f55fe80bc269acba2214cfc24ac6611f3
 - Fresh review gate evidence: `docker compose run --rm -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/dump-prod web bin/rails problem_boulder_assignments:report` → all five required categories printed with count `0` and `*_ids: none`.
 - Fresh review gate evidence: `docker compose run --rm -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/dump-prod web bin/rails relationship_foreign_keys:report` → every candidate relationship reported `clean`, `count: 0`, `row_ids: none`.
 - Fresh review gate evidence: `docker compose run --rm -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/dump-prod web bin/rails problem_boulder_assignments:backfill` → all categories count `0`, `updated: 0`, `updated_ids: none`.
-- Fresh review gate evidence: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails test test/models/problem_boulder_assignment_test.rb test/models/relationship_foreign_key_report_test.rb test/models/walking_path_test.rb test/models/topo_test.rb test/models/boulder_test.rb test/models/poi_test.rb test/controllers/admin/walking_paths_controller_test.rb` → 33 runs, 126 assertions, 0 failures, 0 errors, 0 skips.
-- Fresh review gate evidence: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rubocop` → 248 files inspected, no offenses detected.
+- Fresh re-review gate evidence: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=https://example.invalid -e BUNNY_STORAGE_ACCESS_KEY_ID=test -e BUNNY_STORAGE_SECRET_ACCESS_KEY=test -e BUNNY_STORAGE_REGION=de -e BUNNY_STORAGE_BUCKET=test web bin/rails test test/models/problem_boulder_assignment_test.rb test/models/relationship_foreign_key_report_test.rb test/models/walking_path_test.rb test/models/topo_test.rb test/models/boulder_test.rb test/models/poi_test.rb test/controllers/admin/walking_paths_controller_test.rb` → 33 runs, 126 assertions, 0 failures, 0 errors, 0 skips.
+- Fresh re-review gate evidence: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rubocop` → 248 files inspected, no offenses detected.
+- Fresh re-review workflow evidence: `.incant/work/0007-db-relationships-walking-paths/summary.md` is absent from the working tree and `git diff --name-status e553738f..HEAD -- .incant/work/0007-db-relationships-walking-paths/summary.md` shows it deleted.
 
 ### Blocker
 None.
 
 ### Major
-- .incant/work/0007-db-relationships-walking-paths/summary.md:4 and .incant/work/0007-db-relationships-walking-paths/summary.md:11 — A finalize-stage artifact has already been committed in the active work directory with `stage: archived`, stale `commit: 3cd48232`, and placeholder summary sections. This is a problematic departure from the incant workflow: `summary.md` is owned by finalization after review, and archiving metadata/placeholders before finalization can leave the item with a false archived state or an empty release summary. Fix: remove this premature `summary.md` from the implementation branch (or replace it only during `/incant:finalize` after review has passed). status: open
+- .incant/work/0007-db-relationships-walking-paths/summary.md:4 and .incant/work/0007-db-relationships-walking-paths/summary.md:11 — Previously, a finalize-stage artifact had been committed in the active work directory with `stage: archived`, stale `commit: 3cd48232`, and placeholder summary sections. The premature `summary.md` is now deleted from the implementation branch, so finalization owns summary creation again. status: addressed
 - .incant/work/0007-db-relationships-walking-paths/spec.md:96 and .incant/work/0007-db-relationships-walking-paths/plan.md:167 — Previously, Phase 0007-P4 lacked complete release-readiness evidence and full `bin/rubocop` failed. P4 is now complete: migration status, assignment report/backfill, relationship report, relevant Rails tests, and full RuboCop all have fresh passing evidence in `plan.md` and were re-run during this review. status: addressed
 - app/views/admin/walking_paths/_form.html.erb:48 and app/controllers/admin/walking_paths_controller.rb:100 — Previously, editing an existing path with geometry pre-filled the `geojson_text` textarea caused uploaded `.geojson` replacement through the normal edit UI to be rejected as “both pasted and uploaded” input. The form now keeps the textarea blank unless the user pasted new input and shows current geometry separately; `test/controllers/admin/walking_paths_controller_test.rb:90` covers uploaded replacement. status: addressed
 - app/services/walking_path_geojson_parser.rb:24 — Previously, `extract_line_geometries` silently ignored unsupported geometries inside a `FeatureCollection` as long as exactly one line geometry was present. The parser now returns `GeoJSON must contain only LineString or MultiLineString geometries` when any sibling Point/Polygon is present, and regression tests cover both mixed cases. status: addressed
@@ -43,4 +44,4 @@ None.
 None.
 
 ### Verdict
-Ready to release? **No** — the code and release gates now satisfy the spec, but one open major incant-artifact finding remains: a premature placeholder `summary.md` marks the active item as archived before finalization. Return to `/incant:implement 0007` to remove that finalize-stage artifact, then re-review.
+Ready to release? **Yes** — all blocker and major findings are addressed, the premature finalize-stage summary artifact is gone, and the fresh re-review gates pass. Proceed to `/incant:finalize 0007`.
