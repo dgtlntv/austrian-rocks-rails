@@ -1,9 +1,9 @@
 # State
-- Updated: 2026-06-07 (0007-P2 implementation)
-- Current focus: 0007 — Database relationships and walking path admin foundations P2 complete; awaiting review
+- Updated: 2026-06-07 (0007-P2 review fix)
+- Current focus: 0007 — Database relationships and walking path admin foundations P2 major addressed; awaiting re-review
 
 ## Active
-- 0007 implement — work/0007-db-relationships-walking-paths (Phase 0007-P2 complete; next `/incant:review 0007`)
+- 0007 implement — work/0007-db-relationships-walking-paths (Phase 0007-P2 review fix complete; next `/incant:review 0007`)
 - 0004 plan — work/0004-pmtiles-overlay-contract (blocked until 0007 is done)
 
 ## Cross-cutting notes / blockers

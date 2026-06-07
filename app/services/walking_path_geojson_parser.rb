@@ -13,13 +13,18 @@ class WalkingPathGeojsonParser
     @input = input.to_s
   end
 
+  Extraction = Data.define(:line_geometries, :unsupported_geometry)
+
   def parse
     return failure("GeoJSON is required") if @input.blank?
 
     decoded = decode_json
     return decoded unless decoded.success?
 
-    line_geometries = extract_line_geometries(decoded.geometry)
+    extraction = extract_line_geometries(decoded.geometry)
+    return failure("GeoJSON must contain only LineString or MultiLineString geometries") if extraction.unsupported_geometry
+
+    line_geometries = extraction.line_geometries
     return failure("GeoJSON must contain a LineString or MultiLineString") if line_geometries.empty?
     return failure("GeoJSON must contain exactly one LineString or MultiLineString") if line_geometries.many?
 
@@ -34,18 +39,25 @@ class WalkingPathGeojsonParser
   private
 
   # Walking paths are editorial source records, so one admin form submission must map
-  # to exactly one persisted path. Rejecting unsupported shapes and multi-line feature
-  # collections here keeps invalid GeoJSON from partially updating the model.
+  # to exactly one persisted path. Rejecting unsupported sibling shapes and multi-line
+  # feature collections here keeps invalid GeoJSON from partially updating the model.
   def extract_line_geometries(entity)
     case entity
     when RGeo::Feature::LineString, RGeo::Feature::MultiLineString
-      [ entity ]
+      Extraction.new(line_geometries: [ entity ], unsupported_geometry: false)
     when RGeo::GeoJSON::Feature
       extract_line_geometries(entity.geometry)
     when RGeo::GeoJSON::FeatureCollection
-      entity.map { |feature| extract_line_geometries(feature) }.flatten
+      entity.reduce(Extraction.new(line_geometries: [], unsupported_geometry: false)) do |result, feature|
+        extraction = extract_line_geometries(feature)
+
+        Extraction.new(
+          line_geometries: result.line_geometries + extraction.line_geometries,
+          unsupported_geometry: result.unsupported_geometry || extraction.unsupported_geometry
+        )
+      end
     else
-      []
+      Extraction.new(line_geometries: [], unsupported_geometry: true)
     end
   end
 

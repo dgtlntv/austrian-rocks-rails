@@ -12,11 +12,14 @@ updated: 2026-06-07
 # Plan — Database Relationships And Walking Path Admin Foundations
 
 ## Status
-- Current phase: `0007-P2` complete; awaiting review.
+- Current phase: `0007-P2` review major addressed; awaiting re-review.
 - Stage: implement
 - Branch: `incant/0007-db-relationships-walking-paths`
 - Next step: run `/incant:review 0007` for Phase 0007-P2.
 - Blockers: none. Relationship verification against the Docker-hosted `dump-prod` database reported every candidate relationship clean before adding foreign keys.
+- Review fixes:
+  - Addressed P2 major finding in `review.md`: `WalkingPathGeojsonParser` now rejects unsupported sibling geometries in `FeatureCollection` input instead of accepting a mixed collection with one line plus Point/Polygon geometry.
+  - Added regression coverage for mixed line+Point and line+Polygon FeatureCollections.
 - Fresh evidence:
   - `PATH="$(rbenv root)/shims:$PATH" DATABASE_URL=postgis://austrian-rocks:password@127.0.0.1:5432/dump-prod ... bin/rails relationship_foreign_keys:report` → all candidate relationships clean, no dirty row IDs.
   - `PATH="$(rbenv root)/shims:$PATH" DATABASE_URL=postgis://austrian-rocks:password@127.0.0.1:5432/dump-prod ... bin/rails db:migrate` → migrations `20260607091029` and `20260607091030` applied successfully in the Docker PostgreSQL/PostGIS container.
@@ -25,6 +28,8 @@ updated: 2026-06-07
   - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails db:prepare` → migrations `20260607092647`, `20260607092651`, and `20260607092652` applied successfully in the dev container against Docker PostgreSQL/PostGIS.
   - `docker compose run --rm ... web bin/rails db:migrate` → completed in the dev container against the Docker PostgreSQL/PostGIS development database with no pending migration output after P2 schema application.
   - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails test test/models/walking_path_test.rb` → 11 runs, 29 assertions, 0 failures, 0 errors, 0 skips.
+  - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails test test/models/walking_path_test.rb` → 12 runs, 33 assertions, 0 failures, 0 errors, 0 skips (P2 review-fix regression).
+  - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bundle exec rubocop app/services/walking_path_geojson_parser.rb test/models/walking_path_test.rb` → 2 files inspected, no offenses detected.
 - Key decisions:
   - The spec was approved by the human. `spec.md` frontmatter `commit: 3cd48232` is behind current `HEAD` (`6952d912`), but `HEAD` is the spec commit itself and code files have not changed since the spec was written; no spec rewrite is needed before planning.
   - `problems.boulder_id` remains optional; ambiguous and unmatched legacy rows are reported, not guessed.

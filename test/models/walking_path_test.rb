@@ -54,9 +54,35 @@ class WalkingPathTest < ActiveSupport::TestCase
     JSON
 
     assert_not point.success?
-    assert_equal "GeoJSON must contain a LineString or MultiLineString", point.error
+    assert_equal "GeoJSON must contain only LineString or MultiLineString geometries", point.error
     assert_not polygon.success?
-    assert_equal "GeoJSON must contain a LineString or MultiLineString", polygon.error
+    assert_equal "GeoJSON must contain only LineString or MultiLineString geometries", polygon.error
+  end
+
+  test "parser rejects feature collection with mixed line and unsupported geometry" do
+    point_result = WalkingPathGeojsonParser.parse(<<~JSON)
+      {
+        "type":"FeatureCollection",
+        "features":[
+          {"type":"Feature","properties":{},"geometry":#{line_string_geojson}},
+          {"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[16.2,48.2]}}
+        ]
+      }
+    JSON
+    polygon_result = WalkingPathGeojsonParser.parse(<<~JSON)
+      {
+        "type":"FeatureCollection",
+        "features":[
+          {"type":"Feature","properties":{},"geometry":#{line_string_geojson}},
+          {"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[16.2,48.2],[16.3,48.2],[16.3,48.3],[16.2,48.2]]]}}
+        ]
+      }
+    JSON
+
+    assert_not point_result.success?
+    assert_equal "GeoJSON must contain only LineString or MultiLineString geometries", point_result.error
+    assert_not polygon_result.success?
+    assert_equal "GeoJSON must contain only LineString or MultiLineString geometries", polygon_result.error
   end
 
   test "parser accepts feature with one line geometry" do
