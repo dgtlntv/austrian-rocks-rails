@@ -3,29 +3,31 @@ id: "0004"
 slug: pmtiles-overlay-contract
 stage: review
 reviewed: 2026-06-07
-commit: 7e4b5ada
+commit: 5d38d12f
 ---
 
 # Pmtiles Overlay Contract — review
 
 ### Strengths
-- docs/map_tiles.md:3 and `.gitignore:29` — the contract is present as the spec-requested ignored `/docs/` artifact rather than a committed file; the fresh P1 gate passed with `P1 quality gate passed: ignored docs contract exists, includes walking_paths, and documents native max zoom`.
-- docs/map_tiles.md:40-docs/map_tiles.md:159 — all ten required source layers are enumerated with geometry, stable IDs, required/optional properties, and navigation guidance; no circuit layer/property appears in the contract.
-- docs/map_tiles.md:29-docs/map_tiles.md:36 — the PMTiles source-layer vs later MapLibre style-layer distinction is clear, including label/fill/outline/line usage.
-- docs/map_tiles.md:121-docs/map_tiles.md:144 — POIs are included, `googleUrl` is treated as the allowed external URL, and `accessAreasJson` is explicitly documented as scalar JSON metadata rather than route geometry.
-- .incant/work/0004-pmtiles-overlay-contract/plan.md:21-.incant/work/0004-pmtiles-overlay-contract/plan.md:23 — the phase records fresh verification evidence, and I re-ran the documented gate successfully during review.
+- docs/map_tiles.md:3 and `.gitignore:29` — the contract remains the spec-requested ignored `/docs/` artifact rather than a committed docs file.
+- docs/map_tiles.md:7-docs/map_tiles.md:15 — artifact naming, native max zoom `16`, ignored build-output policy, Bunny immutable/latest object names, and map-specific CDN configuration are documented clearly for later implementation.
+- docs/map_tiles.md:17-docs/map_tiles.md:27 — the naming/data rules keep source layers stable, properties camelCase/scalar, navigation ID/slug-based, circuit data excluded, and walking paths tied to `WalkingPath` records where `published` is true.
+- docs/map_tiles.md:29-docs/map_tiles.md:36 — the source-layer vs later MapLibre style-layer distinction is explicit for labels, fills, outlines, and `walking_paths` line styling.
+- docs/map_tiles.md:40-docs/map_tiles.md:159 — all ten required source layers are enumerated with geometry, stable identifiers, required/optional properties, and navigation guidance.
+- docs/map_tiles.md:121-docs/map_tiles.md:144 — POIs include the allowed external `googleUrl`, and `accessAreasJson` is documented as scalar JSON metadata derived from `poi_routes`, not route geometry.
+- .incant/work/0004-pmtiles-overlay-contract/plan.md:21-.incant/work/0004-pmtiles-overlay-contract/plan.md:27 — review fixes and fresh P1 gate evidence are recorded; I re-ran the review-fix gate successfully during this review.
 
 ### Blocker
 - None.
 
 ### Major
-- docs/map_tiles.md:118 and .incant/work/0004-pmtiles-overlay-contract/plan.md:74 — both say the exporter will use `WalkingPath.published`, but the delivered `0007` model currently defines no `scope :published` (app/models/walking_path.rb:1-app/models/walking_path.rb:38). Implementing P2 literally will fail with `NoMethodError`, and P1's source-alignment contract is therefore not aligned with the source it claims to consume. Fix by either updating the contract/plan to say records where `published` is true, or explicitly adding a tested P2 step to introduce `scope :published, -> { where(published: true) }` before the exporter calls it. status: open
+- docs/map_tiles.md:118 and .incant/work/0004-pmtiles-overlay-contract/plan.md:78 — previous finding about `WalkingPath.published` is fixed: both artifacts now describe `WalkingPath` records where `published` is true, matching the delivered model shape in app/models/walking_path.rb:1-app/models/walking_path.rb:38. Fresh gate: `test -f docs/map_tiles.md && git check-ignore -q docs/map_tiles.md && grep -q "walking_paths" docs/map_tiles.md && grep -q "native max zoom" docs/map_tiles.md && ! rg -q 'WalkingPath\\.published' docs/map_tiles.md .incant/work/0004-pmtiles-overlay-contract/plan.md` → passed. status: addressed
 
 ### Minor
-- .incant/work/0004-pmtiles-overlay-contract/plan.md:46-.incant/work/0004-pmtiles-overlay-contract/plan.md:47 — the Files touched notes still describe keeping the backlog/state at the plan stage, while the actual backlog is now `status:review phase:0004-P1` (.incant/backlog.md:5) and STATE says the item awaits review (.incant/STATE.md:6). Update these notes so the work artifact does not send the next implementer back to a stale stage. status: open
+- .incant/work/0004-pmtiles-overlay-contract/plan.md:50-.incant/work/0004-pmtiles-overlay-contract/plan.md:51 — previous stale Files touched notes are fixed: they now match the current backlog/state handoff at `.incant/backlog.md:5` and `.incant/STATE.md:6`. status: addressed
 
 ### Nit
 - None.
 
 ### Verdict
-Ready to release? **No** — one open major. The P1 contract is close and the gate passes, but the `WalkingPath.published` source mismatch should be corrected before starting P2 so the exporter plan is executable against the merged `0007` code.
+Ready to release? **With fixes** — no open blocker or major findings remain for the `0004-P1` phase gate, and P1 is clear to proceed to `0004-P2`. The overall item is not release-complete yet because the planned exporter, smoke checks, and Bunny publication phases remain unimplemented.
