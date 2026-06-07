@@ -1,4 +1,5 @@
 require "test_helper"
+require "tempfile"
 
 class Admin::WalkingPathsControllerTest < ActionDispatch::IntegrationTest
   setup do
@@ -83,6 +84,32 @@ class Admin::WalkingPathsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "updated-approach", walking_path.slug
     assert walking_path.published?
     assert_kind_of RGeo::Feature::LineString, walking_path.geometry
+  end
+
+  test "update walking path from uploaded geojson" do
+    walking_path = walking_paths(:published)
+    upload = geojson_upload(updated_line_string_geojson)
+
+    get edit_admin_walking_path_path(walking_path, locale: :en)
+    assert_response :success
+    assert_includes response.body, "Current geometry"
+    assert_select "textarea#walking_path_geojson_text" do |textareas|
+      assert_equal "", textareas.first.children.text.strip
+    end
+
+    patch admin_walking_path_path(walking_path, locale: :en), params: {
+      walking_path: {
+        label: "Uploaded replacement",
+        slug: walking_path.slug,
+        geojson_file: upload
+      }
+    }
+
+    assert_redirected_to edit_admin_walking_path_path(walking_path, locale: :en)
+    walking_path.reload
+    assert_equal "Uploaded replacement", walking_path.label
+    assert_equal 17.0, walking_path.geometry.points.first.x
+    assert_equal 49.0, walking_path.geometry.points.first.y
   end
 
   test "publish walking path" do
@@ -196,8 +223,19 @@ class Admin::WalkingPathsControllerTest < ActionDispatch::IntegrationTest
     WalkingPathGeojsonParser.parse(line_string_geojson).geometry
   end
 
+  def geojson_upload(contents)
+    file = Tempfile.new([ "walking-path", ".geojson" ])
+    file.write(contents)
+    file.rewind
+    Rack::Test::UploadedFile.new(file.path, "application/geo+json")
+  end
+
   def line_string_geojson
     "{\"type\":\"LineString\",\"coordinates\":[[16.0,48.0],[16.1,48.1]]}"
+  end
+
+  def updated_line_string_geojson
+    "{\"type\":\"LineString\",\"coordinates\":[[17.0,49.0],[17.1,49.1]]}"
   end
 
   def point_geojson

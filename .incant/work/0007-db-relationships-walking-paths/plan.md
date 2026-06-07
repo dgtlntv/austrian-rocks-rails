@@ -12,12 +12,14 @@ updated: 2026-06-07
 # Plan — Database Relationships And Walking Path Admin Foundations
 
 ## Status
-- Current phase: `0007-P3` complete; awaiting review.
+- Current phase: `0007-P3` review fix complete; awaiting review.
 - Stage: implement
 - Branch: `incant/0007-db-relationships-walking-paths`
 - Next step: run `/incant:review 0007` for Phase 0007-P3.
 - Blockers: none. Relationship verification against the Docker-hosted `dump-prod` database reported every candidate relationship clean before adding foreign keys.
 - Review fixes:
+  - Addressed P3 major finding in `review.md`: the edit form no longer pre-fills the paste textarea with the current geometry, shows current geometry as a separate non-input preview, and preserves uploaded `.geojson` as the replacement path without a false both-inputs error.
+  - Added controller regression coverage for updating an existing walking path from an uploaded `.geojson`, including proof the edit form's paste textarea is blank while current geometry is shown separately.
   - Addressed P2 major finding in `review.md`: `WalkingPathGeojsonParser` now rejects unsupported sibling geometries in `FeatureCollection` input instead of accepting a mixed collection with one line plus Point/Polygon geometry.
   - Added regression coverage for mixed line+Point and line+Polygon FeatureCollections.
 - Fresh evidence:
@@ -32,6 +34,8 @@ updated: 2026-06-07
   - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bundle exec rubocop app/services/walking_path_geojson_parser.rb test/models/walking_path_test.rb` → 2 files inspected, no offenses detected.
   - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails test test/controllers/admin/walking_paths_controller_test.rb test/models/walking_path_test.rb` → 25 runs, 97 assertions, 0 failures, 0 errors, 0 skips.
   - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bundle exec rubocop app/controllers/admin/walking_paths_controller.rb test/controllers/admin/walking_paths_controller_test.rb` → 2 files inspected, no offenses detected.
+  - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bin/rails test test/controllers/admin/walking_paths_controller_test.rb test/models/walking_path_test.rb` → 26 runs, 107 assertions, 0 failures, 0 errors, 0 skips (P3 review-fix regression).
+  - `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test ... web bundle exec rubocop test/controllers/admin/walking_paths_controller_test.rb` → 1 file inspected, no offenses detected.
 - Key decisions:
   - The spec was approved by the human. `spec.md` frontmatter `commit: 3cd48232` is behind current `HEAD` (`6952d912`), but `HEAD` is the spec commit itself and code files have not changed since the spec was written; no spec rewrite is needed before planning.
   - `problems.boulder_id` remains optional; ambiguous and unmatched legacy rows are reported, not guessed.

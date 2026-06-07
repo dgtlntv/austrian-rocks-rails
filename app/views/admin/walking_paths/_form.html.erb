@@ -44,13 +44,20 @@
 </div>
 
 <div class="col-span-6">
-  <%= form.label :geojson_text, "Paste GeoJSON" %>
-  <%= form.text_area :geojson_text, rows: 8, value: @walking_path.geometry_geojson %>
+  <%= form.label :geojson_text, "Paste GeoJSON replacement" %>
+  <%= form.text_area :geojson_text, rows: 8, value: params.dig(:walking_path, :geojson_text) %>
   <p class="mt-2 text-sm text-gray-500">
-    Accepted input: a raw LineString or MultiLineString geometry, a Feature with one line geometry,
-    or a FeatureCollection containing exactly one line geometry. Point, Polygon, malformed JSON,
-    and mixed or multi-line collections are rejected before saving.
+    Paste new GeoJSON only when replacing the current geometry. Accepted input: a raw LineString
+    or MultiLineString geometry, a Feature with one line geometry, or a FeatureCollection
+    containing exactly one line geometry. Point, Polygon, malformed JSON, and mixed or multi-line
+    collections are rejected before saving.
   </p>
+  <% if @walking_path.geometry.present? %>
+    <div class="mt-4 rounded-md bg-gray-50 p-4">
+      <p class="text-sm font-semibold text-gray-700">Current geometry</p>
+      <pre class="mt-2 whitespace-pre-wrap text-xs text-gray-600"><%= @walking_path.geometry_geojson %></pre>
+    </div>
+  <% end %>
 </div>
 
 <div class="col-span-6">
