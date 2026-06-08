@@ -13,12 +13,12 @@ updated: 2026-06-08
 # PMTiles publish workflow — plan
 
 ## Status
-- Phase: 0009-P3 ✅ — background publish job and pipeline orchestration complete.
+- Phase: 0009-P3 ✅ — background publish job and pipeline orchestration review fix complete.
 - Stage: implement
 - Branch: incant/0009-pmtiles-publish-workflow
-- Next: review this phase via `/incant:review 0009`.
+- Next: re-review this phase via `/incant:review 0009`.
 - Blockers: none.
-- Fresh verification: 10 job/pipeline tests, 58 assertions, 0 failures, 0 errors; P2 scheduler/callback regression 35 tests, 108 assertions, 0 failures, 0 errors; targeted RuboCop 5 files, no offenses on 2026-06-08.
+- Fresh verification: P3 review-fix gate `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/jobs/map_tile_publish_job_test.rb test/services/map_tiles/publish_pipeline_test.rb` → 11 tests, 66 assertions, 0 failures, 0 errors on 2026-06-08; `docker compose run --rm web bin/rubocop app/services/map_tiles/publish_pipeline.rb test/services/map_tiles/publish_pipeline_test.rb` → 2 files inspected, no offenses; prior P2 scheduler/callback regression 35 tests, 108 assertions, 0 failures, 0 errors.
 - Key decisions:
   - Persist publish workflow state in one singleton `MapTilePublishState` row plus immutable history rows in `MapTilePublishAttempt`.
   - Treat sliding debounce as one pending automatic attempt row; older delayed jobs that wake up before the current `scheduled_for` self-reschedule and do not build.
@@ -37,6 +37,14 @@ Addressed all open findings from the initial review.
 | `current_status` hides a failed publish when a previous success exists and no newer `stale_at` | major | Changed `failed` derivation to compare `last_failed_attempt.finished_at` against `last_successful_attempt.finished_at`. Failed attempts finished after the last success now correctly return `"failed"`. |
 | No database-level singleton constraint on `map_tile_publish_states` | major | Added migration `20260608120001` adding boolean `singleton` column with a partial unique index `WHERE singleton = true`. `current!` uses `find_or_create_by!(singleton: true)`. Duplicate row creation raises `ActiveRecord::RecordNotUnique`. |
 | `latest_object_key` still exposed in Configuration | minor | Initially removed `latest_object_key` to prepare for manifest-only publication, but this broke existing CLI paths. The method was restored to return `austrian-rocks-latest.pmtiles` for legacy CLI compatibility. It will be removed from `BunnyPublisher` usage in 0009-P4 when manifest-only publication is implemented. Configuration tests now assert the method returns `austrian-rocks-latest.pmtiles`. |
+
+### Review fixes (0009-P3 review)
+
+Addressed the open major from the P3 review.
+
+| Finding | Severity | Fix |
+|---|---|---|
+| Manual publish success leaves an older pending automatic attempt active | major | `MapTiles::PublishPipeline#record_success!` now clears `pending_automatic_attempt_id` and marks a covered pending automatic attempt `cancelled` with `Superseded by successful PMTiles publish` when the successful publish covers all stale changes. Added regression coverage proving manual success clears stale status, cancels the pending automatic row, leaves `current_status` as `up_to_date`, and enqueues no follow-up. Fresh verification: 11 job/pipeline tests, 66 assertions, 0 failures; targeted RuboCop 2 files, no offenses on 2026-06-08. |
 
 ### Review fixes (0009-P2 review)
 

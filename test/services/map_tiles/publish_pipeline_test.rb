@@ -55,6 +55,38 @@ class MapTiles::PublishPipelineTest < ActiveSupport::TestCase
     assert_nil MapTilePublishState.current!.reload.stale_at
   end
 
+  test "manual success supersedes a pending automatic attempt for covered stale changes" do
+    calls = []
+    collaborators = successful_collaborators(calls)
+    started_at = Time.zone.parse("2026-06-08 16:00:00 UTC")
+    finished_at = started_at + 5.minutes
+    attempt = running_attempt(started_at: started_at)
+    pending = MapTilePublishAttempt.create!(
+      source: "automatic",
+      status: "pending",
+      scheduled_for: started_at + 25.minutes,
+      enqueued_at: started_at - 1.minute
+    )
+    MapTilePublishState.current!.update!(
+      stale_at: started_at - 1.minute,
+      last_source_change_at: started_at - 1.minute,
+      pending_automatic_attempt: pending
+    )
+
+    assert_no_enqueued_jobs do
+      MapTiles::PublishPipeline.new(**collaborators, clock: -> { finished_at }).call(attempt)
+    end
+
+    state = MapTilePublishState.current!.reload
+    pending.reload
+    assert_nil state.stale_at
+    assert_nil state.pending_automatic_attempt_id
+    assert_equal "up_to_date", state.current_status
+    assert_equal "cancelled", pending.status
+    assert_equal "Superseded by successful PMTiles publish", pending.error_text
+    assert_equal finished_at, pending.finished_at
+  end
+
   test "keeps newer stale state and enqueues an automatic follow-up" do
     calls = []
     collaborators = successful_collaborators(calls)

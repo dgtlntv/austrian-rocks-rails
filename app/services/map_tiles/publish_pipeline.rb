@@ -81,6 +81,7 @@ module MapTiles
           follow_up_attempt = ensure_pending_follow_up!(state)
         else
           state.stale_at = nil
+          supersede_pending_automatic!(state, attempt: attempt, finished_at: finished_at)
         end
 
         state.save!
@@ -119,6 +120,21 @@ module MapTiles
       )
       state.pending_automatic_attempt = attempt
       attempt
+    end
+
+    def supersede_pending_automatic!(state, attempt:, finished_at:)
+      pending_attempt = state.pending_automatic_attempt
+      return if pending_attempt.blank? || pending_attempt.id == attempt.id
+
+      if pending_attempt.status == "pending"
+        pending_attempt.update!(
+          status: "cancelled",
+          finished_at: finished_at,
+          error_text: "Superseded by successful PMTiles publish"
+        )
+      end
+
+      state.pending_automatic_attempt = nil
     end
 
     def enqueue_follow_up(attempt)
