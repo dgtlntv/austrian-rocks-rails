@@ -8,8 +8,8 @@ require "map_tiles/bunny_publisher"
 class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
   setup do
     @output_dir = Rails.root.join("tmp/bunny_publisher_test/#{SecureRandom.hex(8)}")
-    @env = publication_env.merge("MAP_TILES_OUTPUT_DIR" => @output_dir.to_s)
-    @configuration = MapTiles::Configuration.new(env: @env)
+    @env = publication_env
+    @configuration = MapTiles::Configuration.new(version: "2026-06-07", env: @env, settings: map_tile_settings)
     FileUtils.mkdir_p(@configuration.output_dir)
     @configuration.artifact_path.binwrite("pmtiles")
     @s3_client = FakeS3Client.new
@@ -21,30 +21,44 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
     FileUtils.rm_rf(@output_dir)
   end
 
-  test "requires map and Bunny publication configuration" do
-    configuration = MapTiles::Configuration.new(env: @env.except("MAP_TILES_PUBLIC_CDN_HOST", "BUNNY_STORAGE_SECRET_ACCESS_KEY"))
+  test "requires Bunny secret environment configuration" do
+    configuration = MapTiles::Configuration.new(
+      version: "2026-06-07",
+      env: @env.except("BUNNY_STORAGE_SECRET_ACCESS_KEY"),
+      settings: map_tile_settings
+    )
     publisher = MapTiles::BunnyPublisher.new(configuration: configuration, s3_client: @s3_client, http_head: @http_head)
 
     error = assert_raises(MapTiles::BunnyPublisher::ConfigurationError) { publisher.publish }
 
-    assert_includes error.message, "MAP_TILES_PUBLIC_CDN_HOST"
     assert_includes error.message, "BUNNY_STORAGE_SECRET_ACCESS_KEY"
+    assert_not_includes error.message, "MAP_TILES_PUBLIC_CDN_HOST"
     assert_not_includes error.message, "super-secret"
+  end
+
+  test "requires config-backed publication settings" do
+    configuration = MapTiles::Configuration.new(version: "2026-06-07", env: @env, settings: map_tile_settings("public_cdn_host" => ""))
+    publisher = MapTiles::BunnyPublisher.new(configuration: configuration, s3_client: @s3_client, http_head: @http_head)
+
+    error = assert_raises(MapTiles::BunnyPublisher::ConfigurationError) { publisher.publish }
+
+    assert_includes error.message, "Configured public CDN host is required"
+    assert_not_includes error.message, "MAP_TILES_PUBLIC_CDN_HOST"
   end
 
   test "constructs sanitized versioned and latest object keys" do
     assert_equal "maps/austrian-rocks-2026-06-07.pmtiles", @configuration.versioned_object_key
     assert_equal "maps/austrian-rocks-latest.pmtiles", @configuration.latest_object_key
 
-    bad_configuration = MapTiles::Configuration.new(env: @env.merge("MAP_TILES_VERSION" => "2026/06/07"))
+    bad_configuration = MapTiles::Configuration.new(version: "2026/06/07", env: @env, settings: map_tile_settings)
 
     assert_raises(ArgumentError) { bad_configuration.versioned_object_key }
 
-    blank_prefix_configuration = MapTiles::Configuration.new(env: @env.merge("MAP_TILES_BUNNY_PREFIX" => "/"))
+    blank_prefix_configuration = MapTiles::Configuration.new(version: "2026-06-07", env: @env, settings: map_tile_settings("bunny_prefix" => "/"))
     publisher = MapTiles::BunnyPublisher.new(configuration: blank_prefix_configuration, s3_client: @s3_client, http_head: @http_head)
 
     error = assert_raises(MapTiles::BunnyPublisher::ConfigurationError) { publisher.publish }
-    assert_includes error.message, "MAP_TILES_BUNNY_PREFIX"
+    assert_includes error.message, "Configured Bunny prefix"
   end
 
   test "uploads immutable and latest objects and verifies both public urls" do
@@ -102,15 +116,26 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
 
   def publication_env
     {
-      "MAP_TILES_PUBLIC_CDN_HOST" => "https://cdn.example.test/",
-      "MAP_TILES_BUNNY_PREFIX" => "/maps/",
-      "MAP_TILES_VERSION" => "2026-06-07",
+      "MAP_TILES_PUBLIC_CDN_HOST" => "https://legacy.example.test/",
+      "MAP_TILES_BUNNY_PREFIX" => "/legacy/",
+      "MAP_TILES_OUTPUT_DIR" => "tmp/legacy_map_tiles",
+      "MAP_TILES_VERSION" => "legacy-version",
       "BUNNY_STORAGE_ENDPOINT" => "https://storage.example.test",
       "BUNNY_STORAGE_REGION" => "de",
       "BUNNY_STORAGE_BUCKET" => "austrian-rocks",
       "BUNNY_STORAGE_ACCESS_KEY_ID" => "key-id",
       "BUNNY_STORAGE_SECRET_ACCESS_KEY" => "super-secret"
     }
+  end
+
+  def map_tile_settings(overrides = {})
+    {
+      "artifact_basename" => "austrian-rocks",
+      "output_dir" => @output_dir.to_s,
+      "public_cdn_host" => "https://cdn.example.test/",
+      "bunny_prefix" => "/maps/",
+      "optional_production_layers" => []
+    }.merge(overrides)
   end
 
   class FakeS3Client
