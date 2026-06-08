@@ -1,6 +1,6 @@
 # State
-- Updated: 2026-06-08 (0009-P5 in progress)
-- Current focus: 0009 — Phase 0009-P5 admin publish UI/history and legacy GeoJSON export removal in progress
+- Updated: 2026-06-08 (0009-P5 complete)
+- Current focus: 0009 — Phase 0009-P5 complete; ready for review
 
 ## Active
 - 0009: Phase 0009-P5 (admin publish UI, history, and legacy GeoJSON export removal) on `incant/0009-pmtiles-publish-workflow`; work dir `.incant/work/0009-pmtiles-publish-workflow/`

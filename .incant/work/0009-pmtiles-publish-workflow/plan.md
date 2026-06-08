@@ -13,12 +13,12 @@ updated: 2026-06-08
 # PMTiles publish workflow — plan
 
 ## Status
-- Phase: 0009-P5 ⏳ — admin publish UI, history, and legacy GeoJSON export removal in progress.
+- Phase: 0009-P5 ✅ — admin publish UI, history, and legacy GeoJSON export removal complete.
 - Stage: implement
 - Branch: incant/0009-pmtiles-publish-workflow
-- Next: complete the P5 checklist, run the P5 quality gate, commit, then review this phase via `/incant:review 0009`.
+- Next: review this phase via `/incant:review 0009`.
 - Blockers: none.
-- Fresh verification: P4 review passed with no open blocker/major findings; P4 gate `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/cli_test.rb` → 32 tests, 147 assertions, 0 failures, 0 errors on 2026-06-08; targeted P4 RuboCop `docker compose run --rm web bin/rubocop lib/map_tiles/bunny_publisher.rb lib/map_tiles/cli.rb lib/tasks/map_tiles.rake test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/cli_test.rb` → 5 files inspected, no offenses; prior P3 review-fix gate 11 tests, 66 assertions, 0 failures, 0 errors and targeted RuboCop 2 files, no offenses.
+- Fresh verification: P5 gate `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/controllers/admin/exports_controller_test.rb` → 7 runs, 62 assertions, 0 failures, 0 errors on 2026-06-08; targeted P5 RuboCop `docker compose run --rm web bin/rubocop app/controllers/admin/exports_controller.rb app/helpers/admin/exports_helper.rb test/controllers/admin/exports_controller_test.rb` → 3 files inspected, no offenses; P4 review passed with no open blocker/major findings.
 - Key decisions:
   - Persist publish workflow state in one singleton `MapTilePublishState` row plus immutable history rows in `MapTilePublishAttempt`.
   - Treat sliding debounce as one pending automatic attempt row; older delayed jobs that wake up before the current `scheduled_for` self-reschedule and do not build.
@@ -169,18 +169,18 @@ Addressed all open findings from the P2 review (commit ebb72f5d).
 - [x] Commit this phase as `incant 0009-P4: publish PMTiles latest manifest` after the quality gate passes.
 **Quality gate:** ✅ `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/cli_test.rb` → 32 tests, 147 assertions, 0 failures, 0 errors on 2026-06-08.
 
-## Phase 0009-P5 — admin publish UI, history, and legacy GeoJSON export removal
-- [ ] Read `app/controllers/admin/base_controller.rb`, `app/controllers/admin/exports_controller.rb`, `app/views/admin/exports/index.html.erb`, `app/views/layouts/admin.html.erb`, `config/routes.rb`, and existing admin controller tests before editing.
-- [ ] Edit `config/routes.rb` under admin exports to keep `get :db`, add `post :publish_pmtiles`, and remove `get :areas_geojson`, `get :clusters_geojson`, `get :regions_geojson`, and `get :problems_geojson`.
-- [ ] Edit `app/controllers/admin/exports_controller.rb` so `index` loads `@map_tile_state = MapTilePublishState.current!`, `@last_successful_attempt`, `@pending_automatic_attempt`, and `@recent_map_tile_attempts = MapTilePublishAttempt.order(created_at: :desc).limit(25)`.
-- [ ] In `Admin::ExportsController`, keep `db` as the SQLite download action, remove `areas_geojson`, `clusters_geojson`, `regions_geojson`, and `problems_geojson`, and add `publish_pmtiles` that calls `MapTiles::PublishScheduler.new.enqueue_manual!(reason: "Manual admin publish")`, sets queued flash text, and redirects to `admin_exports_path`.
-- [ ] Add `app/helpers/admin/exports_helper.rb` with deterministic helpers for status label text, timestamp formatting, duration formatting, external link rendering, and safe error display; helpers must not render Bunny credentials or raw provider bodies.
-- [ ] Edit `app/views/admin/exports/index.html.erb` to show the SQLite Database download, a PMTiles card with status (`up to date`, `stale`, `pending`, `running`, or `failed`), last successful version/URLs/timestamp, pending automatic publish time, recent attempts table, and a `button_to "Publish now"` using `data: { turbo_confirm: "Build, smoke-check, and publish PMTiles now?" }`.
-- [ ] Remove all legacy admin GeoJSON controls from `app/views/admin/exports/index.html.erb`; do not touch area-specific admin map downloads or import/editing GeoJSON flows outside this exports page.
-- [ ] Add `test/controllers/admin/exports_controller_test.rb` covering `GET /:locale/admin/exports`, SQLite DB download, manual publish POST creating a pending manual attempt and one enqueued job without invoking fake pipeline collaborators, rendered status/last success/pending/history fields, confirm-protected button markup, and absence of legacy GeoJSON controls.
-- [ ] In the same controller test, assert route helpers and requests for `areas_geojson`, `clusters_geojson`, `regions_geojson`, and `problems_geojson` are removed while `db_admin_exports_path` still succeeds.
-- [ ] Commit this phase as `incant 0009-P5: add admin PMTiles publishing` after the quality gate passes.
-**Quality gate:** `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/controllers/admin/exports_controller_test.rb` → admin trigger/history and GeoJSON-removal tests pass against Docker-hosted PostgreSQL/PostGIS.
+## Phase 0009-P5 — admin publish UI, history, and legacy GeoJSON export removal ✅
+- [x] Read `app/controllers/admin/base_controller.rb`, `app/controllers/admin/exports_controller.rb`, `app/views/admin/exports/index.html.erb`, `app/views/layouts/admin.html.erb`, `config/routes.rb`, and existing admin controller tests before editing.
+- [x] Edit `config/routes.rb` under admin exports to keep `get :db`, add `post :publish_pmtiles`, and remove `get :areas_geojson`, `get :clusters_geojson`, `get :regions_geojson`, and `get :problems_geojson`.
+- [x] Edit `app/controllers/admin/exports_controller.rb` so `index` loads `@map_tile_state = MapTilePublishState.current!`, `@last_successful_attempt`, `@pending_automatic_attempt`, and `@recent_map_tile_attempts = MapTilePublishAttempt.order(created_at: :desc).limit(25)`.
+- [x] In `Admin::ExportsController`, keep `db` as the SQLite download action, remove `areas_geojson`, `clusters_geojson`, `regions_geojson`, and `problems_geojson`, and add `publish_pmtiles` that calls `MapTiles::PublishScheduler.new.enqueue_manual!(reason: "Manual admin publish")`, sets queued flash text, and redirects to `admin_exports_path`.
+- [x] Add `app/helpers/admin/exports_helper.rb` with deterministic helpers for status label text, timestamp formatting, duration formatting, external link rendering, and safe error display; helpers must not render Bunny credentials or raw provider bodies.
+- [x] Edit `app/views/admin/exports/index.html.erb` to show the SQLite Database download, a PMTiles card with status (`up to date`, `stale`, `pending`, `running`, or `failed`), last successful version/URLs/timestamp, pending automatic publish time, recent attempts table, and a `button_to "Publish now"` using `data: { turbo_confirm: "Build, smoke-check, and publish PMTiles now?" }`.
+- [x] Remove all legacy admin GeoJSON controls from `app/views/admin/exports/index.html.erb`; do not touch area-specific admin map downloads or import/editing GeoJSON flows outside this exports page.
+- [x] Add `test/controllers/admin/exports_controller_test.rb` covering `GET /:locale/admin/exports`, SQLite DB download, manual publish POST creating a pending manual attempt and one enqueued job without invoking fake pipeline collaborators, rendered status/last success/pending/history fields, confirm-protected button markup, and absence of legacy GeoJSON controls.
+- [x] In the same controller test, assert route helpers and requests for `areas_geojson`, `clusters_geojson`, `regions_geojson`, and `problems_geojson` are removed while `db_admin_exports_path` still succeeds.
+- [x] Commit this phase as `incant 0009-P5: add admin PMTiles publishing` after the quality gate passes.
+**Quality gate:** ✅ `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/controllers/admin/exports_controller_test.rb` → 7 runs, 62 assertions, 0 failures, 0 errors on 2026-06-08; targeted RuboCop `docker compose run --rm web bin/rubocop app/controllers/admin/exports_controller.rb app/helpers/admin/exports_helper.rb test/controllers/admin/exports_controller_test.rb` → 3 files inspected, no offenses.
 
 ## Phase 0009-P6 — acceptance sweep, status updates, and release readiness
 - [ ] Read `.incant/work/0009-pmtiles-publish-workflow/spec.md`, this `plan.md`, `.incant/backlog.md`, `.incant/STATE.md`, and the current `git diff --stat` before editing any incant status artifacts.

@@ -41,10 +41,7 @@ Rails.application.routes.draw do
       resources :exports, only: [ :index ] do
         collection do
           get :db
-          get :areas_geojson
-          get :clusters_geojson
-          get :regions_geojson
-          get :problems_geojson
+          post :publish_pmtiles
         end
       end
 
