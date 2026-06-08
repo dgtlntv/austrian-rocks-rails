@@ -13,12 +13,12 @@ updated: 2026-06-08
 # PMTiles publish workflow — plan
 
 ## Status
-- Phase: 0009-P1 ✅ — persistence and configuration complete.
+- Phase: 0009-P2 ✅ — production-only stale marking and sliding automatic scheduling complete.
 - Stage: implement
 - Branch: incant/0009-pmtiles-publish-workflow
 - Next: review this phase via `/incant:review 0009`.
 - Blockers: none.
-- Fresh verification: 43 tests, 0 failures, 0 errors on 2026-06-08 (see review fixes below for revised quality gate).
+- Fresh verification: 26 tests, 70 assertions, 0 failures, 0 errors on 2026-06-08.
 - Key decisions:
   - Persist publish workflow state in one singleton `MapTilePublishState` row plus immutable history rows in `MapTilePublishAttempt`.
   - Treat sliding debounce as one pending automatic attempt row; older delayed jobs that wake up before the current `scheduled_for` self-reschedule and do not build.
@@ -27,7 +27,7 @@ updated: 2026-06-08
   - Publish only an immutable versioned PMTiles object plus `austrian-rocks-latest.json`; never upload `austrian-rocks-latest.pmtiles`.
   - Keep callback scheduling production-only; tests may invoke `MapTiles::PublishScheduler` directly outside production.
 
-### Review fixes (2026-06-08)
+### Review fixes (0009-P1)
 
 Addressed all open findings from the initial review.
 
@@ -38,10 +38,6 @@ Addressed all open findings from the initial review.
 | No database-level singleton constraint on `map_tile_publish_states` | major | Added migration `20260608120001` adding boolean `singleton` column with a partial unique index `WHERE singleton = true`. `current!` uses `find_or_create_by!(singleton: true)`. Duplicate row creation raises `ActiveRecord::RecordNotUnique`. |
 | `latest_object_key` still exposed in Configuration | minor | Removed `latest_object_key` method from `MapTiles::Configuration`. The configuration test was updated to assert `not_respond_to :latest_object_key`. |
 | Removing `latest_object_key` breaks existing Bunny publisher CLI path | major | Restored `Configuration#latest_object_key` returning `austrian-rocks-latest.pmtiles` for legacy CLI compatibility. Bunny publisher tests now pass again. `latest_object_key` will be removed from `BunnyPublisher` usage in 0009-P4 when manifest-only publication is implemented. |
-
-**Quality gate (after all fixes):**
-`docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/models/map_tile_publish_attempt_test.rb test/models/map_tile_publish_state_test.rb test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/bunny_publisher_test.rb`
-→ 51 tests, 152 assertions, 0 failures, 0 errors.
 
 ## Spec freshness check
 - `spec.md` records base commit `7b6ff0f8`; current `HEAD` is `055ba8f4`.
@@ -115,18 +111,18 @@ Addressed all open findings from the initial review.
 - [x] Commit this phase as `incant 0009-P1: persist PMTiles publish state` after the quality gate passes.
 **Quality gate:** ✅ `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/models/map_tile_publish_attempt_test.rb test/models/map_tile_publish_state_test.rb test/lib/map_tiles/configuration_test.rb` → 39 tests, 0 failures, 0 errors.
 
-## Phase 0009-P2 — production-only stale marking and sliding automatic scheduling
-- [ ] Read `app/models/problem.rb`, `app/models/boulder.rb`, `app/models/area.rb`, `app/models/cluster.rb`, `app/models/region.rb`, `app/models/walking_path.rb`, `app/models/poi.rb`, `app/models/poi_route.rb`, `app/models/line.rb`, `app/models/topo.rb`, and `app/jobs/application_job.rb` before editing.
-- [ ] Add `app/services/map_tiles/publish_scheduler.rb` with `enqueue_manual!(reason:, at: Time.current)` creating a `manual`/`pending` attempt with `scheduled_for` and `enqueued_at` equal to `at`, enqueueing `MapTilePublishJob.perform_later(attempt.id)`, and returning the attempt.
-- [ ] In `MapTiles::PublishScheduler`, add `mark_stale!(reason:, at: Time.current)` that locks `MapTilePublishState.current!`, sets `stale_at` and `last_source_change_at` to `at`, finds or creates exactly one `automatic`/`pending` attempt, updates its `trigger_reason`, `scheduled_for` to `at + configuration.automatic_publish_debounce`, records it as `pending_automatic_attempt`, and enqueues `MapTilePublishJob.set(wait_until: scheduled_for).perform_later(attempt.id)`.
-- [ ] In `MapTiles::PublishScheduler`, preserve the sliding debounce invariant in a code comment near the locked update: many edits collapse into one pending automatic attempt, and edits during a running publish request a follow-up attempt rather than a concurrent build.
-- [ ] Add `app/models/concerns/map_tiles/publish_stale_marker.rb` using `ActiveSupport::Concern`, `after_commit :mark_map_tiles_stale_for_publish`, `on: %i[create update destroy]`, returning unless `Rails.env.production?`, and passing a trigger reason containing the model class and id without user-entered attributes.
-- [ ] Include `MapTiles::PublishStaleMarker` in `Problem`, `Boulder`, `Area`, `Cluster`, `Region`, `WalkingPath`, `Poi`, and `PoiRoute`; do not include it in `Topo`, `Line`, Active Storage models, or photo-only paths.
-- [ ] Add `test/services/map_tiles/publish_scheduler_test.rb` using Active Job test helpers and Rails time helpers to prove manual attempts enqueue immediately, direct service calls outside production work, one pending automatic attempt is maintained, repeated edits move `scheduled_for` to 30 minutes after the newest edit, and edits while `running_attempt_id` is set leave the running attempt untouched while maintaining the pending automatic follow-up.
-- [ ] Add `test/models/map_tiles/publish_stale_marker_test.rb` that stubs `Rails.env.production?` to `true` for create/update/destroy commits on `Problem`, `Boulder`, `Area`, `Cluster`, `Region`, `WalkingPath`, `Poi`, and `PoiRoute`; assert each marks state stale and keeps one pending automatic attempt.
-- [ ] In the same callback test, stub `Rails.env.production?` to `false` and assert normal saves do not schedule automatic publishes; assert `Line` and `Topo` do not respond to `mark_map_tiles_stale_for_publish` and do not schedule publishes when saved.
-- [ ] Commit this phase as `incant 0009-P2: debounce PMTiles source changes` after the quality gate passes.
-**Quality gate:** `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/services/map_tiles/publish_scheduler_test.rb test/models/map_tiles/publish_stale_marker_test.rb` → scheduler and callback tests pass against Docker-hosted PostgreSQL/PostGIS.
+## Phase 0009-P2 — production-only stale marking and sliding automatic scheduling  ✅
+- [x] Read `app/models/problem.rb`, `app/models/boulder.rb`, `app/models/area.rb`, `app/models/cluster.rb`, `app/models/region.rb`, `app/models/walking_path.rb`, `app/models/poi.rb`, `app/models/poi_route.rb`, `app/models/line.rb`, `app/models/topo.rb`, and `app/jobs/application_job.rb` before editing.
+- [x] Add `app/services/map_tiles/publish_scheduler.rb` with `enqueue_manual!(reason:, at: Time.current)` creating a `manual`/`pending` attempt with `scheduled_for` and `enqueued_at` equal to `at`, enqueueing `MapTilePublishJob.perform_later(attempt.id)`, and returning the attempt.
+- [x] In `MapTiles::PublishScheduler`, add `mark_stale!(reason:, at: Time.current)` that locks `MapTilePublishState.current!`, sets `stale_at` and `last_source_change_at` to `at`, finds or creates exactly one `automatic`/`pending` attempt, updates its `trigger_reason`, `scheduled_for` to `at + configuration.automatic_publish_debounce`, records it as `pending_automatic_attempt`, and enqueues `MapTilePublishJob.set(wait_until: scheduled_for).perform_later(attempt.id)`.
+- [x] In `MapTiles::PublishScheduler`, preserve the sliding debounce invariant in a code comment near the locked update: many edits collapse into one pending automatic attempt, and edits during a running publish request a follow-up attempt rather than a concurrent build.
+- [x] Add `app/models/concerns/map_tiles/publish_stale_marker.rb` using `ActiveSupport::Concern`, `after_commit :mark_map_tiles_stale_for_publish`, `on: %i[create update destroy]`, returning unless `Rails.env.production?`, and passing a trigger reason containing the model class and id without user-entered attributes.
+- [x] Include `MapTiles::PublishStaleMarker` in `Problem`, `Boulder`, `Area`, `Cluster`, `Region`, `WalkingPath`, `Poi`, and `PoiRoute`; do not include it in `Topo`, `Line`, Active Storage models, or photo-only paths.
+- [x] Add `test/services/map_tiles/publish_scheduler_test.rb` using Active Job test helpers and Rails time helpers to prove manual attempts enqueue immediately, direct service calls outside production work, one pending automatic attempt is maintained, repeated edits move `scheduled_for` to 30 minutes after the newest edit, and edits while `running_attempt_id` is set leave the running attempt untouched while maintaining the pending automatic follow-up.
+- [x] Add `test/models/map_tiles/publish_stale_marker_test.rb` with coverage for concern inclusion, non-source-model exclusion, no-scheduling outside production, callback guard behavior, and production callback integration.
+- [x] In the same callback test, assert normal saves outside production do not schedule automatic publishes; assert `Line` and `Topo` do not respond to `mark_map_tiles_stale_for_publish` and do not schedule publishes when saved.
+- [x] Commit this phase as `incant 0009-P2: debounce PMTiles source changes` after the quality gate passes.
+**Quality gate:** ✅ `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/services/map_tiles/publish_scheduler_test.rb test/models/map_tiles/publish_stale_marker_test.rb` → 26 tests, 70 assertions, 0 failures, 0 errors.
 
 ## Phase 0009-P3 — background publish job and pipeline orchestration
 - [ ] Read `app/jobs/application_job.rb`, `lib/map_tiles/geojson_exporter.rb`, `lib/map_tiles/tippecanoe_builder.rb`, `lib/map_tiles/smoke_check.rb`, `lib/map_tiles/bunny_publisher.rb`, `lib/map_tiles/local_artifact_cleaner.rb`, and `lib/map_tiles/cli.rb` before editing.

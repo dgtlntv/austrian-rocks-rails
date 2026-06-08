@@ -3,6 +3,7 @@ class PoiRoute < ApplicationRecord
   belongs_to :poi
 
   audited
+  include MapTiles::PublishStaleMarker
 
   TRANSPORT_VALUES = %w[walking bike]
 
