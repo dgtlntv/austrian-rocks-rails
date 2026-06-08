@@ -13,7 +13,11 @@ class MapTiles::CLITest < ActiveSupport::TestCase
       "output_dir" => "tmp/cli_test/#{SecureRandom.hex(8)}",
       "public_cdn_host" => "https://cdn.example.test",
       "bunny_prefix" => "maps",
-      "optional_production_layers" => []
+      "optional_production_layers" => [],
+      "automatic_publish_debounce_minutes" => "30",
+      "manifest_cache_ttl_seconds" => "60",
+      "pmtiles_cache_control" => "public, max-age=31536000, immutable",
+      "manifest_content_type" => "application/json"
     }
     @configuration = MapTiles::Configuration.new(settings: @settings)
     @exporter_class = exporter_class(@calls)
@@ -76,6 +80,7 @@ class MapTiles::CLITest < ActiveSupport::TestCase
     assert_equal [ "--mode=production" ], @calls.fetch(:smokes).last.fetch(:argv)
     assert_equal "2026-06-07", @calls.fetch(:publishes).last.fetch(:version)
     assert_equal "2026-06-07", @calls.fetch(:cleans).last.fetch(:version)
+    assert_includes out.string, "latest manifest -> https://cdn.example.test/maps/austrian-rocks-latest.json"
   end
 
   test "publish skip smoke is the only smoke bypass" do
@@ -178,6 +183,16 @@ class MapTiles::CLITest < ActiveSupport::TestCase
 
       define_method(:publish) do
         calls.fetch(:publishes) << { version: @configuration.version }
+        {
+          pmtiles: {
+            key: @configuration.versioned_object_key,
+            url: "https://cdn.example.test/#{@configuration.versioned_object_key}"
+          },
+          manifest: {
+            key: @configuration.latest_manifest_object_key,
+            url: "https://cdn.example.test/#{@configuration.latest_manifest_object_key}"
+          }
+        }
       end
     end
   end

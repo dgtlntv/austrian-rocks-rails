@@ -13,12 +13,12 @@ updated: 2026-06-08
 # PMTiles publish workflow — plan
 
 ## Status
-- Phase: 0009-P3 ✅ — background publish job and pipeline orchestration review fix complete.
+- Phase: 0009-P4 ✅ — manifest-only Bunny publication and command-line compatibility complete.
 - Stage: implement
 - Branch: incant/0009-pmtiles-publish-workflow
-- Next: re-review this phase via `/incant:review 0009`.
+- Next: review this phase via `/incant:review 0009`.
 - Blockers: none.
-- Fresh verification: P3 review-fix gate `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/jobs/map_tile_publish_job_test.rb test/services/map_tiles/publish_pipeline_test.rb` → 11 tests, 66 assertions, 0 failures, 0 errors on 2026-06-08; `docker compose run --rm web bin/rubocop app/services/map_tiles/publish_pipeline.rb test/services/map_tiles/publish_pipeline_test.rb` → 2 files inspected, no offenses; prior P2 scheduler/callback regression 35 tests, 108 assertions, 0 failures, 0 errors.
+- Fresh verification: P4 gate `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/cli_test.rb` → 32 tests, 147 assertions, 0 failures, 0 errors on 2026-06-08; targeted P4 RuboCop `docker compose run --rm web bin/rubocop lib/map_tiles/bunny_publisher.rb lib/map_tiles/cli.rb lib/tasks/map_tiles.rake test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/cli_test.rb` → 5 files inspected, no offenses; prior P3 review-fix gate 11 tests, 66 assertions, 0 failures, 0 errors and targeted RuboCop 2 files, no offenses.
 - Key decisions:
   - Persist publish workflow state in one singleton `MapTilePublishState` row plus immutable history rows in `MapTilePublishAttempt`.
   - Treat sliding debounce as one pending automatic attempt row; older delayed jobs that wake up before the current `scheduled_for` self-reschedule and do not build.
@@ -156,18 +156,18 @@ Addressed all open findings from the P2 review (commit ebb72f5d).
 - [x] Commit this phase as `incant 0009-P3: run PMTiles publish jobs` after the quality gate passes.
 **Quality gate:** ✅ `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/jobs/map_tile_publish_job_test.rb test/services/map_tiles/publish_pipeline_test.rb` → 10 tests, 58 assertions, 0 failures, 0 errors.
 
-## Phase 0009-P4 — manifest-only Bunny publication and command-line compatibility
-- [ ] Read `lib/map_tiles/bunny_publisher.rb`, `lib/map_tiles/configuration.rb`, `lib/map_tiles/cli.rb`, `lib/tasks/map_tiles.rake`, `test/lib/map_tiles/bunny_publisher_test.rb`, `test/lib/map_tiles/configuration_test.rb`, and `test/lib/map_tiles/cli_test.rb` before editing.
-- [ ] Edit `lib/map_tiles/bunny_publisher.rb` so `publish` uploads only `configuration.versioned_object_key` and `configuration.latest_manifest_object_key`; remove the upload path for `austrian-rocks-latest.pmtiles` entirely.
-- [ ] In `BunnyPublisher#publish`, upload the versioned PMTiles object with `content_type: application/octet-stream` and `cache_control: configuration.pmtiles_cache_control`, verify its public URL, then build manifest JSON containing `version`, `pmtiles_url`, `published_at`, `artifact_basename`, `pmtiles_object_key`, and `pmtiles_object_basename`.
-- [ ] In `BunnyPublisher#publish`, upload `austrian-rocks-latest.json` with `content_type: configuration.manifest_content_type` and `cache_control: "public, max-age=#{configuration.manifest_cache_ttl_seconds}"`, verify its public URL, print both published object URLs, and return `{ pmtiles: { key:, url: }, manifest: { key:, url: } }`.
-- [ ] Add a concise code comment near the manifest upload explaining that `latest.json` is the only overwritten object because overwritten PMTiles archives can produce stale or mixed range responses.
-- [ ] Keep Bunny credential validation limited to Bunny storage environment variables and continue to redact provider/credential details from upload errors.
-- [ ] Edit `lib/map_tiles/cli.rb` and `lib/tasks/map_tiles.rake` so `bin/build_pmtiles publish --version=2026-06-08T16-45-30Z` and `bin/rails "map_tiles:publish[2026-06-08T16-45-30Z,false]"` print the manifest URL, keep the existing exit-status behavior, and keep working with manifest-only publication.
-- [ ] Update `test/lib/map_tiles/bunny_publisher_test.rb` to assert PMTiles and JSON manifest keys, body content, cache metadata, content types, public URL verification order, no `austrian-rocks-latest.pmtiles` put, and sanitized failures.
-- [ ] Update `test/lib/map_tiles/configuration_test.rb` and `test/lib/map_tiles/cli_test.rb` for the new manifest key and publisher return shape while preserving command-line smoke and `--skip-smoke` behavior.
-- [ ] Commit this phase as `incant 0009-P4: publish PMTiles latest manifest` after the quality gate passes.
-**Quality gate:** `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/cli_test.rb` → map tile publisher, configuration, and CLI tests pass against Docker-hosted PostgreSQL/PostGIS.
+## Phase 0009-P4 — manifest-only Bunny publication and command-line compatibility  ✅
+- [x] Read `lib/map_tiles/bunny_publisher.rb`, `lib/map_tiles/configuration.rb`, `lib/map_tiles/cli.rb`, `lib/tasks/map_tiles.rake`, `test/lib/map_tiles/bunny_publisher_test.rb`, `test/lib/map_tiles/configuration_test.rb`, and `test/lib/map_tiles/cli_test.rb` before editing.
+- [x] Edit `lib/map_tiles/bunny_publisher.rb` so `publish` uploads only `configuration.versioned_object_key` and `configuration.latest_manifest_object_key`; remove the upload path for `austrian-rocks-latest.pmtiles` entirely.
+- [x] In `BunnyPublisher#publish`, upload the versioned PMTiles object with `content_type: application/octet-stream` and `cache_control: configuration.pmtiles_cache_control`, verify its public URL, then build manifest JSON containing `version`, `pmtiles_url`, `published_at`, `artifact_basename`, `pmtiles_object_key`, and `pmtiles_object_basename`.
+- [x] In `BunnyPublisher#publish`, upload `austrian-rocks-latest.json` with `content_type: configuration.manifest_content_type` and `cache_control: "public, max-age=#{configuration.manifest_cache_ttl_seconds}"`, verify its public URL, print both published object URLs, and return `{ pmtiles: { key:, url: }, manifest: { key:, url: } }`.
+- [x] Add a concise code comment near the manifest upload explaining that `latest.json` is the only overwritten object because overwritten PMTiles archives can produce stale or mixed range responses.
+- [x] Keep Bunny credential validation limited to Bunny storage environment variables and continue to redact provider/credential details from upload errors.
+- [x] Edit `lib/map_tiles/cli.rb` and `lib/tasks/map_tiles.rake` so `bin/build_pmtiles publish --version=2026-06-08T16-45-30Z` and `bin/rails "map_tiles:publish[2026-06-08T16-45-30Z,false]"` print the manifest URL, keep the existing exit-status behavior, and keep working with manifest-only publication.
+- [x] Update `test/lib/map_tiles/bunny_publisher_test.rb` to assert PMTiles and JSON manifest keys, body content, cache metadata, content types, public URL verification order, no `austrian-rocks-latest.pmtiles` put, and sanitized failures.
+- [x] Update `test/lib/map_tiles/configuration_test.rb` and `test/lib/map_tiles/cli_test.rb` for the new manifest key and publisher return shape while preserving command-line smoke and `--skip-smoke` behavior.
+- [x] Commit this phase as `incant 0009-P4: publish PMTiles latest manifest` after the quality gate passes.
+**Quality gate:** ✅ `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/cli_test.rb` → 32 tests, 147 assertions, 0 failures, 0 errors on 2026-06-08.
 
 ## Phase 0009-P5 — admin publish UI, history, and legacy GeoJSON export removal
 - [ ] Read `app/controllers/admin/base_controller.rb`, `app/controllers/admin/exports_controller.rb`, `app/views/admin/exports/index.html.erb`, `app/views/layouts/admin.html.erb`, `config/routes.rb`, and existing admin controller tests before editing.
