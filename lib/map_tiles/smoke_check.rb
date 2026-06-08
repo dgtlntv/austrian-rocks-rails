@@ -46,12 +46,13 @@ module MapTiles
     def check
       failures = []
       verify_artifact!(failures)
-      verify_metadata!(read_pmtiles_metadata(failures), failures)
+      metadata = read_pmtiles_metadata(failures)
 
       layer_results = LayerContract.layers.map do |layer|
         inspect_geojson_layer(layer, failures)
       end
 
+      verify_metadata!(metadata, layer_results, failures)
       verify_layer_counts!(layer_results, failures)
       bounds = combined_bounds(layer_results)
       verify_bounds!(bounds, failures)
@@ -175,7 +176,7 @@ module MapTiles
       nil
     end
 
-    def verify_metadata!(metadata, failures)
+    def verify_metadata!(metadata, layer_results, failures)
       return if metadata.blank?
 
       vector_layers = metadata.fetch("vector_layers", nil)
@@ -184,15 +185,24 @@ module MapTiles
         return
       end
 
-      actual_layer_names = vector_layers.map { |layer| layer["id"] || layer["name"] }
-      expected_layer_names = LayerContract.layer_names
-      unless actual_layer_names.sort == expected_layer_names.sort
-        failures << "PMTiles metadata layers mismatch: expected #{expected_layer_names.join(', ')}, got #{actual_layer_names.join(', ')}"
+      actual_layer_names = vector_layers.map { |layer| layer["id"] || layer["name"] }.compact
+      layer_counts = layer_results.to_h { |result| [ result.fetch(:name), result.fetch(:count) ] }
+      required_layer_names = LayerContract.layer_names - production_optional_layer_names
+      dataful_optional_layer_names = production_optional_layer_names.select { |name| layer_counts.fetch(name, 0).positive? }
+      missing_layer_names = (required_layer_names + dataful_optional_layer_names).uniq - actual_layer_names
+      unexpected_layer_names = actual_layer_names - LayerContract.layer_names
+
+      if missing_layer_names.any? || unexpected_layer_names.any?
+        details = []
+        details << "missing #{missing_layer_names.join(', ')}" if missing_layer_names.any?
+        details << "unexpected #{unexpected_layer_names.join(', ')}" if unexpected_layer_names.any?
+        failures << "PMTiles metadata layers mismatch: #{details.join('; ')}"
       end
 
-      LayerContract.layers.each do |contract_layer|
-        metadata_layer = vector_layers.find { |layer| (layer["id"] || layer["name"]) == contract_layer.name }
-        next if metadata_layer.blank?
+      vector_layers.each do |metadata_layer|
+        layer_name = metadata_layer["id"] || metadata_layer["name"]
+        contract_layer = LayerContract.layers.find { |layer| layer.name == layer_name }
+        next if contract_layer.blank?
 
         actual_fields = metadata_field_names(metadata_layer)
         missing_required = contract_layer.required_properties - actual_fields
@@ -302,11 +312,19 @@ module MapTiles
         next if result[:count].positive?
 
         if mode == "production"
+          next if production_optional_layer_names.include?(result[:name])
+
           failures << "GeoJSON layer #{result[:name]} has zero features in production mode"
         elsif !allowed_empty_layers.include?(result[:name])
           failures << "GeoJSON layer #{result[:name]} has zero features but is not listed in --allow-empty"
         end
       end
+    end
+
+    def production_optional_layer_names
+      return [] unless mode == "production"
+
+      configuration.optional_production_layers
     end
 
     def combined_bounds(layer_results)

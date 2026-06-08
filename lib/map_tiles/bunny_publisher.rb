@@ -20,12 +20,6 @@ module MapTiles
       BUNNY_STORAGE_ACCESS_KEY_ID
       BUNNY_STORAGE_SECRET_ACCESS_KEY
     ].freeze
-    REQUIRED_MAP_ENV = %w[
-      MAP_TILES_PUBLIC_CDN_HOST
-      MAP_TILES_BUNNY_PREFIX
-      MAP_TILES_VERSION
-    ].freeze
-
     attr_reader :configuration, :s3_client, :http_head, :out
 
     def initialize(configuration: Configuration.new, s3_client: nil, http_head: nil, out: $stdout)
@@ -57,11 +51,13 @@ module MapTiles
     private
 
     def validate_configuration!
-      missing = (REQUIRED_MAP_ENV + REQUIRED_BUNNY_ENV).select { |name| configuration.env[name].to_s.strip.blank? }
-      raise ConfigurationError, "Missing map tile publication environment variable(s): #{missing.join(', ')}" if missing.any?
+      missing_bunny_env = REQUIRED_BUNNY_ENV.select { |name| configuration.env[name].to_s.strip.blank? }
+      raise ConfigurationError, "Missing Bunny storage environment variable(s): #{missing_bunny_env.join(', ')}" if missing_bunny_env.any?
 
-      raise ConfigurationError, "MAP_TILES_BUNNY_PREFIX must include at least one object key segment" if configuration.bunny_prefix.blank?
+      raise ConfigurationError, "Configured public CDN host is required" if configuration.public_cdn_host.blank?
+      raise ConfigurationError, "Configured Bunny prefix must include at least one object key segment" if configuration.bunny_prefix.blank?
 
+      configuration.artifact_basename
       configuration.versioned_object_key
       configuration.latest_object_key
     rescue ArgumentError => e

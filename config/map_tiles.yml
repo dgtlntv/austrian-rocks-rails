@@ -1,0 +1,22 @@
+default: &default
+  artifact_basename: austrian-rocks
+  output_dir: tmp/map_tiles
+  public_cdn_host: tiles.austrian.rocks
+  bunny_prefix: map_tiles
+  optional_production_layers: []
+
+development:
+  <<: *default
+  bunny_prefix: map_tiles/e2e
+  optional_production_layers:
+    - pois
+
+test:
+  <<: *default
+  bunny_prefix: map_tiles/test
+
+production:
+  <<: *default
+  bunny_prefix: map_tiles
+  optional_production_layers:
+    - pois

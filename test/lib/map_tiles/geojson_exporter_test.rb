@@ -11,10 +11,7 @@ require "map_tiles/geojson_exporter"
 class MapTiles::GeojsonExporterTest < ActiveSupport::TestCase
   setup do
     @output_dir = Rails.root.join("tmp/map_tiles_exporter_test/#{SecureRandom.hex(8)}")
-    @configuration = MapTiles::Configuration.new(env: {
-      "MAP_TILES_OUTPUT_DIR" => @output_dir.to_s,
-      "MAP_TILES_VERSION" => "test-version"
-    })
+    @configuration = MapTiles::Configuration.new(version: "test-version", settings: map_tile_settings)
 
     create_map_records
   end
@@ -50,6 +47,11 @@ class MapTiles::GeojsonExporterTest < ActiveSupport::TestCase
     boulder = feature_properties(paths.fetch("boulders"), "boulderId", @boulder.id)
     assert_equal @area.slug, boulder.fetch("areaSlug")
     assert_equal "Test Boulder", boulder.fetch("name")
+
+    area = feature_properties(paths.fetch("areas"), "areaId", @area.id)
+    assert_equal "TA", area.fetch("shortName")
+    area_hull = feature_properties(paths.fetch("area_hulls"), "areaId", @area.id)
+    assert_not_includes area_hull, "shortName"
 
     walking_path = feature_properties(paths.fetch("walking_paths"), "walkingPathId", @walking_path.id)
     assert_equal @walking_path.slug, walking_path.fetch("slug")
@@ -121,6 +123,16 @@ class MapTiles::GeojsonExporterTest < ActiveSupport::TestCase
   end
 
   private
+
+  def map_tile_settings
+    {
+      "artifact_basename" => "austrian-rocks",
+      "output_dir" => @output_dir.to_s,
+      "public_cdn_host" => "https://cdn.example.test",
+      "bunny_prefix" => "maps",
+      "optional_production_layers" => []
+    }
+  end
 
   def create_map_records
     @region = Region.create!(

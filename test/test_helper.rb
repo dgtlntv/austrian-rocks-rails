@@ -1,4 +1,9 @@
 ENV["RAILS_ENV"] ||= "test"
+ENV["BUNNY_STORAGE_ENDPOINT"] ||= "https://storage.example.test"
+ENV["BUNNY_STORAGE_ACCESS_KEY_ID"] ||= "test-key-id"
+ENV["BUNNY_STORAGE_SECRET_ACCESS_KEY"] ||= "test-secret"
+ENV["BUNNY_STORAGE_REGION"] ||= "de"
+ENV["BUNNY_STORAGE_BUCKET"] ||= "austrian-rocks-test"
 require_relative "../config/environment"
 require "rails/test_help"
 
