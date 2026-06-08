@@ -15,7 +15,7 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     assert_equal Rails.root.join("tmp/map_tiles"), configuration.output_dir
     assert_equal Rails.root.join("tmp/map_tiles/geojson"), configuration.geojson_dir
     assert_equal "austrian-rocks", configuration.artifact_basename
-    assert_equal "assets.austrian.rocks", configuration.public_cdn_host
+    assert_equal "tiles.austrian.rocks", configuration.public_cdn_host
     assert_equal "map_tiles/test", configuration.bunny_prefix
     assert_equal [], configuration.optional_production_layers
   end

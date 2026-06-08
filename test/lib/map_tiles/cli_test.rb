@@ -7,7 +7,7 @@ require "map_tiles/cli"
 
 class MapTiles::CLITest < ActiveSupport::TestCase
   setup do
-    @calls = { exports: [], builds: [], smokes: [], publishes: [] }
+    @calls = { exports: [], builds: [], smokes: [], publishes: [], cleans: [] }
     @settings = {
       "artifact_basename" => "austrian-rocks",
       "output_dir" => "tmp/cli_test/#{SecureRandom.hex(8)}",
@@ -20,6 +20,7 @@ class MapTiles::CLITest < ActiveSupport::TestCase
     @builder_class = builder_class(@calls)
     @smoke_check_class = smoke_check_class(@calls)
     @publisher_class = publisher_class(@calls)
+    @cleaner_class = cleaner_class(@calls)
   end
 
   test "export does not require a version" do
@@ -74,6 +75,7 @@ class MapTiles::CLITest < ActiveSupport::TestCase
     assert_includes out.string, "running production PMTiles smoke check before publish"
     assert_equal [ "--mode=production" ], @calls.fetch(:smokes).last.fetch(:argv)
     assert_equal "2026-06-07", @calls.fetch(:publishes).last.fetch(:version)
+    assert_equal "2026-06-07", @calls.fetch(:cleans).last.fetch(:version)
   end
 
   test "publish skip smoke is the only smoke bypass" do
@@ -121,7 +123,8 @@ class MapTiles::CLITest < ActiveSupport::TestCase
       exporter_class: @exporter_class,
       builder_class: @builder_class,
       smoke_check_class: @smoke_check_class,
-      publisher_class: @publisher_class
+      publisher_class: @publisher_class,
+      cleaner_class: @cleaner_class
     ).run
   end
 
@@ -175,6 +178,19 @@ class MapTiles::CLITest < ActiveSupport::TestCase
 
       define_method(:publish) do
         calls.fetch(:publishes) << { version: @configuration.version }
+      end
+    end
+  end
+
+  def cleaner_class(calls)
+    Class.new do
+      define_method(:initialize) do |configuration:, out:|
+        @configuration = configuration
+        @out = out
+      end
+
+      define_method(:clean) do
+        calls.fetch(:cleans) << { version: @configuration.version }
       end
     end
   end

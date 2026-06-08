@@ -1,7 +1,7 @@
 default: &default
   artifact_basename: austrian-rocks
   output_dir: tmp/map_tiles
-  public_cdn_host: assets.austrian.rocks
+  public_cdn_host: tiles.austrian.rocks
   bunny_prefix: map_tiles
   optional_production_layers: []
 

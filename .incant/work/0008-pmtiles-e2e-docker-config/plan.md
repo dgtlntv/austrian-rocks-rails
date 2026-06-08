@@ -32,10 +32,16 @@ updated: 2026-06-08
   - 2026-06-08 P3: initial `docker build -t austrian-rocks:0008-tippecanoe .` attempts failed with Docker daemon/storage I/O errors; after Docker restart and freeing disk space, `docker build --progress=plain -t austrian-rocks:0008-tippecanoe .` built successfully.
   - 2026-06-08 P3: `docker run --rm --entrypoint sh austrian-rocks:0008-tippecanoe -lc 'tippecanoe --version && command -v tippecanoe-decode && command -v tile-join'` → `tippecanoe v2.79.0`, `/usr/local/bin/tippecanoe-decode`, `/usr/local/bin/tile-join`.
   - 2026-06-08 P3: `git status --short --ignored tmp docs` → only ignored `docs/` and `tmp/` artifacts, including ignored local `tmp/map_tiles_e2e_publish.sh`; no generated PMTiles, GeoJSON, downloaded artifacts, secrets, or helper scripts are tracked.
+  - 2026-06-08 post-review E2E fix: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/lib/map_tiles` → 47 runs, 892 assertions, 0 failures, 0 errors, 0 skips.
+  - 2026-06-08 post-review E2E fix: `docker compose run --rm web bin/rubocop lib/map_tiles/geojson_exporter.rb test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/geojson_exporter_test.rb` → 3 files inspected, no offenses detected.
+  - 2026-06-08 post-review local cleanup fix: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/lib/map_tiles` → 48 runs, 903 assertions, 0 failures, 0 errors, 0 skips.
+  - 2026-06-08 post-review local cleanup fix: `docker compose run --rm web bin/rubocop lib/map_tiles test/lib/map_tiles` → 16 files inspected, no offenses detected.
   - Setup note: the first P1 gate attempt failed because the dev container was missing `brakeman-8.0.4`; `docker compose run --rm web bundle install` installed the locked gem, then the gate passed.
 - Review fixes:
   - Addressed P2 major in implementation: development/E2E config now exposes optional production layer `pois`, with regression coverage against the committed development config and a fresh Rails runner check showing `["pois"]` in the Docker development environment.
   - Addressed P1 minor opportunistically in implementation: space-form `--version` now rejects following option tokens such as `--bogus`, with CLI regression coverage.
+  - Addressed post-review E2E findings: `area_hulls` no longer exports out-of-contract `shortName`, and PMTiles public CDN host now points to the storage-backed `tiles.austrian.rocks` pull zone instead of the Rails-origin `assets.austrian.rocks` pull zone.
+  - Addressed post-review local disk hygiene: successful publish now prunes old local PMTiles artifacts and metadata older than 14 days from `tmp/map_tiles/`, while keeping the current artifact and never deleting remote Bunny objects.
   - Addressed open P3 blocker by installing pinned Felt Tippecanoe in both dev and production Docker images, updating missing-binary guidance, updating ignored local docs/E2E helper hygiene, and passing dev plus production image availability checks.
 - Key decisions:
   - Stable non-secret PMTiles settings move to `config/map_tiles.yml`; Bunny credentials remain environment secrets.
@@ -55,6 +61,7 @@ updated: 2026-06-08
 - `lib/map_tiles/cli.rb` (edit) — parse required `--version` for build/smoke/publish and explicit `--skip-smoke` for publish.
 - `lib/tasks/map_tiles.rake` (edit) — expose explicit Rails task arguments for version, smoke mode, allow-empty layers, and skip-smoke.
 - `lib/map_tiles/bunny_publisher.rb` (edit) — use config-backed CDN host/prefix/version object keys while keeping only Bunny storage credentials in environment variables.
+- `lib/map_tiles/local_artifact_cleaner.rb` (new) — prune old local PMTiles artifacts and metadata after successful publish so production disk usage remains bounded without deleting remote Bunny objects.
 - `lib/map_tiles/smoke_check.rb` (edit) — permit configured optional production layers to be empty and absent from PMTiles metadata while keeping feature validation when data exists.
 - `lib/map_tiles/tippecanoe_builder.rb` (edit) — update missing-binary guidance to Felt Tippecanoe and Dockerized availability.
 - `Dockerfile.dev` (edit) — build and install Felt Tippecanoe `2.79.0` in the development web image.
@@ -64,6 +71,7 @@ updated: 2026-06-08
 - `test/lib/map_tiles/configuration_test.rb` (new) — cover Rails config loading, sanitized versions, optional layer config, and ignored legacy non-secret env overrides.
 - `test/lib/map_tiles/cli_test.rb` (new) — cover command argument parsing, required versions, `export` without version, publish smoke default, and `--skip-smoke`.
 - `test/lib/map_tiles/bunny_publisher_test.rb` (edit) — cover config-backed host/prefix and secret-only Bunny env requirements.
+- `test/lib/map_tiles/local_artifact_cleaner_test.rb` (new) — cover local retention cleanup deleting only old generated PMTiles artifacts/metadata while keeping current, fresh, unrelated, and GeoJSON files.
 - `test/lib/map_tiles/smoke_check_test.rb` (edit) — cover zero-feature optional `pois`, required `walking_paths`, metadata omission, and dataful POI validation.
 - `test/lib/map_tiles/tippecanoe_builder_test.rb` (edit) — cover updated Felt/Docker install guidance and explicit-version configuration.
 - `test/lib/map_tiles/geojson_exporter_test.rb` (edit) — adjust PMTiles configuration construction after env-only output/version removal.
@@ -74,7 +82,7 @@ updated: 2026-06-08
 
 ## Phase 0008-P1 — Rails config, explicit version arguments, and Bunny publication config
 - [x] Read `config/application.rb`, `lib/map_tiles/configuration.rb`, `lib/map_tiles/cli.rb`, `lib/tasks/map_tiles.rake`, `lib/map_tiles/bunny_publisher.rb`, `lib/map_tiles/tippecanoe_builder.rb`, `test/lib/map_tiles/bunny_publisher_test.rb`, `test/lib/map_tiles/tippecanoe_builder_test.rb`, and `test/lib/map_tiles/geojson_exporter_test.rb` before editing.
-- [x] Add `config/map_tiles.yml` with `default` values `artifact_basename: austrian-rocks`, `output_dir: tmp/map_tiles`, `public_cdn_host: assets.austrian.rocks`, and `bunny_prefix: map_tiles`; set `development.bunny_prefix: map_tiles/e2e`; set `test.bunny_prefix: map_tiles/test`; set `production.bunny_prefix: map_tiles`; set `production.optional_production_layers: [pois]`.
+- [x] Add `config/map_tiles.yml` with `default` values `artifact_basename: austrian-rocks`, `output_dir: tmp/map_tiles`, `public_cdn_host: tiles.austrian.rocks`, and `bunny_prefix: map_tiles`; set `development.bunny_prefix: map_tiles/e2e`; set `test.bunny_prefix: map_tiles/test`; set `production.bunny_prefix: map_tiles`; set `production.optional_production_layers: [pois]`.
 - [x] Edit `lib/map_tiles/configuration.rb` so `Configuration.new(version: nil, env: ENV, settings: nil)` loads `Rails.application.config_for(:map_tiles)`, returns `output_dir`, `geojson_dir`, `artifact_basename`, `public_cdn_host`, `bunny_prefix`, and `optional_production_layers` from config, and keeps `env` only for Bunny secret lookups.
 - [x] In `lib/map_tiles/configuration.rb`, keep one safe path-segment sanitizer that accepts only letters, numbers, dots, underscores, and dashes; apply it to configured artifact basename, configured Bunny prefix segments, configured optional layer names, and the explicit version.
 - [x] In `lib/map_tiles/configuration.rb`, make artifact-specific methods (`version`, `artifact_path`, `metadata_path`, `versioned_object_key`, `latest_object_key`) raise `ArgumentError, "--version is required for build, smoke, and publish"` when no version was supplied, while `output_dir` and `geojson_dir` continue to work without a version for `export`.

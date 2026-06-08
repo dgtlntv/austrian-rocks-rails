@@ -48,6 +48,11 @@ class MapTiles::GeojsonExporterTest < ActiveSupport::TestCase
     assert_equal @area.slug, boulder.fetch("areaSlug")
     assert_equal "Test Boulder", boulder.fetch("name")
 
+    area = feature_properties(paths.fetch("areas"), "areaId", @area.id)
+    assert_equal "TA", area.fetch("shortName")
+    area_hull = feature_properties(paths.fetch("area_hulls"), "areaId", @area.id)
+    assert_not_includes area_hull, "shortName"
+
     walking_path = feature_properties(paths.fetch("walking_paths"), "walkingPathId", @walking_path.id)
     assert_equal @walking_path.slug, walking_path.fetch("slug")
     assert_equal @walking_path.label, walking_path.fetch("name")

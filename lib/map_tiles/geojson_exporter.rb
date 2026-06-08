@@ -109,7 +109,7 @@ module MapTiles
         bounds = bounds_for_boulders(area.boulders.where(ignore_for_area_hull: false))
         next if result&.hull.blank? || result&.centroid.blank? || bounds.blank?
 
-        feature(result.centroid, area_properties(area, bounds, include_name: true, include_cluster: true))
+        feature(result.centroid, area_properties(area, bounds, include_name: true, include_short_name: true, include_cluster: true))
       end
     end
 
@@ -228,14 +228,14 @@ module MapTiles
       Area.published.joins(:cluster).where(clusters: { region_id: region.id, published: true })
     end
 
-    def area_properties(area, bounds, include_name: false, include_cluster: false)
+    def area_properties(area, bounds, include_name: false, include_short_name: false, include_cluster: false)
       cluster = area.cluster if include_cluster
       {
         areaId: area.id,
         areaSlug: area.slug,
         name: include_name ? display_label(area, :name, :slug, fallback_prefix: "Area") : nil,
         priority: area.priority,
-        shortName: area.short_name,
+        shortName: include_short_name ? area.short_name : nil,
         clusterId: cluster&.id,
         clusterSlug: cluster&.slug
       }.merge(bounds_properties(bounds))
