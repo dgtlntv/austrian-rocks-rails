@@ -3,8 +3,18 @@
 require "test_helper"
 
 class MapTiles::PublishStaleMarkerTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   SOURCE_MODELS = %w[Problem Boulder Area Cluster Region WalkingPath Poi PoiRoute].freeze
   NON_SOURCE_MODELS = %w[Line Topo].freeze
+
+  setup do
+    clear_enqueued_jobs
+  end
+
+  teardown do
+    clear_enqueued_jobs
+  end
 
   # -- Concern inclusion -----------------------------------------------------
 
@@ -153,7 +163,7 @@ class MapTiles::PublishStaleMarkerTest < ActiveSupport::TestCase
     original_production = Rails.env.method(:production?)
     Rails.env.define_singleton_method(:production?) { true }
 
-    [captured, original_new, original_production]
+    [ captured, original_new, original_production ]
   end
 
   def restore_production_and_scheduler(original_new, original_production)
@@ -313,19 +323,37 @@ class MapTiles::PublishStaleMarkerTest < ActiveSupport::TestCase
 
   # -- Pending automatic attempt maintenance ---------------------------------
 
-  test "production-mode saves maintain exactly one pending automatic attempt" do
-    captured, orig_new, orig_prod = stub_production_and_scheduler
+  test "production-mode source model saves use real scheduler and maintain one pending automatic attempt" do
+    dependency_area = Area.create!(slug: "dep-area-#{SecureRandom.hex(8)}", published: false)
+    dependency_poi = Poi.new(poi_type: "parking")
+    dependency_poi.save!(validate: false)
 
-    Area.create!(slug: "stale-1-#{SecureRandom.hex(8)}", published: false)
-    Area.create!(slug: "stale-2-#{SecureRandom.hex(8)}", published: false)
-    Area.create!(slug: "stale-3-#{SecureRandom.hex(8)}", published: false)
+    original_production = Rails.env.method(:production?)
+    Rails.env.define_singleton_method(:production?) { true }
 
-    restore_production_and_scheduler(orig_new, orig_prod)
+    begin
+      freeze_time do
+        Area.create!(slug: "real-area-#{SecureRandom.hex(8)}", published: false)
+        Boulder.create!(area: dependency_area)
+        Problem.create!(area: dependency_area, steepness: "wall")
+        Cluster.create!(slug: "real-cluster-#{SecureRandom.hex(8)}", published: false)
+        Region.create!(slug: "real-region-#{SecureRandom.hex(8)}", published: false)
+        WalkingPath.create!(slug: "real-wp-#{SecureRandom.hex(8)}", published: false)
+        poi = Poi.new(poi_type: "parking")
+        poi.save!(validate: false)
+        route = PoiRoute.new(transport: "walking", distance: 1000, area: dependency_area, poi: dependency_poi)
+        route.save!(validate: false)
+      end
+    ensure
+      Rails.env.singleton_class.undef_method(:production?)
+    end
 
-    # The mock scheduler just records calls — the real scheduler maintains
-    # one pending attempt.  This test proves all three source-model commits
-    # triggered the callback.
-    assert_equal 3, captured[:reasons].size
-    captured[:reasons].each { |reason| assert_includes reason, "changed" }
+    state = MapTilePublishState.current!
+    assert_predicate state.stale_at, :present?
+    assert_predicate state.pending_automatic_attempt, :present?
+    assert_equal "automatic", state.pending_automatic_attempt.source
+    assert_equal "pending", state.pending_automatic_attempt.status
+    assert_equal 1, MapTilePublishAttempt.where(source: "automatic", status: "pending").count
+    assert_equal 8, enqueued_jobs.count { |job| job[:job] == MapTilePublishJob }
   end
 end
