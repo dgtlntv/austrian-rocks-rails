@@ -90,6 +90,16 @@ class MapTiles::CLITest < ActiveSupport::TestCase
     assert_equal "2026-06-08", @calls.fetch(:publishes).last.fetch(:version)
   end
 
+  test "space-form version rejects a following option token" do
+    err = StringIO.new
+
+    status = run_cli([ "build", "--version", "--bogus" ], err: err)
+
+    assert_equal 1, status
+    assert_includes err.string, "--version requires a value"
+    assert_empty @calls.fetch(:builds)
+  end
+
   test "unknown command options fail with usage" do
     err = StringIO.new
 

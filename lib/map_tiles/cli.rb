@@ -116,6 +116,7 @@ module MapTiles
           version = Regexp.last_match(1)
         when "--version"
           raise ArgumentError, "--version requires a value" if parsed_argv.empty?
+          raise ArgumentError, "--version requires a value" if parsed_argv.first.to_s.start_with?("--")
           raise ArgumentError, "--version may only be provided once" if version
 
           version = parsed_argv.shift

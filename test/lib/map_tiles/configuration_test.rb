@@ -21,7 +21,10 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "supports environment-specific settings through injected Rails config" do
-    development = MapTiles::Configuration.new(version: "2026-06-07", settings: settings("bunny_prefix" => "map_tiles/e2e"))
+    development = MapTiles::Configuration.new(
+      version: "2026-06-07",
+      settings: settings("bunny_prefix" => "map_tiles/e2e", "optional_production_layers" => [ "pois" ])
+    )
     test = MapTiles::Configuration.new(version: "2026-06-07", settings: settings("bunny_prefix" => "map_tiles/test"))
     production = MapTiles::Configuration.new(
       version: "2026-06-07",
@@ -29,9 +32,18 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     )
 
     assert_equal "map_tiles/e2e", development.bunny_prefix
+    assert_equal [ "pois" ], development.optional_production_layers
     assert_equal "map_tiles/test", test.bunny_prefix
     assert_equal "map_tiles", production.bunny_prefix
     assert_equal [ "pois" ], production.optional_production_layers
+  end
+
+  test "committed development config supports zero-POI local E2E smoke" do
+    development_settings = Rails.application.config_for(:map_tiles, env: "development")
+    configuration = MapTiles::Configuration.new(version: "2026-06-07", settings: development_settings)
+
+    assert_equal "map_tiles/e2e", configuration.bunny_prefix
+    assert_equal [ "pois" ], configuration.optional_production_layers
   end
 
   test "uses explicit safe version for artifact paths and object keys" do

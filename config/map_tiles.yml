@@ -8,6 +8,8 @@ default: &default
 development:
   <<: *default
   bunny_prefix: map_tiles/e2e
+  optional_production_layers:
+    - pois
 
 test:
   <<: *default

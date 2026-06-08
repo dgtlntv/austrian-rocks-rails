@@ -13,7 +13,7 @@ updated: 2026-06-08
 # Make PMTiles E2E Publish-Ready With Dockerized Felt Tippecanoe And Rails Config — plan
 
 ## Status
-- Phase: 0008-P2 complete — optional production POI smoke semantics
+- Phase: 0008-P2 review fixes complete — optional production POI smoke semantics
 - Stage: review
 - Branch: incant/0008-pmtiles-e2e-docker-config
 - Next: run `/incant:review 0008`
@@ -22,9 +22,13 @@ updated: 2026-06-08
   - 2026-06-08: `docker compose run --rm web bin/rails test test/lib/map_tiles/smoke_check_test.rb` → 12 runs, 63 assertions, 0 failures, 0 errors, 0 skips.
   - 2026-06-08: `docker compose run --rm web bin/rubocop lib/map_tiles/smoke_check.rb test/lib/map_tiles/smoke_check_test.rb` → 2 files inspected, no offenses detected.
   - 2026-06-08: `docker compose run --rm web bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/cli_test.rb test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/tippecanoe_builder_test.rb test/lib/map_tiles/geojson_exporter_test.rb` → 29 runs, 225 assertions, 0 failures, 0 errors, 0 skips.
+  - 2026-06-08 review fix: `docker compose run --rm web bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/cli_test.rb test/lib/map_tiles/smoke_check_test.rb` → 28 runs, 135 assertions, 0 failures, 0 errors, 0 skips.
+  - 2026-06-08 review fix: `docker compose run --rm web bin/rubocop lib/map_tiles/cli.rb test/lib/map_tiles/cli_test.rb test/lib/map_tiles/configuration_test.rb` → 3 files inspected, no offenses detected.
+  - 2026-06-08 review fix: `docker compose run --rm web bin/rails runner 'puts Rails.env; p MapTiles::Configuration.new.optional_production_layers'` → `development`, `["pois"]`.
   - Setup note: the first P1 gate attempt failed because the dev container was missing `brakeman-8.0.4`; `docker compose run --rm web bundle install` installed the locked gem, then the gate passed.
-- Open review findings:
-  - Minor from P1 review remains open: `lib/map_tiles/cli.rb` accepts `--version --bogus` as a version token; no blocker/major findings are open.
+- Review fixes:
+  - Addressed P2 major in implementation: development/E2E config now exposes optional production layer `pois`, with regression coverage against the committed development config and a fresh Rails runner check showing `["pois"]` in the Docker development environment.
+  - Addressed P1 minor opportunistically in implementation: space-form `--version` now rejects following option tokens such as `--bogus`, with CLI regression coverage.
 - Key decisions:
   - Stable non-secret PMTiles settings move to `config/map_tiles.yml`; Bunny credentials remain environment secrets.
   - Artifact version is a per-command argument and is sanitized before artifact paths or Bunny object keys are built.
