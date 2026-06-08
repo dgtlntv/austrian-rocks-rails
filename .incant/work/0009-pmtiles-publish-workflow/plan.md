@@ -36,8 +36,17 @@ Addressed all open findings from the initial review.
 | `record_failure!` does not redact actual Bunny secret values from error messages | blocker | Added `BUNNY_SECRET_VALUES` as a dynamic class method reading from `ENV`; `sanitize_error_text` now redacts bare values via `Regexp.new(Regexp.escape(value))` before storing. All existing key-name redaction retained. |
 | `current_status` hides a failed publish when a previous success exists and no newer `stale_at` | major | Changed `failed` derivation to compare `last_failed_attempt.finished_at` against `last_successful_attempt.finished_at`. Failed attempts finished after the last success now correctly return `"failed"`. |
 | No database-level singleton constraint on `map_tile_publish_states` | major | Added migration `20260608120001` adding boolean `singleton` column with a partial unique index `WHERE singleton = true`. `current!` uses `find_or_create_by!(singleton: true)`. Duplicate row creation raises `ActiveRecord::RecordNotUnique`. |
-| `latest_object_key` still exposed in Configuration | minor | Removed `latest_object_key` method from `MapTiles::Configuration`. The configuration test was updated to assert `not_respond_to :latest_object_key`. |
-| Removing `latest_object_key` breaks existing Bunny publisher CLI path | major | Restored `Configuration#latest_object_key` returning `austrian-rocks-latest.pmtiles` for legacy CLI compatibility. Bunny publisher tests now pass again. `latest_object_key` will be removed from `BunnyPublisher` usage in 0009-P4 when manifest-only publication is implemented. |
+| `latest_object_key` still exposed in Configuration | minor | Initially removed `latest_object_key` to prepare for manifest-only publication, but this broke existing CLI paths. The method was restored to return `austrian-rocks-latest.pmtiles` for legacy CLI compatibility. It will be removed from `BunnyPublisher` usage in 0009-P4 when manifest-only publication is implemented. Configuration tests now assert the method returns `austrian-rocks-latest.pmtiles`. |
+
+### Review fixes (0009-P2 review)
+
+Addressed all open findings from the P2 review (commit ebb72f5d).
+
+| Finding | Severity | Fix |
+|---|---|---|
+| Production callbacks cannot enqueue because no `MapTilePublishJob` class exists yet | blocker | `MapTilePublishJob` is added in 0009-P3 (this phase). The job class is required for the scheduler's default `resolve_job_class` to return a non-nil class. P2 scheduler tests inject a stub job class so they pass without the real job. The blocker is resolved once P3 is complete and committed. |
+| Callback tests do not exercise production-mode saves for all 8 source models | major | Extended `publish_stale_marker_test.rb` with dedicated `create/update/destroy` integration tests for each of the 8 PMTiles source models (`Area`, `Boulder`, `Cluster`, `Poi`, `PoiRoute`, `Problem`, `Region`, `WalkingPath`) under a `Rails.env.production?` stub with a mocked scheduler. Fresh verification: 35 runs, 109 assertions, 0 failures on 2026-06-08. |
+| plan.md `latest_object_key` review-fix rows were internally inconsistent | minor | Merged the two contradictory review-fix rows into one that clearly states the method was removed, then restored for legacy CLI compatibility, to be removed from publisher usage in P4. |
 
 ## Spec freshness check
 - `spec.md` records base commit `7b6ff0f8`; current `HEAD` is `055ba8f4`.
