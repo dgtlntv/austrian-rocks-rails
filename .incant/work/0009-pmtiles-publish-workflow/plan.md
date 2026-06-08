@@ -13,12 +13,12 @@ updated: 2026-06-08
 # PMTiles publish workflow — plan
 
 ## Status
-- Phase: 0009-P5 ✅ — admin publish UI, history, and legacy GeoJSON export removal complete.
-- Stage: implement
+- Phase: 0009-P6 ✅ — acceptance sweep, status updates, and release readiness complete.
+- Stage: review
 - Branch: incant/0009-pmtiles-publish-workflow
-- Next: review this phase via `/incant:review 0009`.
+- Next: review this final phase via `/incant:review 0009`.
 - Blockers: none.
-- Fresh verification: P5 gate `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/controllers/admin/exports_controller_test.rb` → 7 runs, 62 assertions, 0 failures, 0 errors on 2026-06-08; targeted P5 RuboCop `docker compose run --rm web bin/rubocop app/controllers/admin/exports_controller.rb app/helpers/admin/exports_helper.rb test/controllers/admin/exports_controller_test.rb` → 3 files inspected, no offenses; P4 review passed with no open blocker/major findings.
+- Fresh verification: P6 acceptance gate `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/lib/map_tiles test/jobs test/models test/controllers` → 154 runs, 1302 assertions, 0 failures, 0 errors on 2026-06-08; P6 RuboCop `docker compose run --rm web bin/rubocop` → 281 files inspected, no offenses; tracked diff check showed only incant review/session/status artifacts and no secrets or generated PMTiles/GeoJSON/dump artifacts.
 - Key decisions:
   - Persist publish workflow state in one singleton `MapTilePublishState` row plus immutable history rows in `MapTilePublishAttempt`.
   - Treat sliding debounce as one pending automatic attempt row; older delayed jobs that wake up before the current `scheduled_for` self-reschedule and do not build.
@@ -26,6 +26,14 @@ updated: 2026-06-08
   - Keep manual publishes immediate and request-scoped work limited to creating an attempt and enqueuing `MapTilePublishJob`.
   - Publish only an immutable versioned PMTiles object plus `austrian-rocks-latest.json`; never upload `austrian-rocks-latest.pmtiles`.
   - Keep callback scheduling production-only; tests may invoke `MapTiles::PublishScheduler` directly outside production.
+
+### Review fixes (0009-P5 review)
+
+Addressed the open major from the release-readiness review.
+
+| Finding | Severity | Fix |
+|---|---|---|
+| Phase 0009-P6 remained open in durable status artifacts | major | Ran the full acceptance test set and full RuboCop in Docker, inspected the tracked diff for secrets/generated artifacts, updated the P6 checklist plus plan/backlog/STATE status to `phase:0009-P6`, and prepared the phase commit. Fresh verification: 154 Rails runs, 1302 assertions, 0 failures/errors; 281 RuboCop files, no offenses on 2026-06-08. |
 
 ### Review fixes (0009-P1)
 
@@ -182,14 +190,14 @@ Addressed all open findings from the P2 review (commit ebb72f5d).
 - [x] Commit this phase as `incant 0009-P5: add admin PMTiles publishing` after the quality gate passes.
 **Quality gate:** ✅ `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/controllers/admin/exports_controller_test.rb` → 7 runs, 62 assertions, 0 failures, 0 errors on 2026-06-08; targeted RuboCop `docker compose run --rm web bin/rubocop app/controllers/admin/exports_controller.rb app/helpers/admin/exports_helper.rb test/controllers/admin/exports_controller_test.rb` → 3 files inspected, no offenses.
 
-## Phase 0009-P6 — acceptance sweep, status updates, and release readiness
-- [ ] Read `.incant/work/0009-pmtiles-publish-workflow/spec.md`, this `plan.md`, `.incant/backlog.md`, `.incant/STATE.md`, and the current `git diff --stat` before editing any incant status artifacts.
-- [ ] Run the full acceptance test set named in the spec: `test/lib/map_tiles`, `test/jobs`, `test/models`, and `test/controllers`, using Docker-hosted PostgreSQL/PostGIS.
-- [ ] Run `bin/rubocop` in Docker after the acceptance tests pass.
-- [ ] Inspect `git diff --name-only` and confirm no secrets, generated PMTiles artifacts, generated GeoJSON, temporary dumps, or ignored helper scripts are tracked.
-- [ ] Update this plan’s `## Status` block with completed phase evidence, set `.incant/backlog.md` to `status:review phase:0009-P6`, and update `.incant/STATE.md` to say item `0009` is awaiting review.
-- [ ] Commit this phase as `incant 0009-P6: verify PMTiles publish workflow` after the quality gate passes.
-**Quality gate:** `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/lib/map_tiles test/jobs test/models test/controllers && docker compose run --rm web bin/rubocop` → specified Rails tests and RuboCop pass; tracked diff contains no secrets or generated tile artifacts.
+## Phase 0009-P6 — acceptance sweep, status updates, and release readiness ✅
+- [x] Read `.incant/work/0009-pmtiles-publish-workflow/spec.md`, this `plan.md`, `.incant/backlog.md`, `.incant/STATE.md`, and the current `git diff --stat` before editing any incant status artifacts.
+- [x] Run the full acceptance test set named in the spec: `test/lib/map_tiles`, `test/jobs`, `test/models`, and `test/controllers`, using Docker-hosted PostgreSQL/PostGIS.
+- [x] Run `bin/rubocop` in Docker after the acceptance tests pass.
+- [x] Inspect `git diff --name-only` and confirm no secrets, generated PMTiles artifacts, generated GeoJSON, temporary dumps, or ignored helper scripts are tracked.
+- [x] Update this plan’s `## Status` block with completed phase evidence, set `.incant/backlog.md` to `status:review phase:0009-P6`, and update `.incant/STATE.md` to say item `0009` is awaiting review.
+- [x] Commit this phase as `incant 0009-P6: verify PMTiles publish workflow` after the quality gate passes.
+**Quality gate:** ✅ `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/lib/map_tiles test/jobs test/models test/controllers` → 154 runs, 1302 assertions, 0 failures, 0 errors on 2026-06-08; `docker compose run --rm web bin/rubocop` → 281 files inspected, no offenses; tracked diff contained only incant artifacts and no secrets or generated tile artifacts.
 
 ## Coverage self-review
 - Requirement 1 → Phase 0009-P5 adds authenticated admin PMTiles publish UI under `Admin::ExportsController`.
