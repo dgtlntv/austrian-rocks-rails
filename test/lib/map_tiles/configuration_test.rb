@@ -18,6 +18,10 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     assert_equal "tiles.austrian.rocks", configuration.public_cdn_host
     assert_equal "map_tiles/test", configuration.bunny_prefix
     assert_equal [], configuration.optional_production_layers
+    assert_equal 30.minutes, configuration.automatic_publish_debounce
+    assert_equal 60, configuration.manifest_cache_ttl_seconds
+    assert_equal "public, max-age=31536000, immutable", configuration.pmtiles_cache_control
+    assert_equal "application/json", configuration.manifest_content_type
   end
 
   test "supports environment-specific settings through injected Rails config" do
@@ -105,6 +109,53 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     assert_equal "explicit-version", configuration.version
   end
 
+  test "exposes automatic publish debounce duration" do
+    configuration = MapTiles::Configuration.new(settings: settings("automatic_publish_debounce_minutes" => "45"))
+
+    assert_equal 45.minutes, configuration.automatic_publish_debounce
+  end
+
+  test "exposes manifest cache TTL" do
+    configuration = MapTiles::Configuration.new(settings: settings("manifest_cache_ttl_seconds" => "120"))
+
+    assert_equal 120, configuration.manifest_cache_ttl_seconds
+  end
+
+  test "exposes PMTiles cache control header" do
+    configuration = MapTiles::Configuration.new(
+      settings: settings("pmtiles_cache_control" => "public, max-age=86400")
+    )
+
+    assert_equal "public, max-age=86400", configuration.pmtiles_cache_control
+  end
+
+  test "exposes manifest content type" do
+    configuration = MapTiles::Configuration.new(
+      settings: settings("manifest_content_type" => "application/vnd.custom+json")
+    )
+
+    assert_equal "application/vnd.custom+json", configuration.manifest_content_type
+  end
+
+  test "returns latest manifest object key derived from basename and prefix" do
+    configuration = MapTiles::Configuration.new(version: "v1", settings: settings("bunny_prefix" => "maps/prod"))
+
+    assert_equal "maps/prod/austrian-rocks-latest.json", configuration.latest_manifest_object_key
+  end
+
+  test "returns latest manifest basename" do
+    configuration = MapTiles::Configuration.new(version: "v1", settings: settings)
+
+    assert_equal "austrian-rocks-latest.json", configuration.latest_manifest_basename
+  end
+
+  test "does not expose latest.pmtiles via manifest method" do
+    configuration = MapTiles::Configuration.new(version: "v1", settings: settings)
+
+    assert_equal "austrian-rocks-latest.json", configuration.latest_manifest_basename
+    assert_not_respond_to configuration, :latest_manifest_pmtiles
+  end
+
   private
 
   def settings(overrides = {})
@@ -113,7 +164,11 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
       "output_dir" => @output_dir,
       "public_cdn_host" => "https://cdn.example.test",
       "bunny_prefix" => "maps",
-      "optional_production_layers" => []
+      "optional_production_layers" => [],
+      "automatic_publish_debounce_minutes" => "30",
+      "manifest_cache_ttl_seconds" => "60",
+      "pmtiles_cache_control" => "public, max-age=31536000, immutable",
+      "manifest_content_type" => "application/json"
     }.merge(overrides)
   end
 end

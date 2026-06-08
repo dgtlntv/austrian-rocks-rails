@@ -13,12 +13,12 @@ updated: 2026-06-08
 # PMTiles publish workflow — plan
 
 ## Status
-- Phase: 0009-P1 pending — plan drafted, awaiting human approval before implementation.
-- Stage: plan
+- Phase: 0009-P1 ✅ — persistence and configuration complete.
+- Stage: implement
 - Branch: incant/0009-pmtiles-publish-workflow
-- Next: human approves this plan, then run `/incant:implement 0009`.
+- Next: review this phase via `/incant:review 0009`.
 - Blockers: none.
-- Fresh verification: not run during planning; each implementation phase below has its own required gate.
+- Fresh verification: 39 tests, 0 failures, 0 errors on 2026-06-08 (see quality gate above).
 - Key decisions:
   - Persist publish workflow state in one singleton `MapTilePublishState` row plus immutable history rows in `MapTilePublishAttempt`.
   - Treat sliding debounce as one pending automatic attempt row; older delayed jobs that wake up before the current `scheduled_for` self-reschedule and do not build.
@@ -84,20 +84,20 @@ updated: 2026-06-08
 - `test/lib/map_tiles/cli_test.rb` (edit) — keep command-line publish coverage passing after manifest-only publication while proving `--skip-smoke` remains CLI-only behavior.
 - `test/controllers/admin/exports_controller_test.rb` (new) — cover SQLite DB download, PMTiles status/history rendering, confirmation-protected manual publish enqueue, and removed GeoJSON routes/actions.
 
-## Phase 0009-P1 — persisted publish history and map tile workflow configuration
-- [ ] Read `db/schema.rb`, `app/models/application_record.rb`, `config/map_tiles.yml`, `lib/map_tiles/configuration.rb`, `test/lib/map_tiles/configuration_test.rb`, and existing migration naming under `db/migrate/` before editing.
-- [ ] Add `db/migrate/20260608120000_create_map_tile_publish_workflow.rb` creating `map_tile_publish_states` with `status`, `stale_at`, `pending_automatic_attempt_id`, `running_attempt_id`, `last_successful_attempt_id`, `last_failed_attempt_id`, `last_source_change_at`, `created_at`, and `updated_at`; add indexes for the attempt foreign-key columns.
-- [ ] In the same migration create `map_tile_publish_attempts` with `source`, `status`, `trigger_reason`, `version`, `scheduled_for`, `enqueued_at`, `started_at`, `finished_at`, `pmtiles_url`, `manifest_url`, `pmtiles_object_key`, `manifest_object_key`, `error_text`, `created_at`, and `updated_at`; add indexes on `source`, `status`, `scheduled_for`, `created_at`, and `version`.
-- [ ] Run the migration in the Docker test/development database path and update `db/schema.rb` so both new tables are reflected with the latest schema version.
-- [ ] Add `app/models/map_tile_publish_attempt.rb` with `SOURCES = %w[manual automatic]`, `STATUSES = %w[pending running succeeded failed cancelled]`, validations for inclusion/presence, `duration` returning `finished_at - started_at` when both timestamps exist, and `record_failure!(error, finished_at:)` that strips Bunny secret values and truncates stored text to 2,000 characters.
-- [ ] Add `app/models/map_tile_publish_state.rb` with `self.current!` creating or returning the singleton row, associations to `pending_automatic_attempt`, `running_attempt`, `last_successful_attempt`, and `last_failed_attempt`, and `current_status` returning `running`, `pending`, `failed`, `stale`, or `up_to_date` from persisted state.
-- [ ] Edit `config/map_tiles.yml` defaults to add `automatic_publish_debounce_minutes: 30`, `manifest_cache_ttl_seconds: 60`, `pmtiles_cache_control: public, max-age=31536000, immutable`, and `manifest_content_type: application/json`; inherit these values in development, test, and production.
-- [ ] Edit `lib/map_tiles/configuration.rb` to expose `automatic_publish_debounce`, `manifest_cache_ttl_seconds`, `pmtiles_cache_control`, `manifest_content_type`, `latest_manifest_object_key`, and `latest_manifest_basename` derived from `artifact_basename`; keep `latest_object_key` from returning or naming `austrian-rocks-latest.pmtiles`.
-- [ ] Add `test/models/map_tile_publish_attempt_test.rb` covering source/status validation, duration calculation, failed status transition, credential redaction for `BUNNY_STORAGE_ACCESS_KEY_ID` and `BUNNY_STORAGE_SECRET_ACCESS_KEY`, and 2,000-character error truncation.
-- [ ] Add `test/models/map_tile_publish_state_test.rb` covering singleton creation, derived `up_to_date`, `stale`, `pending`, `running`, and `failed` statuses, and last successful publish fields.
-- [ ] Update `test/lib/map_tiles/configuration_test.rb` to assert the 30-minute debounce, 60-second manifest TTL, immutable PMTiles cache control, `map_tiles/test/austrian-rocks-latest.json`, and absence of any `latest.pmtiles` configuration method expectation.
-- [ ] Commit this phase as `incant 0009-P1: persist PMTiles publish state` after the quality gate passes.
-**Quality gate:** `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/models/map_tile_publish_attempt_test.rb test/models/map_tile_publish_state_test.rb test/lib/map_tiles/configuration_test.rb` → all persistence and configuration tests pass against Docker-hosted PostgreSQL/PostGIS.
+## Phase 0009-P1 — persisted publish history and map tile workflow configuration  ✅
+- [x] Read `db/schema.rb`, `app/models/application_record.rb`, `config/map_tiles.yml`, `lib/map_tiles/configuration.rb`, `test/lib/map_tiles/configuration_test.rb`, and existing migration naming under `db/migrate/` before editing.
+- [x] Add `db/migrate/20260608120000_create_map_tile_publish_workflow.rb` creating `map_tile_publish_states` with `status`, `stale_at`, `pending_automatic_attempt_id`, `running_attempt_id`, `last_successful_attempt_id`, `last_failed_attempt_id`, `last_source_change_at`, `created_at`, and `updated_at`; add indexes for the attempt foreign-key columns.
+- [x] In the same migration create `map_tile_publish_attempts` with `source`, `status`, `trigger_reason`, `version`, `scheduled_for`, `enqueued_at`, `started_at`, `finished_at`, `pmtiles_url`, `manifest_url`, `pmtiles_object_key`, `manifest_object_key`, `error_text`, `created_at`, and `updated_at`; add indexes on `source`, `status`, `scheduled_for`, `created_at`, and `version`.
+- [x] Run the migration in the Docker test/development database path and update `db/schema.rb` so both new tables are reflected with the latest schema version.
+- [x] Add `app/models/map_tile_publish_attempt.rb` with `SOURCES = %w[manual automatic]`, `STATUSES = %w[pending running succeeded failed cancelled]`, validations for inclusion/presence, `duration` returning `finished_at - started_at` when both timestamps exist, and `record_failure!(error, finished_at:)` that strips Bunny secret values and truncates stored text to 2,000 characters.
+- [x] Add `app/models/map_tile_publish_state.rb` with `self.current!` creating or returning the singleton row, associations to `pending_automatic_attempt`, `running_attempt`, `last_successful_attempt`, and `last_failed_attempt`, and `current_status` returning `running`, `pending`, `failed`, `stale`, or `up_to_date` from persisted state.
+- [x] Edit `config/map_tiles.yml` defaults to add `automatic_publish_debounce_minutes: 30`, `manifest_cache_ttl_seconds: 60`, `pmtiles_cache_control: public, max-age=31536000, immutable`, and `manifest_content_type: application/json`; inherit these values in development, test, and production.
+- [x] Edit `lib/map_tiles/configuration.rb` to expose `automatic_publish_debounce`, `manifest_cache_ttl_seconds`, `pmtiles_cache_control`, `manifest_content_type`, `latest_manifest_object_key`, and `latest_manifest_basename` derived from `artifact_basename`; keep `latest_object_key` from returning or naming `austrian-rocks-latest.pmtiles`.
+- [x] Add `test/models/map_tile_publish_attempt_test.rb` covering source/status validation, duration calculation, failed status transition, credential redaction for `BUNNY_STORAGE_ACCESS_KEY_ID` and `BUNNY_STORAGE_SECRET_ACCESS_KEY`, and 2,000-character error truncation.
+- [x] Add `test/models/map_tile_publish_state_test.rb` covering singleton creation, derived `up_to_date`, `stale`, `pending`, `running`, and `failed` statuses, and last successful publish fields.
+- [x] Update `test/lib/map_tiles/configuration_test.rb` to assert the 30-minute debounce, 60-second manifest TTL, immutable PMTiles cache control, `map_tiles/test/austrian-rocks-latest.json`, and absence of any `latest.pmtiles` configuration method expectation.
+- [x] Commit this phase as `incant 0009-P1: persist PMTiles publish state` after the quality gate passes.
+**Quality gate:** ✅ `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/models/map_tile_publish_attempt_test.rb test/models/map_tile_publish_state_test.rb test/lib/map_tiles/configuration_test.rb` → 39 tests, 0 failures, 0 errors.
 
 ## Phase 0009-P2 — production-only stale marking and sliding automatic scheduling
 - [ ] Read `app/models/problem.rb`, `app/models/boulder.rb`, `app/models/area.rb`, `app/models/cluster.rb`, `app/models/region.rb`, `app/models/walking_path.rb`, `app/models/poi.rb`, `app/models/poi_route.rb`, `app/models/line.rb`, `app/models/topo.rb`, and `app/jobs/application_job.rb` before editing.

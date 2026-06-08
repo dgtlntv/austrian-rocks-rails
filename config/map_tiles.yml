@@ -4,6 +4,10 @@ default: &default
   public_cdn_host: tiles.austrian.rocks
   bunny_prefix: map_tiles
   optional_production_layers: []
+  automatic_publish_debounce_minutes: 30
+  manifest_cache_ttl_seconds: 60
+  pmtiles_cache_control: "public, max-age=31536000, immutable"
+  manifest_content_type: application/json
 
 development:
   <<: *default
