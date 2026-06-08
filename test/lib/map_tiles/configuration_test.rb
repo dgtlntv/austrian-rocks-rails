@@ -57,7 +57,8 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     assert_equal Rails.root.join("#{@output_dir}/austrian-rocks-2026.06_07-e2e.pmtiles"), configuration.artifact_path
     assert_equal Rails.root.join("#{@output_dir}/austrian-rocks-2026.06_07-e2e.metadata.json"), configuration.metadata_path
     assert_equal "maps/e2e/austrian-rocks-2026.06_07-e2e.pmtiles", configuration.versioned_object_key
-    assert_not_respond_to configuration, :latest_object_key
+    assert_respond_to configuration, :latest_object_key
+    assert_equal "maps/e2e/austrian-rocks-latest.pmtiles", configuration.latest_object_key
   end
 
   test "requires explicit version for artifact-specific methods only" do
@@ -147,6 +148,12 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     configuration = MapTiles::Configuration.new(version: "v1", settings: settings)
 
     assert_equal "austrian-rocks-latest.json", configuration.latest_manifest_basename
+  end
+
+  test "exposes latest PMTiles object key for legacy CLI compatibility" do
+    configuration = MapTiles::Configuration.new(version: "v1", settings: settings("bunny_prefix" => "maps/prod"))
+
+    assert_equal "maps/prod/austrian-rocks-latest.pmtiles", configuration.latest_object_key
   end
 
   test "does not expose latest.pmtiles via manifest method" do

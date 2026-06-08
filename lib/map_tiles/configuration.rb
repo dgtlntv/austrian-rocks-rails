@@ -87,6 +87,10 @@ module MapTiles
       fetch_setting("manifest_content_type").to_s.strip
     end
 
+    def latest_object_key
+      object_key("#{artifact_basename}-latest.pmtiles")
+    end
+
     def latest_manifest_object_key
       object_key("#{artifact_basename}-latest.json")
     end
