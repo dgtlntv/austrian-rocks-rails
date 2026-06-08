@@ -9,6 +9,24 @@
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
 ARG RUBY_VERSION=3.3.5
+FROM docker.io/library/ruby:$RUBY_VERSION-slim AS tippecanoe
+
+ARG TIPPECANOE_VERSION=2.79.0
+
+# Build pinned Felt Tippecanoe in a throw-away stage so compiler tools stay out of runtime.
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    ca-certificates \
+    git \
+    libsqlite3-dev \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists /var/cache/apt/archives && \
+    git clone --depth 1 --branch "$TIPPECANOE_VERSION" https://github.com/felt/tippecanoe /tmp/tippecanoe && \
+    make -C /tmp/tippecanoe -j"$(nproc)" && \
+    make -C /tmp/tippecanoe install && \
+    rm -rf /tmp/tippecanoe
+
 FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 
 # Rails app lives here
@@ -58,9 +76,12 @@ RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 # Final stage for app image
 FROM base
 
-# Copy built artifacts: gems, application
+# Copy built artifacts: gems, application, and PMTiles inspection/build binaries.
 COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
 COPY --from=build /rails /rails
+COPY --from=tippecanoe /usr/local/bin/tippecanoe /usr/local/bin/tippecanoe
+COPY --from=tippecanoe /usr/local/bin/tippecanoe-decode /usr/local/bin/tippecanoe-decode
+COPY --from=tippecanoe /usr/local/bin/tile-join /usr/local/bin/tile-join
 
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \

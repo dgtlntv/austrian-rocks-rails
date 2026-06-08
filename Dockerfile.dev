@@ -4,6 +4,8 @@
 ARG RUBY_VERSION=3.3.5
 FROM docker.io/library/ruby:$RUBY_VERSION-slim
 
+ARG TIPPECANOE_VERSION=2.79.0
+
 # Rails app lives here
 WORKDIR /rails
 
@@ -11,12 +13,21 @@ WORKDIR /rails
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
     build-essential \
+    ca-certificates \
     curl \
     git \
+    libsqlite3-dev \
     libvips \
     libpq-dev \
     postgresql-client \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Build and install pinned Felt Tippecanoe for Dockerized PMTiles builds.
+RUN git clone --depth 1 --branch "$TIPPECANOE_VERSION" https://github.com/felt/tippecanoe /tmp/tippecanoe && \
+    make -C /tmp/tippecanoe -j"$(nproc)" && \
+    make -C /tmp/tippecanoe install && \
+    rm -rf /tmp/tippecanoe
 
 # Set development environment
 ENV RAILS_ENV="development" \

@@ -10,7 +10,7 @@ module MapTiles
     class BuildError < Error; end
 
     INSTALL_GUIDANCE = <<~TEXT.squish
-      Tippecanoe is required to build Austrian Rocks PMTiles. Install it with `brew install tippecanoe` on macOS, or follow https://github.com/mapbox/tippecanoe for your platform, then rerun the build.
+      Tippecanoe is required to build Austrian Rocks PMTiles. Project Docker images include Felt Tippecanoe 2.79.0 from https://github.com/felt/tippecanoe. For non-Docker local runs, install it with `brew install tippecanoe` on macOS or follow the Felt Tippecanoe instructions for your platform, then rerun the build.
     TEXT
 
     attr_reader :configuration, :executable, :executable_checker, :command_runner

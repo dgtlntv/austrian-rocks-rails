@@ -13,7 +13,7 @@ updated: 2026-06-08
 # Make PMTiles E2E Publish-Ready With Dockerized Felt Tippecanoe And Rails Config — plan
 
 ## Status
-- Phase: 0008-P2 review fixes complete — optional production POI smoke semantics
+- Phase: 0008-P3 complete — Dockerized Felt Tippecanoe, guidance, and E2E hygiene
 - Stage: review
 - Branch: incant/0008-pmtiles-e2e-docker-config
 - Next: run `/incant:review 0008`
@@ -25,10 +25,18 @@ updated: 2026-06-08
   - 2026-06-08 review fix: `docker compose run --rm web bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/cli_test.rb test/lib/map_tiles/smoke_check_test.rb` → 28 runs, 135 assertions, 0 failures, 0 errors, 0 skips.
   - 2026-06-08 review fix: `docker compose run --rm web bin/rubocop lib/map_tiles/cli.rb test/lib/map_tiles/cli_test.rb test/lib/map_tiles/configuration_test.rb` → 3 files inspected, no offenses detected.
   - 2026-06-08 review fix: `docker compose run --rm web bin/rails runner 'puts Rails.env; p MapTiles::Configuration.new.optional_production_layers'` → `development`, `["pois"]`.
+  - 2026-06-08 P3: `docker compose run --rm web bin/rails test test/lib/map_tiles` → 47 runs, 889 assertions, 0 failures, 0 errors, 0 skips.
+  - 2026-06-08 P3: `docker compose run --rm web bin/rubocop` → 263 files inspected, no offenses detected.
+  - 2026-06-08 P3: `docker compose build web` → image built successfully with Felt Tippecanoe 2.79.0.
+  - 2026-06-08 P3: `docker compose run --rm web sh -lc 'tippecanoe --version && command -v tippecanoe-decode && command -v tile-join'` → `tippecanoe v2.79.0`, `/usr/local/bin/tippecanoe-decode`, `/usr/local/bin/tile-join`.
+  - 2026-06-08 P3: initial `docker build -t austrian-rocks:0008-tippecanoe .` attempts failed with Docker daemon/storage I/O errors; after Docker restart and freeing disk space, `docker build --progress=plain -t austrian-rocks:0008-tippecanoe .` built successfully.
+  - 2026-06-08 P3: `docker run --rm --entrypoint sh austrian-rocks:0008-tippecanoe -lc 'tippecanoe --version && command -v tippecanoe-decode && command -v tile-join'` → `tippecanoe v2.79.0`, `/usr/local/bin/tippecanoe-decode`, `/usr/local/bin/tile-join`.
+  - 2026-06-08 P3: `git status --short --ignored tmp docs` → only ignored `docs/` and `tmp/` artifacts, including ignored local `tmp/map_tiles_e2e_publish.sh`; no generated PMTiles, GeoJSON, downloaded artifacts, secrets, or helper scripts are tracked.
   - Setup note: the first P1 gate attempt failed because the dev container was missing `brakeman-8.0.4`; `docker compose run --rm web bundle install` installed the locked gem, then the gate passed.
 - Review fixes:
   - Addressed P2 major in implementation: development/E2E config now exposes optional production layer `pois`, with regression coverage against the committed development config and a fresh Rails runner check showing `["pois"]` in the Docker development environment.
   - Addressed P1 minor opportunistically in implementation: space-form `--version` now rejects following option tokens such as `--bogus`, with CLI regression coverage.
+  - Addressed open P3 blocker by installing pinned Felt Tippecanoe in both dev and production Docker images, updating missing-binary guidance, updating ignored local docs/E2E helper hygiene, and passing dev plus production image availability checks.
 - Key decisions:
   - Stable non-secret PMTiles settings move to `config/map_tiles.yml`; Bunny credentials remain environment secrets.
   - Artifact version is a per-command argument and is sanitized before artifact paths or Bunny object keys are built.
@@ -93,15 +101,15 @@ updated: 2026-06-08
 **Quality gate:** `docker compose run --rm web bin/rails test test/lib/map_tiles/smoke_check_test.rb` → all smoke-check contract tests pass, including optional POI and required walking-path cases.
 
 ## Phase 0008-P3 — Dockerized Felt Tippecanoe, guidance, and E2E hygiene
-- [ ] Read `Dockerfile.dev`, `Dockerfile`, `lib/map_tiles/tippecanoe_builder.rb`, `docs/map_tiles.md`, `.gitignore`, and `.dockerignore` before editing.
-- [ ] Edit `Dockerfile.dev` to define `ARG TIPPECANOE_VERSION=2.79.0`, install the minimal Felt Tippecanoe build dependencies (`build-essential`, `git`, `ca-certificates`, `libsqlite3-dev`, `zlib1g-dev` in addition to existing dev packages), clone `https://github.com/felt/tippecanoe` with `--depth 1 --branch "$TIPPECANOE_VERSION"`, run `make -j"$(nproc)"`, run `make install`, and remove `/tmp/tippecanoe` plus apt caches.
-- [ ] Edit `Dockerfile` to add a throw-away `tippecanoe` build stage with `ARG TIPPECANOE_VERSION=2.79.0`, Felt clone/build/install commands, and minimal build dependencies; copy `/usr/local/bin/tippecanoe`, `/usr/local/bin/tippecanoe-decode`, and `/usr/local/bin/tile-join` from that stage into the final runtime image.
-- [ ] Keep production Tippecanoe compiler/build dependencies out of the final image by installing them only in the `tippecanoe` stage; rely on final-image runtime libraries already present in the Ruby slim base and app package set.
-- [ ] Edit `lib/map_tiles/tippecanoe_builder.rb` so missing-binary guidance names Felt Tippecanoe, links `https://github.com/felt/tippecanoe`, says project Docker images include Tippecanoe, keeps `brew install tippecanoe` as non-Docker macOS guidance, and no longer links the legacy Mapbox repository.
-- [ ] Edit ignored `docs/map_tiles.md` to document `config/map_tiles.yml`, explicit `--version`, `publish --skip-smoke`, optional production `pois`, required `walking_paths`, Dockerized Felt Tippecanoe `2.79.0`, Bunny credentials from `.kamal/secrets`/shell env, and the strict local Docker production-dump E2E sequence.
-- [ ] If credentials and `tmp/db/production.dump` are available during implementation, create ignored `tmp/map_tiles_e2e_publish.sh` that restores the dump into the Docker Compose PostGIS database, runs migrations in the web container, sources `.kamal/secrets` without echoing secret values, and runs `bin/build_pmtiles build --version=e2e-0008`, `bin/build_pmtiles smoke --version=e2e-0008 --mode=production`, and `bin/build_pmtiles publish --version=e2e-0008` using the development Bunny prefix `map_tiles/e2e`; do not commit this helper.
-- [ ] Verify no generated PMTiles, GeoJSON, downloaded artifacts, secrets, or temporary helper scripts are tracked with `git status --short --ignored tmp docs`; only ignored `docs/map_tiles.md` may remain locally changed outside the commit.
-- [ ] Commit tracked Dockerfile and guidance changes as `incant 0008-P3: dockerize Felt Tippecanoe` after the quality gate passes; leave `docs/map_tiles.md` and any `tmp/` helper uncommitted because they are ignored local operational artifacts.
+- [x] Read `Dockerfile.dev`, `Dockerfile`, `lib/map_tiles/tippecanoe_builder.rb`, `docs/map_tiles.md`, `.gitignore`, and `.dockerignore` before editing.
+- [x] Edit `Dockerfile.dev` to define `ARG TIPPECANOE_VERSION=2.79.0`, install the minimal Felt Tippecanoe build dependencies (`build-essential`, `git`, `ca-certificates`, `libsqlite3-dev`, `zlib1g-dev` in addition to existing dev packages), clone `https://github.com/felt/tippecanoe` with `--depth 1 --branch "$TIPPECANOE_VERSION"`, run `make -j"$(nproc)"`, run `make install`, and remove `/tmp/tippecanoe` plus apt caches.
+- [x] Edit `Dockerfile` to add a throw-away `tippecanoe` build stage with `ARG TIPPECANOE_VERSION=2.79.0`, Felt clone/build/install commands, and minimal build dependencies; copy `/usr/local/bin/tippecanoe`, `/usr/local/bin/tippecanoe-decode`, and `/usr/local/bin/tile-join` from that stage into the final runtime image.
+- [x] Keep production Tippecanoe compiler/build dependencies out of the final image by installing them only in the `tippecanoe` stage; rely on final-image runtime libraries already present in the Ruby slim base and app package set.
+- [x] Edit `lib/map_tiles/tippecanoe_builder.rb` so missing-binary guidance names Felt Tippecanoe, links `https://github.com/felt/tippecanoe`, says project Docker images include Tippecanoe, keeps `brew install tippecanoe` as non-Docker macOS guidance, and no longer links the legacy Mapbox repository.
+- [x] Edit ignored `docs/map_tiles.md` to document `config/map_tiles.yml`, explicit `--version`, `publish --skip-smoke`, optional production `pois`, required `walking_paths`, Dockerized Felt Tippecanoe `2.79.0`, Bunny credentials from `.kamal/secrets`/shell env, and the strict local Docker production-dump E2E sequence.
+- [x] If credentials and `tmp/db/production.dump` are available during implementation, create ignored `tmp/map_tiles_e2e_publish.sh` that restores the dump into the Docker Compose PostGIS database, runs migrations in the web container, sources `.kamal/secrets` without echoing secret values, and runs `bin/build_pmtiles build --version=e2e-0008`, `bin/build_pmtiles smoke --version=e2e-0008 --mode=production`, and `bin/build_pmtiles publish --version=e2e-0008` using the development Bunny prefix `map_tiles/e2e`; do not commit this helper.
+- [x] Verify no generated PMTiles, GeoJSON, downloaded artifacts, secrets, or temporary helper scripts are tracked with `git status --short --ignored tmp docs`; only ignored `docs/map_tiles.md` may remain locally changed outside the commit.
+- [x] Commit tracked Dockerfile and guidance changes as `incant 0008-P3: dockerize Felt Tippecanoe` after the quality gate passes; leave `docs/map_tiles.md` and any `tmp/` helper uncommitted because they are ignored local operational artifacts.
 **Quality gate:** `docker compose run --rm web bin/rails test test/lib/map_tiles && docker compose run --rm web bin/rubocop && docker compose build web && docker compose run --rm web sh -lc 'tippecanoe --version && command -v tippecanoe-decode && command -v tile-join' && docker build -t austrian-rocks:0008-tippecanoe . && docker run --rm --entrypoint sh austrian-rocks:0008-tippecanoe -lc 'tippecanoe --version && command -v tippecanoe-decode && command -v tile-join'` → all map tile tests and RuboCop pass in Docker, the dev image reports Felt Tippecanoe, and the production image reports Felt Tippecanoe with inspection binaries available.
 
 ## Coverage self-review

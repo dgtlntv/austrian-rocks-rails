@@ -31,7 +31,10 @@ class MapTiles::TippecanoeBuilderTest < ActiveSupport::TestCase
     end
 
     assert_includes error.message, "Tippecanoe is required"
+    assert_includes error.message, "Project Docker images include Felt Tippecanoe 2.79.0"
+    assert_includes error.message, "https://github.com/felt/tippecanoe"
     assert_includes error.message, "brew install tippecanoe"
+    assert_not_includes error.message, "github.com/mapbox/tippecanoe"
   end
 
   test "constructs a named-layer PMTiles build command without invoking the binary in tests" do

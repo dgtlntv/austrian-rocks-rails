@@ -3,31 +3,31 @@ id: "0008"
 slug: pmtiles-e2e-docker-config
 stage: review
 reviewed: 2026-06-08
-commit: 3e9680d8
+commit: 57d0746a
 ---
 
 # Pmtiles E2e Docker Config — review
 
 ### Strengths
-- config/map_tiles.yml:1-20 — The committed Rails config covers the required stable non-secret values, including the development `map_tiles/e2e`, test `map_tiles/test`, production `map_tiles`, and production `pois` setting.
-- lib/map_tiles/configuration.rb:12-49 and lib/map_tiles/configuration.rb:62-75 — `Configuration` now loads injected/Rails settings, carries the explicit per-run version through `with_version`, sanitizes artifact basename/Bunny prefix/version values, and requires a version only for artifact-specific paths/object keys.
-- lib/map_tiles/cli.rb:73-100 — Build/smoke/publish are routed through a versioned configuration, and publish runs production smoke by default with only `--skip-smoke` bypassing that gate.
-- lib/map_tiles/smoke_check.rb:48-56 and lib/map_tiles/smoke_check.rb:179-194 — Smoke checks now inspect GeoJSON layer counts before metadata layer comparison, so optional layer metadata is derived from actual exported data rather than a hardcoded full-layer list.
-- lib/map_tiles/smoke_check.rb:310-327 — Production-mode count validation keeps required layers strict while allowing configured optional production layers to be empty.
-- test/lib/map_tiles/smoke_check_test.rb:125-170 — The P2 tests cover zero-feature optional `pois`, required `walking_paths`, relaxed-mode `--allow-empty`, and dataful optional POI contract violations.
-- Fresh verification passed during review: `docker compose run --rm web bin/rails test test/lib/map_tiles/smoke_check_test.rb` → 12 runs, 63 assertions, 0 failures, 0 errors, 0 skips; `docker compose run --rm web bin/rubocop lib/map_tiles/smoke_check.rb test/lib/map_tiles/smoke_check_test.rb` → 2 files inspected, no offenses detected.
+- config/map_tiles.yml:1-22 — Stable non-secret map tile settings are now tracked in Rails config, with the required CDN host, artifact basename/output directory, E2E Bunny prefix, production Bunny prefix, and `pois` optional in both production and the development/E2E path.
+- lib/map_tiles/configuration.rb:12-75 and lib/map_tiles/configuration.rb:95-110 — `Configuration` consumes Rails/injected settings, keeps Bunny secrets in `env`, preserves `export` without a version, and gates artifact paths/object keys behind a sanitized explicit version.
+- lib/map_tiles/cli.rb:73-100 and lib/map_tiles/cli.rb:113-130 — Build/smoke/publish require explicit versions, publish runs production smoke by default, `--skip-smoke` is the only bypass, and the previous space-form `--version --bogus` parser edge case is now rejected.
+- lib/map_tiles/smoke_check.rb:188-193 and lib/map_tiles/smoke_check.rb:310-327 — Optional production metadata semantics are based on actual GeoJSON counts, so empty configured `pois` may be absent while required layers, including `walking_paths`, remain strict.
+- test/lib/map_tiles/configuration_test.rb:41-47, test/lib/map_tiles/cli_test.rb:93-100, and test/lib/map_tiles/smoke_check_test.rb:125-172 — Regression coverage now proves the development/E2E config exposes optional `pois`, the CLI parser rejects an option-token version value, zero-feature optional POIs pass without metadata, required walking paths fail empty, and dataful POIs still get contract validation.
+- Fresh verification passed during this review: `docker compose run --rm web bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/cli_test.rb test/lib/map_tiles/smoke_check_test.rb` → 28 runs, 135 assertions, 0 failures, 0 errors, 0 skips; `docker compose run --rm web bin/rubocop lib/map_tiles/cli.rb test/lib/map_tiles/cli_test.rb test/lib/map_tiles/configuration_test.rb lib/map_tiles/smoke_check.rb test/lib/map_tiles/smoke_check_test.rb` → 5 files inspected, no offenses detected; `docker compose run --rm web bin/rails runner 'puts Rails.env; p MapTiles::Configuration.new.optional_production_layers'` → `development`, `["pois"]`.
+- Commit history is traceable: `incant 0008: spec`, `incant 0008: plan`, `incant 0008-P1: config-backed PMTiles commands`, `incant 0008-P2: allow empty production POIs`, and `incant 0008-P2: address POI E2E review` all follow the expected convention.
 
 ### Blocker
-- None.
+- Dockerfile.dev:10-19, Dockerfile:32-63, and lib/map_tiles/tippecanoe_builder.rb:12-14 — Phase 0008-P3 / acceptance criteria 8-9 and 11-14 are still not implemented: neither Docker image builds or copies Felt Tippecanoe `2.79.0`, neither image can yet satisfy the required `tippecanoe --version` / inspection-binary availability checks, and missing-binary guidance still points at the legacy Mapbox repository. This leaves the promised Dockerized E2E/prod PMTiles path unavailable. Fix by completing Phase 0008-P3, including Docker dev/production Tippecanoe installation, Felt guidance, local docs hygiene, and the Docker availability gates. status: open
 
 ### Major
-- config/map_tiles.yml:6-10 and lib/map_tiles/smoke_check.rb:314-327 — The intended local Docker E2E path uses `RAILS_ENV=development` for the `map_tiles/e2e` Bunny prefix, but development inherits `optional_production_layers: []`. Because production-mode smoke reads `configuration.optional_production_layers`, zero-feature `pois` still fails in the actual dev-container E2E configuration even though the production Rails environment would allow it. Fresh check: `docker compose run --rm web bin/rails runner 'puts Rails.env; p MapTiles::Configuration.new.optional_production_layers'` printed `development` and `[]`. This misses the core requirement to make strict local production-dump E2E work without dummy POIs. Fix by making the production-smoke optional layer contract (`pois`) available in the development/E2E configuration as well (or otherwise decouple optional production smoke layers from Rails env), and add a regression test against the committed development config. status: open
+- config/map_tiles.yml:8-12 and lib/map_tiles/smoke_check.rb:314-327 — The earlier P2 finding is addressed: the development/E2E configuration now exposes `optional_production_layers: [pois]`, and fresh Docker runner output printed `development` and `["pois"]`, so zero-POI strict local production-dump smoke no longer fails solely because Rails is in development. status: addressed
 
 ### Minor
-- lib/map_tiles/cli.rb:117-121 — The space-form parser accepts a following option token as the version value, so `bin/build_pmtiles build --version --bogus` treats `--bogus` as a safe version instead of reporting a missing version/unknown option. This is confusing operator feedback rather than a release-blocking correctness issue; reject `--version` values that begin with `--` unless supplied in `--version=<value>` form, and add a CLI regression test. status: open
+- lib/map_tiles/cli.rb:117-120 — The earlier CLI parser finding is addressed: space-form `--version` now rejects following option tokens, with regression coverage in `test/lib/map_tiles/cli_test.rb:93-100`. status: addressed
 
 ### Nit
 - None.
 
 ### Verdict
-Ready to release? **No** — one open major prevents the promised Dockerized local E2E path from handling zero-POI production-like data, and phase 0008-P3 is still outstanding. Return to implementation for the major finding and remaining Docker/Tippecanoe phase work.
+Ready to release? **No** — P1/P2 review findings are addressed, but one open blocker remains because the Dockerized Felt Tippecanoe/guidance phase is still missing. Return to implementation for 0008-P3 before finalize.
