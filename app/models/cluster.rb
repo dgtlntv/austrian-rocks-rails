@@ -1,6 +1,7 @@
 class Cluster < ApplicationRecord
   include CheckConflicts
   include HasTagsConcern
+  include MapTiles::PublishStaleMarker
 
   audited associated_with: :import
   attr_accessor :import # used by audited associated_with: :import

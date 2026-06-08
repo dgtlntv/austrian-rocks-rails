@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_06_07_092652) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_08_120001) do
   create_schema "tiger"
   create_schema "tiger_data"
   create_schema "topology"
@@ -162,6 +162,46 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_07_092652) do
     t.datetime "updated_at", null: false
     t.index ["problem_id"], name: "index_lines_on_problem_id"
     t.index ["topo_id"], name: "index_lines_on_topo_id"
+  end
+
+  create_table "map_tile_publish_attempts", force: :cascade do |t|
+    t.string "source", null: false
+    t.string "status", default: "pending", null: false
+    t.string "trigger_reason"
+    t.string "version"
+    t.datetime "scheduled_for", precision: nil
+    t.datetime "enqueued_at", precision: nil
+    t.datetime "started_at", precision: nil
+    t.datetime "finished_at", precision: nil
+    t.string "pmtiles_url"
+    t.string "manifest_url"
+    t.string "pmtiles_object_key"
+    t.string "manifest_object_key"
+    t.text "error_text"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_map_tile_publish_attempts_on_created_at"
+    t.index ["scheduled_for"], name: "index_map_tile_publish_attempts_on_scheduled_for"
+    t.index ["source"], name: "index_map_tile_publish_attempts_on_source"
+    t.index ["status"], name: "index_map_tile_publish_attempts_on_status"
+    t.index ["version"], name: "index_map_tile_publish_attempts_on_version"
+  end
+
+  create_table "map_tile_publish_states", force: :cascade do |t|
+    t.datetime "stale_at", precision: nil
+    t.bigint "pending_automatic_attempt_id"
+    t.bigint "running_attempt_id"
+    t.bigint "last_successful_attempt_id"
+    t.bigint "last_failed_attempt_id"
+    t.datetime "last_source_change_at", precision: nil
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "singleton", default: true, null: false
+    t.index ["last_failed_attempt_id"], name: "idx_map_tile_publish_states_on_last_failed_attempt_id"
+    t.index ["last_successful_attempt_id"], name: "idx_map_tile_publish_states_on_last_successful_attempt_id"
+    t.index ["pending_automatic_attempt_id"], name: "idx_map_tile_publish_states_on_pending_automatic_attempt_id"
+    t.index ["running_attempt_id"], name: "idx_map_tile_publish_states_on_running_attempt_id"
+    t.index ["singleton"], name: "idx_map_tile_publish_states_singleton", unique: true, where: "(singleton = true)"
   end
 
   create_table "poi_routes", force: :cascade do |t|

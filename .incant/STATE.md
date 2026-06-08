@@ -1,9 +1,9 @@
 # State
-- Updated: 2026-06-08 (0008 finalized and archived)
-- Current focus: none — ready for next item
+- Updated: 2026-06-08 (0009 archived)
+- Current focus: none
 
 ## Active
-- (none)
+- None.
 
 ## Cross-cutting notes / blockers
 - Database commands/tests for map-data work should run against Docker-hosted PostgreSQL/PostGIS, not a host-created database.

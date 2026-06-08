@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 require "aws-sdk-s3"
+require "json"
 require "net/http"
+require "stringio"
 require "uri"
 require "map_tiles/configuration"
 
@@ -12,7 +14,7 @@ module MapTiles
     class UploadError < Error; end
     class VerificationError < Error; end
 
-    CONTENT_TYPE = "application/octet-stream"
+    PMTILES_CONTENT_TYPE = "application/octet-stream"
     REQUIRED_BUNNY_ENV = %w[
       BUNNY_STORAGE_ENDPOINT
       BUNNY_STORAGE_REGION
@@ -20,13 +22,14 @@ module MapTiles
       BUNNY_STORAGE_ACCESS_KEY_ID
       BUNNY_STORAGE_SECRET_ACCESS_KEY
     ].freeze
-    attr_reader :configuration, :s3_client, :http_head, :out
+    attr_reader :configuration, :s3_client, :http_head, :out, :clock
 
-    def initialize(configuration: Configuration.new, s3_client: nil, http_head: nil, out: $stdout)
+    def initialize(configuration: Configuration.new, s3_client: nil, http_head: nil, out: $stdout, clock: -> { Time.current })
       @configuration = configuration
       @s3_client = s3_client
       @http_head = http_head || method(:net_http_head)
       @out = out
+      @clock = clock
     end
 
     def publish
@@ -35,16 +38,25 @@ module MapTiles
       raise ConfigurationError, "PMTiles artifact is missing: #{artifact_path}" unless artifact_path.exist?
       raise ConfigurationError, "PMTiles artifact is empty: #{artifact_path}" unless artifact_path.size.positive?
 
-      object_keys = [ configuration.versioned_object_key, configuration.latest_object_key ]
-      object_keys.each { |key| upload_object(key, artifact_path) }
+      pmtiles_key = configuration.versioned_object_key
+      upload_pmtiles_object(pmtiles_key, artifact_path)
+      pmtiles_url = public_url_for(pmtiles_key)
+      verify_public_url!(pmtiles_url)
 
-      published = object_keys.map do |key|
-        url = public_url_for(key)
-        verify_public_url!(url)
-        { key: key, url: url }
-      end
+      manifest_key = configuration.latest_manifest_object_key
+      manifest_body = manifest_json(pmtiles_url: pmtiles_url, pmtiles_object_key: pmtiles_key)
+      # latest.json is the only overwritten object; overwriting PMTiles archives can produce stale or mixed range responses.
+      upload_manifest_object(manifest_key, manifest_body)
+      manifest_url = public_url_for(manifest_key)
+      verify_public_url!(manifest_url)
 
-      published.each { |object| out.puts "published #{object.fetch(:key)} -> #{object.fetch(:url)}" }
+      published = {
+        pmtiles: { key: pmtiles_key, url: pmtiles_url },
+        manifest: { key: manifest_key, url: manifest_url }
+      }
+
+      out.puts "published #{pmtiles_key} -> #{pmtiles_url}"
+      out.puts "published #{manifest_key} -> #{manifest_url}"
       published
     end
 
@@ -59,22 +71,52 @@ module MapTiles
 
       configuration.artifact_basename
       configuration.versioned_object_key
-      configuration.latest_object_key
+      configuration.latest_manifest_object_key
     rescue ArgumentError => e
       raise ConfigurationError, e.message
     end
 
-    def upload_object(key, artifact_path)
+    def upload_pmtiles_object(key, artifact_path)
       File.open(artifact_path, "rb") do |body|
-        client.put_object(
-          bucket: configuration.env.fetch("BUNNY_STORAGE_BUCKET"),
+        upload_object(
           key: key,
           body: body,
-          content_type: CONTENT_TYPE
+          content_type: PMTILES_CONTENT_TYPE,
+          cache_control: configuration.pmtiles_cache_control
         )
       end
+    end
+
+    def upload_manifest_object(key, manifest_body)
+      upload_object(
+        key: key,
+        body: StringIO.new(manifest_body),
+        content_type: configuration.manifest_content_type,
+        cache_control: "public, max-age=#{configuration.manifest_cache_ttl_seconds}"
+      )
+    end
+
+    def upload_object(key:, body:, content_type:, cache_control:)
+      client.put_object(
+        bucket: configuration.env.fetch("BUNNY_STORAGE_BUCKET"),
+        key: key,
+        body: body,
+        content_type: content_type,
+        cache_control: cache_control
+      )
     rescue Aws::Errors::ServiceError, SystemCallError => e
       raise UploadError, "Bunny PMTiles upload failed for key #{key} (#{e.class})"
+    end
+
+    def manifest_json(pmtiles_url:, pmtiles_object_key:)
+      JSON.generate(
+        version: configuration.version,
+        pmtiles_url: pmtiles_url,
+        published_at: clock.call.utc.iso8601,
+        artifact_basename: configuration.artifact_basename,
+        pmtiles_object_key: pmtiles_object_key,
+        pmtiles_object_basename: File.basename(pmtiles_object_key)
+      )
     end
 
     def client

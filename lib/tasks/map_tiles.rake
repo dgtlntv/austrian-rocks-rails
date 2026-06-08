@@ -22,7 +22,7 @@ namespace :map_tiles do
     exit MapTiles::CLI.new(argv).run
   end
 
-  desc "Publish Austrian Rocks PMTiles to Bunny/CDN"
+  desc "Publish Austrian Rocks PMTiles and latest manifest to Bunny/CDN"
   task :publish, [ :version, :skip_smoke ] => :environment do |_task, args|
     argv = [ "publish", "--version", args[:version].to_s ]
     argv << "--skip-smoke" if %w[1 true yes on].include?(args[:skip_smoke].to_s.strip.downcase)
