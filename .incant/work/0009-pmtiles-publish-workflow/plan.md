@@ -13,12 +13,12 @@ updated: 2026-06-08
 # PMTiles publish workflow — plan
 
 ## Status
-- Phase: 0009-P4 ✅ — manifest-only Bunny publication and command-line compatibility complete.
+- Phase: 0009-P5 ⏳ — admin publish UI, history, and legacy GeoJSON export removal in progress.
 - Stage: implement
 - Branch: incant/0009-pmtiles-publish-workflow
-- Next: review this phase via `/incant:review 0009`.
+- Next: complete the P5 checklist, run the P5 quality gate, commit, then review this phase via `/incant:review 0009`.
 - Blockers: none.
-- Fresh verification: P4 gate `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/cli_test.rb` → 32 tests, 147 assertions, 0 failures, 0 errors on 2026-06-08; targeted P4 RuboCop `docker compose run --rm web bin/rubocop lib/map_tiles/bunny_publisher.rb lib/map_tiles/cli.rb lib/tasks/map_tiles.rake test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/cli_test.rb` → 5 files inspected, no offenses; prior P3 review-fix gate 11 tests, 66 assertions, 0 failures, 0 errors and targeted RuboCop 2 files, no offenses.
+- Fresh verification: P4 review passed with no open blocker/major findings; P4 gate `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/cli_test.rb` → 32 tests, 147 assertions, 0 failures, 0 errors on 2026-06-08; targeted P4 RuboCop `docker compose run --rm web bin/rubocop lib/map_tiles/bunny_publisher.rb lib/map_tiles/cli.rb lib/tasks/map_tiles.rake test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/cli_test.rb` → 5 files inspected, no offenses; prior P3 review-fix gate 11 tests, 66 assertions, 0 failures, 0 errors and targeted RuboCop 2 files, no offenses.
 - Key decisions:
   - Persist publish workflow state in one singleton `MapTilePublishState` row plus immutable history rows in `MapTilePublishAttempt`.
   - Treat sliding debounce as one pending automatic attempt row; older delayed jobs that wake up before the current `scheduled_for` self-reschedule and do not build.

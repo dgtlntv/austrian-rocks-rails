@@ -3,20 +3,22 @@ id: "0009"
 slug: pmtiles-publish-workflow
 stage: review
 reviewed: 2026-06-08
-commit: 57a701668b8ff92e2dc24630df14f6d5d3278100
+commit: 593dd21f9e12aad21ebe387927b5a0e8b3b40c3b
 ---
 
 # PMTiles publish workflow — review
 
 ### Strengths
-- `app/jobs/map_tile_publish_job.rb:23` — attempt claiming is serialized under the singleton publish-state row lock before the pipeline runs, which is the right concurrency boundary for preventing overlapping PMTiles builds.
-- `app/jobs/map_tile_publish_job.rb:27` and `app/jobs/map_tile_publish_job.rb:55` — early automatic jobs self-reschedule and automatic attempts remain pending when another publish is running, preserving the sliding debounce design from P2.
-- `app/services/map_tiles/publish_pipeline.rb:43` — the pipeline composes the existing exporter, Tippecanoe builder, production smoke check, Bunny publisher, and local cleaner in the promised order, with injectable collaborators for deterministic tests.
-- `app/services/map_tiles/publish_pipeline.rb:56` and `test/services/map_tiles/publish_pipeline_test.rb:22` — publish versions are generated from UTC timestamps in the safe segment format, and the test explicitly proves `2026-06-08T16-45-30Z` from a non-UTC clock value.
-- `test/models/map_tiles/publish_stale_marker_test.rb:326` — the previous P2 major is now covered by a production-stubbed callback path through the real default scheduler/job class, proving all eight source models maintain a single pending automatic attempt.
-- `app/services/map_tiles/publish_pipeline.rb:83` and `app/services/map_tiles/publish_pipeline.rb:125` — the P3 review fix now clears stale state and supersedes an older pending automatic attempt when a successful manual publish covers all known source edits, preventing redundant follow-up builds and restoring an accurate `up_to_date` status.
-- `test/services/map_tiles/publish_pipeline_test.rb:58` — regression coverage proves the manual-success supersede path cancels the pending automatic row, clears `pending_automatic_attempt_id`, reports `up_to_date`, and enqueues no follow-up.
-- Fresh phase gates passed in this review session: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/jobs/map_tile_publish_job_test.rb test/services/map_tiles/publish_pipeline_test.rb` → 11 runs, 66 assertions, 0 failures, 0 errors; `docker compose run --rm web bin/rubocop app/services/map_tiles/publish_pipeline.rb test/services/map_tiles/publish_pipeline_test.rb` → 2 files inspected, no offenses detected.
+- `lib/map_tiles/bunny_publisher.rb:41` — P4 now uploads the immutable versioned PMTiles object first and verifies its public URL before touching the latest manifest, preserving the safety property that the manifest only points at a reachable versioned archive.
+- `lib/map_tiles/bunny_publisher.rb:46` — the publisher uses `latest_manifest_object_key` for `austrian-rocks-latest.json`; there is no remaining publisher path that uploads `austrian-rocks-latest.pmtiles`.
+- `lib/map_tiles/bunny_publisher.rb:48` — the code documents the range-request/cache rationale right at the overwritten-object boundary, reducing the chance that a future change reintroduces overwritten PMTiles archives.
+- `lib/map_tiles/bunny_publisher.rb:79` and `lib/map_tiles/bunny_publisher.rb:90` — cache metadata is split correctly: immutable PMTiles cache control comes from configuration, while the manifest uses the configured short TTL (`public, max-age=60` by default).
+- `lib/map_tiles/bunny_publisher.rb:111` — the latest manifest includes the promised stable fields: version, PMTiles URL, published timestamp, artifact basename, object key, and object basename.
+- `lib/map_tiles/cli.rb:98` and `test/lib/map_tiles/cli_test.rb:86` — command-line publication still runs the production smoke check by default and ignores the legacy `MAP_TILES_SKIP_SMOKE` env bypass, while preserving explicit operator `--skip-smoke` behavior.
+- `lib/map_tiles/cli.rb:103` and `test/lib/map_tiles/cli_test.rb:73` — CLI publication consumes the new publisher return shape and prints the latest manifest URL for operators.
+- `test/lib/map_tiles/bunny_publisher_test.rb:65` — P4 tests cover PMTiles and manifest keys, content types, cache control, manifest JSON, verification URLs, and output, including an assertion that `austrian-rocks-latest.pmtiles` is absent.
+- `test/lib/map_tiles/bunny_publisher_test.rb:98` and `test/lib/map_tiles/bunny_publisher_test.rb:123` — regression coverage proves repeated publishes overwrite only the JSON manifest and that manifest HEAD verification failures are surfaced.
+- Fresh phase gates passed in this review session: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/cli_test.rb` → 32 runs, 147 assertions, 0 failures, 0 errors; `docker compose run --rm web bin/rubocop lib/map_tiles/bunny_publisher.rb lib/map_tiles/cli.rb lib/tasks/map_tiles.rake test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/cli_test.rb` → 5 files inspected, no offenses detected.
 
 ### Blocker
 - `app/services/map_tiles/publish_scheduler.rb:80` — previous finding: the default scheduler could not enqueue because no `MapTilePublishJob` class existed. P3 adds `app/jobs/map_tile_publish_job.rb`, the default scheduler resolves it, and `test/models/map_tiles/publish_stale_marker_test.rb:326` exercises production-stubbed source saves through the real scheduler/default job path. status: addressed
@@ -35,4 +37,4 @@ commit: 57a701668b8ff92e2dc24630df14f6d5d3278100
 - None.
 
 ### Verdict
-Ready to release? **No** — no open blocker or major findings remain in the reviewed P3 work, but the overall item is not ready to close because planned phases P4–P6 are still incomplete. Continue implementation with P4 before final release review.
+Ready to release? **No** — no open blocker or major findings remain in the reviewed P4 work, but the overall item is not ready to close because planned phases P5–P6 are still incomplete. Continue implementation with P5 before final release review.
