@@ -8,11 +8,8 @@ require "map_tiles/smoke_check"
 
 class MapTiles::SmokeCheckTest < ActiveSupport::TestCase
   setup do
-    @output_dir = Rails.root.join("tmp/smoke_check_test/#{SecureRandom.hex(8)}")
-    @configuration = MapTiles::Configuration.new(env: {
-      "MAP_TILES_OUTPUT_DIR" => @output_dir.to_s,
-      "MAP_TILES_VERSION" => "test-version"
-    })
+    @output_dir = "tmp/smoke_check_test/#{SecureRandom.hex(8)}"
+    @configuration = MapTiles::Configuration.new(version: "test-version", settings: map_tile_settings)
 
     FileUtils.mkdir_p(@configuration.geojson_dir)
     write_pmtiles_artifact
@@ -20,7 +17,7 @@ class MapTiles::SmokeCheckTest < ActiveSupport::TestCase
   end
 
   teardown do
-    FileUtils.rm_rf(@output_dir)
+    FileUtils.rm_rf(@configuration.output_dir) if @configuration
   end
 
   test "passes production smoke checks for dataful fixture layers" do
@@ -72,13 +69,22 @@ class MapTiles::SmokeCheckTest < ActiveSupport::TestCase
   end
 
   test "fails when PMTiles metadata layers or required field names do not match the contract" do
-    write_pmtiles_artifact(layers: MapTiles::LayerContract.layers.reject { |layer| layer.name == "pois" })
+    write_pmtiles_artifact(layers: MapTiles::LayerContract.layers.reject { |layer| layer.name == "walking_paths" })
 
     error = assert_raises(MapTiles::SmokeCheck::Error) do
       MapTiles::SmokeCheck.new(configuration: @configuration).check
     end
 
     assert_includes error.message, "PMTiles metadata layers mismatch"
+    assert_includes error.message, "walking_paths"
+
+    write_pmtiles_artifact(layers: MapTiles::LayerContract.layers.reject { |layer| layer.name == "pois" })
+    error = assert_raises(MapTiles::SmokeCheck::Error) do
+      MapTiles::SmokeCheck.new(configuration: @configuration).check
+    end
+
+    assert_includes error.message, "PMTiles metadata layers mismatch"
+    assert_includes error.message, "pois"
 
     write_pmtiles_artifact(field_overrides: { "problems" => %w[problemId areaId unexpectedField canonicalUrl circuitId] })
     error = assert_raises(MapTiles::SmokeCheck::Error) do
@@ -116,8 +122,19 @@ class MapTiles::SmokeCheckTest < ActiveSupport::TestCase
     assert_includes error.message, "outside sane Austria bounds"
   end
 
-  test "fails on zero feature layers in production mode" do
+  test "allows zero feature optional production pois with no PMTiles metadata layer" do
     update_layer("pois") do |collection|
+      collection["features"] = []
+    end
+    write_pmtiles_artifact(layers: MapTiles::LayerContract.layers.reject { |layer| layer.name == "pois" })
+
+    result = MapTiles::SmokeCheck.new(configuration: @configuration, argv: [ "--mode=production" ]).check
+
+    assert_equal 0, result.fetch(:layers).find { |layer| layer.fetch(:name) == "pois" }.fetch(:count)
+  end
+
+  test "fails on zero feature required layers in production mode" do
+    update_layer("walking_paths") do |collection|
       collection["features"] = []
     end
 
@@ -125,7 +142,7 @@ class MapTiles::SmokeCheckTest < ActiveSupport::TestCase
       MapTiles::SmokeCheck.new(configuration: @configuration, argv: [ "--mode=production" ]).check
     end
 
-    assert_includes error.message, "pois has zero features in production mode"
+    assert_includes error.message, "walking_paths has zero features in production mode"
   end
 
   test "allows configured zero feature layers in relaxed mode" do
@@ -140,6 +157,19 @@ class MapTiles::SmokeCheckTest < ActiveSupport::TestCase
 
     assert_equal "relaxed", result.fetch(:mode)
     assert_equal 0, result.fetch(:layers).find { |layer| layer.fetch(:name) == "pois" }.fetch(:count)
+  end
+
+  test "fails when dataful optional pois has a contract violation" do
+    update_layer("pois") do |collection|
+      collection.fetch("features").first.fetch("properties")["canonicalUrl"] = "https://example.test/pois/1"
+    end
+
+    error = assert_raises(MapTiles::SmokeCheck::Error) do
+      MapTiles::SmokeCheck.new(configuration: @configuration).check
+    end
+
+    assert_includes error.message, "GeoJSON layer pois feature 0 has unexpected properties: canonicalUrl"
+    assert_includes error.message, "GeoJSON layer pois feature 0 has forbidden app URL field: canonicalUrl"
   end
 
   test "rejects circuit fields, app URL fields, and non-scalar properties" do
@@ -160,6 +190,16 @@ class MapTiles::SmokeCheckTest < ActiveSupport::TestCase
   end
 
   private
+
+  def map_tile_settings
+    {
+      "artifact_basename" => "austrian-rocks",
+      "output_dir" => @output_dir,
+      "public_cdn_host" => "assets.austrian.rocks",
+      "bunny_prefix" => "map_tiles/test",
+      "optional_production_layers" => [ "pois" ]
+    }
+  end
 
   def write_pmtiles_artifact(layers: MapTiles::LayerContract.layers, field_overrides: {})
     metadata_json = JSON.generate({

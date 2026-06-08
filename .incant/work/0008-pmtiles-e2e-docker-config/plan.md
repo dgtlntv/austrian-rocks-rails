@@ -13,14 +13,18 @@ updated: 2026-06-08
 # Make PMTiles E2E Publish-Ready With Dockerized Felt Tippecanoe And Rails Config — plan
 
 ## Status
-- Phase: 0008-P1 complete — Rails config, explicit version arguments, and Bunny publication config
+- Phase: 0008-P2 complete — optional production POI smoke semantics
 - Stage: review
 - Branch: incant/0008-pmtiles-e2e-docker-config
 - Next: run `/incant:review 0008`
 - Blockers: none
 - Fresh verification:
+  - 2026-06-08: `docker compose run --rm web bin/rails test test/lib/map_tiles/smoke_check_test.rb` → 12 runs, 63 assertions, 0 failures, 0 errors, 0 skips.
+  - 2026-06-08: `docker compose run --rm web bin/rubocop lib/map_tiles/smoke_check.rb test/lib/map_tiles/smoke_check_test.rb` → 2 files inspected, no offenses detected.
   - 2026-06-08: `docker compose run --rm web bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/cli_test.rb test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/tippecanoe_builder_test.rb test/lib/map_tiles/geojson_exporter_test.rb` → 29 runs, 225 assertions, 0 failures, 0 errors, 0 skips.
-  - Setup note: the first gate attempt failed because the dev container was missing `brakeman-8.0.4`; `docker compose run --rm web bundle install` installed the locked gem, then the gate passed.
+  - Setup note: the first P1 gate attempt failed because the dev container was missing `brakeman-8.0.4`; `docker compose run --rm web bundle install` installed the locked gem, then the gate passed.
+- Open review findings:
+  - Minor from P1 review remains open: `lib/map_tiles/cli.rb` accepts `--version --bogus` as a version token; no blocker/major findings are open.
 - Key decisions:
   - Stable non-secret PMTiles settings move to `config/map_tiles.yml`; Bunny credentials remain environment secrets.
   - Artifact version is a per-command argument and is sanitized before artifact paths or Bunny object keys are built.
@@ -74,14 +78,14 @@ updated: 2026-06-08
 **Quality gate:** `docker compose run --rm web bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/cli_test.rb test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/tippecanoe_builder_test.rb test/lib/map_tiles/geojson_exporter_test.rb` → all selected map tile configuration, command, publisher, builder, and exporter tests pass against Docker-hosted PostgreSQL/PostGIS.
 
 ## Phase 0008-P2 — optional production POI smoke semantics
-- [ ] Read `lib/map_tiles/smoke_check.rb`, `lib/map_tiles/layer_contract.rb`, `test/lib/map_tiles/smoke_check_test.rb`, and the updated `config/map_tiles.yml` before editing.
-- [ ] Edit `lib/map_tiles/smoke_check.rb` so GeoJSON layer inspection runs before metadata layer comparison, giving the metadata check the actual per-layer feature counts.
-- [ ] Edit `lib/map_tiles/smoke_check.rb` so production mode treats `configuration.optional_production_layers` as allowed zero-feature layers; in this item the configured production optional layer set is exactly `pois`.
-- [ ] Edit `lib/map_tiles/smoke_check.rb` so required layers with zero features still fail in production mode, including `problems`, `boulders`, `areas`, `area_hulls`, `clusters`, `cluster_hulls`, `regions`, `region_hulls`, and `walking_paths`.
-- [ ] Edit `lib/map_tiles/smoke_check.rb` so PMTiles metadata layer comparison requires all required layers, allows an optional zero-feature `pois` layer to be absent or present, and requires a dataful optional `pois` layer to be present.
-- [ ] Keep the existing metadata field validation and GeoJSON feature validation for every layer that exists or has features, so a dataful `pois.geojson` still validates geometry, required properties, scalar values, forbidden circuit fields, and forbidden app-local URL fields.
-- [ ] Update `test/lib/map_tiles/smoke_check_test.rb` to prove production smoke passes with zero `pois` features and no `pois` PMTiles metadata layer, fails when `walking_paths` has zero features, fails when dataful `pois` has a contract violation, and still fails on required metadata/field mismatches for non-optional layers.
-- [ ] Commit this phase as `incant 0008-P2: allow empty production POIs` after the quality gate passes.
+- [x] Read `lib/map_tiles/smoke_check.rb`, `lib/map_tiles/layer_contract.rb`, `test/lib/map_tiles/smoke_check_test.rb`, and the updated `config/map_tiles.yml` before editing.
+- [x] Edit `lib/map_tiles/smoke_check.rb` so GeoJSON layer inspection runs before metadata layer comparison, giving the metadata check the actual per-layer feature counts.
+- [x] Edit `lib/map_tiles/smoke_check.rb` so production mode treats `configuration.optional_production_layers` as allowed zero-feature layers; in this item the configured production optional layer set is exactly `pois`.
+- [x] Edit `lib/map_tiles/smoke_check.rb` so required layers with zero features still fail in production mode, including `problems`, `boulders`, `areas`, `area_hulls`, `clusters`, `cluster_hulls`, `regions`, `region_hulls`, and `walking_paths`.
+- [x] Edit `lib/map_tiles/smoke_check.rb` so PMTiles metadata layer comparison requires all required layers, allows an optional zero-feature `pois` layer to be absent or present, and requires a dataful optional `pois` layer to be present.
+- [x] Keep the existing metadata field validation and GeoJSON feature validation for every layer that exists or has features, so a dataful `pois.geojson` still validates geometry, required properties, scalar values, forbidden circuit fields, and forbidden app-local URL fields.
+- [x] Update `test/lib/map_tiles/smoke_check_test.rb` to prove production smoke passes with zero `pois` features and no `pois` PMTiles metadata layer, fails when `walking_paths` has zero features, fails when dataful `pois` has a contract violation, and still fails on required metadata/field mismatches for non-optional layers.
+- [x] Commit this phase as `incant 0008-P2: allow empty production POIs` after the quality gate passes.
 **Quality gate:** `docker compose run --rm web bin/rails test test/lib/map_tiles/smoke_check_test.rb` → all smoke-check contract tests pass, including optional POI and required walking-path cases.
 
 ## Phase 0008-P3 — Dockerized Felt Tippecanoe, guidance, and E2E hygiene
