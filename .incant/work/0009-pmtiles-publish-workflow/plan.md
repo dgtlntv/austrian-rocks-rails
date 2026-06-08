@@ -18,7 +18,7 @@ updated: 2026-06-08
 - Branch: incant/0009-pmtiles-publish-workflow
 - Next: review this phase via `/incant:review 0009`.
 - Blockers: none.
-- Fresh verification: 39 tests, 0 failures, 0 errors on 2026-06-08 (see quality gate above).
+- Fresh verification: 43 tests, 0 failures, 0 errors on 2026-06-08 (see review fixes below for revised quality gate).
 - Key decisions:
   - Persist publish workflow state in one singleton `MapTilePublishState` row plus immutable history rows in `MapTilePublishAttempt`.
   - Treat sliding debounce as one pending automatic attempt row; older delayed jobs that wake up before the current `scheduled_for` self-reschedule and do not build.
@@ -26,6 +26,21 @@ updated: 2026-06-08
   - Keep manual publishes immediate and request-scoped work limited to creating an attempt and enqueuing `MapTilePublishJob`.
   - Publish only an immutable versioned PMTiles object plus `austrian-rocks-latest.json`; never upload `austrian-rocks-latest.pmtiles`.
   - Keep callback scheduling production-only; tests may invoke `MapTiles::PublishScheduler` directly outside production.
+
+### Review fixes (2026-06-08)
+
+Addressed all open findings from the initial review.
+
+| Finding | Severity | Fix |
+|---|---|---|
+| `record_failure!` does not redact actual Bunny secret values from error messages | blocker | Added `BUNNY_SECRET_VALUES` as a dynamic class method reading from `ENV`; `sanitize_error_text` now redacts bare values via `Regexp.new(Regexp.escape(value))` before storing. All existing key-name redaction retained. |
+| `current_status` hides a failed publish when a previous success exists and no newer `stale_at` | major | Changed `failed` derivation to compare `last_failed_attempt.finished_at` against `last_successful_attempt.finished_at`. Failed attempts finished after the last success now correctly return `"failed"`. |
+| No database-level singleton constraint on `map_tile_publish_states` | major | Added migration `20260608120001` adding boolean `singleton` column with a partial unique index `WHERE singleton = true`. `current!` uses `find_or_create_by!(singleton: true)`. Duplicate row creation raises `ActiveRecord::RecordNotUnique`. |
+| `latest_object_key` still exposed in Configuration | minor | Removed `latest_object_key` method from `MapTiles::Configuration`. The configuration test was updated to assert `not_respond_to :latest_object_key`. |
+
+**Quality gate (after fixes):**
+`docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:password@db:5432/austrian-rocks-test web bin/rails test test/models/map_tile_publish_attempt_test.rb test/models/map_tile_publish_state_test.rb test/lib/map_tiles/configuration_test.rb`
+→ 43 tests, 114 assertions, 0 failures, 0 errors.
 
 ## Spec freshness check
 - `spec.md` records base commit `7b6ff0f8`; current `HEAD` is `055ba8f4`.

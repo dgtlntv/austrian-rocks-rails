@@ -10,6 +10,7 @@ class MapTilePublishStateTest < ActiveSupport::TestCase
 
     assert_equal 1, MapTilePublishState.count
     assert_predicate state, :persisted?
+    assert state.singleton
   end
 
   test "current! returns same row on subsequent calls" do
@@ -18,6 +19,13 @@ class MapTilePublishStateTest < ActiveSupport::TestCase
 
     assert_equal first.id, second.id
     assert_equal 1, MapTilePublishState.count
+  end
+
+  test "current! prevents duplicate singleton rows via DB constraint" do
+    MapTilePublishState.current!
+    duplicate = MapTilePublishState.new(singleton: true)
+
+    assert_raises(ActiveRecord::RecordNotUnique) { duplicate.save!(validate: false) }
   end
 
   test "current_status is up_to_date when fresh with no errors" do
@@ -62,6 +70,26 @@ class MapTilePublishStateTest < ActiveSupport::TestCase
     success = MapTilePublishAttempt.create!(source: "manual", status: "succeeded", finished_at: 1.minute.ago)
     state.update!(last_successful_attempt: success, stale_at: 30.minutes.ago)
     # stale_at is before finished_at, so data is up to date
+
+    assert_equal "up_to_date", state.current_status
+  end
+
+  test "current_status is failed when failure occurs after last success" do
+    state = MapTilePublishState.current!
+    success = MapTilePublishAttempt.create!(source: "manual", status: "succeeded", finished_at: 1.hour.ago)
+    failure = MapTilePublishAttempt.create!(source: "automatic", status: "failed", finished_at: 1.minute.ago)
+    state.update!(last_successful_attempt: success, last_failed_attempt: failure)
+    # The failed attempt finished after the successful one, so status should be failed
+
+    assert_equal "failed", state.current_status
+  end
+
+  test "current_status is up_to_date when latest failure happened before last success" do
+    state = MapTilePublishState.current!
+    failure = MapTilePublishAttempt.create!(source: "automatic", status: "failed", finished_at: 2.hours.ago)
+    success = MapTilePublishAttempt.create!(source: "manual", status: "succeeded", finished_at: 1.hour.ago)
+    state.update!(last_failed_attempt: failure, last_successful_attempt: success)
+    # Successful publish after the failure resolved it
 
     assert_equal "up_to_date", state.current_status
   end

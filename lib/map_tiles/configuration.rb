@@ -71,10 +71,6 @@ module MapTiles
       object_key("#{artifact_basename}-#{version}.pmtiles")
     end
 
-    def latest_object_key
-      object_key("#{artifact_basename}-latest.pmtiles")
-    end
-
     def automatic_publish_debounce
       fetch_setting("automatic_publish_debounce_minutes").to_i.minutes
     end

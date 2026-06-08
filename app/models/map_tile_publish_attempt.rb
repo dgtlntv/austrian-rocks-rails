@@ -36,13 +36,30 @@ class MapTilePublishAttempt < ApplicationRecord
     BUNNY_API_KEY
   ].freeze
 
+  # Returns non-blank secret values for the configured Bunny credential env vars.
+  # Reads from ENV dynamically so tests can inject values inline.
+  def self.bunny_secret_values
+    BUNNY_SECRET_KEYS.each_with_object([]) do |key, values|
+      val = ENV[key].to_s.strip
+      values << val if val.present?
+    end
+  end
+
   def sanitize_error_text(error)
     text = error.respond_to?(:message) ? error.message : error.to_s
     return "" if text.blank?
 
+    # Redact KEY=value patterns
     BUNNY_SECRET_KEYS.each do |key|
       text = text.gsub(/#{Regexp.escape(key)}=[^\s]*/i, "[REDACTED #{key}]")
     end
+
+    # Redact bare secret values that may appear in provider-formatted messages.
+    # Uses a Regexp so the replacement is safe regardless of special characters.
+    self.class.bunny_secret_values.each do |value|
+      text = text.gsub(Regexp.new(Regexp.escape(value)), "[REDACTED VALUE]")
+    end
+
     text.truncate(2000)
   end
 end

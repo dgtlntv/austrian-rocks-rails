@@ -98,6 +98,22 @@ class MapTilePublishAttemptTest < ActiveSupport::TestCase
     assert_not_includes attempt.error_text, "def"
   end
 
+  test "record_failure! redacts bare secret values from ENV without key names" do
+    secret_value = "test-s3cret-val"
+    original = ENV["BUNNY_STORAGE_SECRET_ACCESS_KEY"]
+    ENV["BUNNY_STORAGE_SECRET_ACCESS_KEY"] = secret_value
+
+    attempt = MapTilePublishAttempt.create!(source: "manual", status: "running")
+    error = RuntimeError.new("S3Error: Access Denied (token: #{secret_value}) at https://storage.bunnycdn.com")
+
+    attempt.record_failure!(error)
+
+    assert_includes attempt.error_text, "[REDACTED VALUE]"
+    assert_not_includes attempt.error_text, secret_value
+  ensure
+    ENV["BUNNY_STORAGE_SECRET_ACCESS_KEY"] = original
+  end
+
   test "record_failure! truncates error text to 2000 characters" do
     attempt = MapTilePublishAttempt.create!(source: "manual", status: "running")
     long_error = RuntimeError.new("x" * 5000)

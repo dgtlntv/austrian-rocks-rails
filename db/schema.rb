@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_06_08_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_08_120001) do
   create_schema "tiger"
   create_schema "tiger_data"
   create_schema "topology"
@@ -196,10 +196,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_08_120000) do
     t.datetime "last_source_change_at", precision: nil
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "singleton", default: true, null: false
     t.index ["last_failed_attempt_id"], name: "idx_map_tile_publish_states_on_last_failed_attempt_id"
     t.index ["last_successful_attempt_id"], name: "idx_map_tile_publish_states_on_last_successful_attempt_id"
     t.index ["pending_automatic_attempt_id"], name: "idx_map_tile_publish_states_on_pending_automatic_attempt_id"
     t.index ["running_attempt_id"], name: "idx_map_tile_publish_states_on_running_attempt_id"
+    t.index ["singleton"], name: "idx_map_tile_publish_states_singleton", unique: true, where: "(singleton = true)"
   end
 
   create_table "poi_routes", force: :cascade do |t|

@@ -19,8 +19,10 @@ class MapTilePublishState < ApplicationRecord
   belongs_to :last_failed_attempt, class_name: "MapTilePublishAttempt", optional: true
 
   # Returns or creates the singleton publish state row.
+  # The `singleton` column and its partial unique index enforce
+  # exactly one row with `singleton = true` at the database level.
   def self.current!
-    first_or_create!
+    find_or_create_by!(singleton: true)
   end
 
   # Derives the current published-status label for admin UI rendering.
@@ -29,7 +31,9 @@ class MapTilePublishState < ApplicationRecord
       "running"
     elsif pending_automatic_attempt_id.present?
       "pending"
-    elsif last_failed_attempt_id.present? && (last_successful_attempt_id.nil? || (stale_at.present? && stale_at > (last_successful_attempt&.finished_at || Time.at(0))))
+    elsif last_failed_attempt_id.present? &&
+          (last_successful_attempt_id.nil? ||
+           (last_failed_attempt&.finished_at || Time.at(0)) > (last_successful_attempt&.finished_at || Time.at(0)))
       "failed"
     elsif stale_at.present? && (last_successful_attempt_id.nil? || stale_at > (last_successful_attempt&.finished_at || Time.at(0)))
       "stale"
