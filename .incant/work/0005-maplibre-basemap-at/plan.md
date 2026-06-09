@@ -16,13 +16,15 @@ updated: 2026-06-09
 - Work item: `0005` / `maplibre-basemap-at`
 - Stage: review
 - Branch: `incant/0005-maplibre-basemap-at`
-- Current phase: `0005-P3` complete; awaiting phase review
+- Current phase: `0005-P3` review fix complete; awaiting phase re-review
 - Next step: run `/incant:review 0005`
-- Blockers: none
+- Blockers: none pending re-review
 - Review fixes:
+  - 2026-06-09: addressed open blocker P3 finding from `.incant/work/0005-maplibre-basemap-at/review.md` by making public problem popups resolve either Rails deep-link `id` or PMTiles `problemId` before building `/redirects/new?problem_id=...`; added a regression check that the MapLibre controller uses `problemId`-compatible popup IDs.
   - 2026-06-09: addressed open major P2 finding from `.incant/work/0005-maplibre-basemap-at/review.md` by splitting `MapTiles::BunnyPublisher#publish` so versioned PMTiles/light/dark style artifacts are uploaded and publicly HEAD-verified before the non-cached manifest is uploaded; added a regression assertion that the manifest is not uploaded when a versioned style HEAD check fails.
   - 2026-06-09: addressed open major finding from `.incant/work/0005-maplibre-basemap-at/review.md` by rejecting blank object keys, leading/trailing/empty object-key segments, and `public_cdn_host` query/fragment components; added regression assertions in `test/lib/map_tiles/configuration_test.rb`.
 - Verification evidence:
+  - 2026-06-09: P3 review-fix quality gate passed in Docker: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/controllers/map_controller_test.rb test/controllers/mapping/contribution_requests_controller_test.rb && bin/importmap audit'` → `6 runs, 134 assertions, 0 failures, 0 errors, 0 skips`; `bin/importmap audit` reported `No vulnerable packages found`.
   - 2026-06-09: `0005-P3` quality gate passed in Docker: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/controllers/map_controller_test.rb test/controllers/mapping/contribution_requests_controller_test.rb && bin/importmap audit'` → `5 runs, 128 assertions, 0 failures, 0 errors, 0 skips`; `bin/importmap audit` reported `No vulnerable packages found`.
   - 2026-06-09: `bin/importmap pin maplibre-gl pmtiles` was attempted in Docker but JSPM returned `Couldn't find any packages`; `config/importmap.rb` therefore pins explicit current stable browser ESM URLs for `maplibre-gl`, `pmtiles`, and `fflate`, verified by the P3 `bin/importmap audit` gate.
   - 2026-06-09: review-fix targeted test passed: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.invalid -e BUNNY_STORAGE_ACCESS_KEY_ID=dummy -e BUNNY_STORAGE_SECRET_ACCESS_KEY=dummy -e BUNNY_STORAGE_REGION=dummy -e BUNNY_STORAGE_BUCKET=dummy web bash -lc 'bin/rails test test/lib/map_tiles/bunny_publisher_test.rb'` → `8 runs, 55 assertions, 0 failures, 0 errors, 0 skips`.

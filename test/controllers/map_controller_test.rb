@@ -40,6 +40,14 @@ class MapControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "6a"
   end
 
+  test "public problem popups use PMTiles problem ids" do
+    controller_source = Rails.root.join("app/javascript/controllers/map_controller.js").read
+
+    assert_includes controller_source, "problem.id ?? problem.problemId"
+    assert_includes controller_source, "encodeURIComponent(problemId)"
+    assert_not_includes controller_source, "problem_id=${encodeURIComponent(problem.id)}"
+  end
+
   test "contribution map renders contribution source for MapLibre controller" do
     get "/en/mapping/map"
 

@@ -374,12 +374,18 @@ export default class extends Controller {
      */
     problemPopupContent(problem) {
         const container = document.createElement("div")
-        const link = document.createElement("a")
-        link.href = `/${this.localeValue}/redirects/new?problem_id=${encodeURIComponent(problem.id)}`
-        link.target = "_blank"
-        link.rel = "noopener noreferrer"
-        link.textContent = this.localizedName(problem)
-        container.appendChild(link)
+        const problemId = this.problemFeatureId(problem)
+
+        if (problemId !== undefined && problemId !== null && problemId !== "") {
+            const link = document.createElement("a")
+            link.href = `/${this.localeValue}/redirects/new?problem_id=${encodeURIComponent(problemId)}`
+            link.target = "_blank"
+            link.rel = "noopener noreferrer"
+            link.textContent = this.localizedName(problem)
+            container.appendChild(link)
+        } else {
+            container.appendChild(document.createTextNode(this.localizedName(problem)))
+        }
 
         const grade = document.createElement("span")
         grade.className = "text-gray-400 ml-1"
@@ -460,6 +466,15 @@ export default class extends Controller {
     localizedName(properties) {
         if (this.localeValue == "en" && properties.nameEn) return properties.nameEn
         return properties.name || ""
+    }
+
+    /**
+     * Returns the problem ID from either Rails deep-link data or PMTiles feature properties.
+     * @param {Object} problem Problem feature properties.
+     * @returns {string|number|undefined|null} Problem identifier.
+     */
+    problemFeatureId(problem) {
+        return problem.id ?? problem.problemId
     }
 
     /**
