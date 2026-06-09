@@ -45,10 +45,14 @@ module MapTiles
       manifest_path = release_manifest.write
       uploads = upload_plan(pmtiles_path: pmtiles_path, style_paths: style_paths, manifest_path: manifest_path)
       uploads.each { |upload| validate_artifact!(upload.fetch(:path), upload.fetch(:label)) }
-      uploads.each { |upload| upload_object(upload) }
-      uploads.each { |upload| verify_public_url!(upload.fetch(:url)) }
 
-      published = uploads.map { |upload| { key: upload.fetch(:key), url: upload.fetch(:url) } }
+      versioned_uploads, manifest_upload = split_upload_plan(uploads)
+      versioned_uploads.each { |upload| upload_object(upload) }
+      versioned_uploads.each { |upload| verify_public_url!(upload.fetch(:url)) }
+      upload_object(manifest_upload)
+      verify_public_url!(manifest_upload.fetch(:url))
+
+      published = (versioned_uploads + [ manifest_upload ]).map { |upload| { key: upload.fetch(:key), url: upload.fetch(:url) } }
       published.each { |object| out.puts "published #{object.fetch(:key)} -> #{object.fetch(:url)}" }
       published
     end
@@ -78,6 +82,14 @@ module MapTiles
     def validate_artifact!(path, label)
       raise ConfigurationError, "#{label} artifact is missing: #{path}" unless path.exist?
       raise ConfigurationError, "#{label} artifact is empty: #{path}" unless path.size.positive?
+    end
+
+    def split_upload_plan(uploads)
+      manifest_upload = uploads.find { |upload| upload.fetch(:key) == configuration.manifest_object_key }
+      versioned_uploads = uploads.reject { |upload| upload.equal?(manifest_upload) }
+      raise ConfigurationError, "Manifest upload is missing from map release upload plan" unless manifest_upload
+
+      [ versioned_uploads, manifest_upload ]
     end
 
     def upload_plan(pmtiles_path:, style_paths:, manifest_path:)

@@ -120,14 +120,21 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
     assert_includes out.string, "maps/current.json"
   end
 
-  test "fails when a style public HEAD check is not successful" do
+  test "fails before publishing the manifest when a versioned asset public HEAD check is not successful" do
     publisher = build_publisher(http_head: ->(uri) { FakeHeadResponse.new(uri.to_s.include?("-dark.json") ? 503 : 200) })
 
     error = assert_raises(MapTiles::BunnyPublisher::VerificationError) { publisher.publish }
 
     assert_includes error.message, "returned 503"
     assert_includes error.message, "https://cdn.example.test/styles/austrian-rocks-2026-06-07-dark.json"
-    assert_equal 4, @s3_client.puts.length
+    assert_equal(
+      %w[
+        maps/austrian-rocks-2026-06-07.pmtiles
+        styles/austrian-rocks-2026-06-07-light.json
+        styles/austrian-rocks-2026-06-07-dark.json
+      ],
+      @s3_client.puts.map { |put| put.fetch(:key) }
+    )
   end
 
   test "fails when the manifest public HEAD check is not successful" do
