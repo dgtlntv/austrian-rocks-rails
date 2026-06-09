@@ -1,9 +1,9 @@
 # State
-- Updated: 2026-06-09 (0005 P2 review fix complete)
-- Current focus: 0005 — MapLibre/basemap.at immutable publish contract awaiting P2 re-review
+- Updated: 2026-06-09 (0005 P3 complete)
+- Current focus: 0005 — MapLibre/basemap.at Rails runtime awaiting P3 review
 
 ## Active
-- 0005 — review stage on branch `incant/0005-maplibre-basemap-at`; work dir `.incant/work/0005-maplibre-basemap-at/`; phase `0005-P2` review fix makes manifest publication the final step after versioned asset HEAD verification and passed the P2 gate. Next gate: `/incant:review 0005`.
+- 0005 — review stage on branch `incant/0005-maplibre-basemap-at`; work dir `.incant/work/0005-maplibre-basemap-at/`; phase `0005-P3` replaces the Rails web map runtime with MapLibre/PMTiles manifest loading, safe popups, contribution overlays, and MapLibre markup/GeoJSON tests. Next gate: `/incant:review 0005`.
 
 ## Cross-cutting notes / blockers
 - Database commands/tests for map-data work should run against Docker-hosted PostgreSQL/PostGIS, not a host-created database.

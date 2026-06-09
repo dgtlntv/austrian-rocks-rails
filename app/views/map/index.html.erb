@@ -17,27 +17,24 @@
   <% set_meta_tags canonical: map_url %>
 <% end %>
 
-<div 
-data-controller="mapbox"
-data-action="gotoproblem@window->mapbox#gotoproblem gotoarea@window->mapbox#gotoarea"
-class="h-screen w-full relative"
-data-mapbox-target="map"
-data-mapbox-locale-value="<%= I18n.locale %>"
-
-data-mapbox-contribute-source-value="<%= mapping_requests_path(format: :geojson) %>"
-data-mapbox-contribute-value="<%= params[:contribute] ? "true" : "false" %>"
-
-<% if @problem %> 
-data-mapbox-problem-value="<%= @problem.to_json %>" 
-<% end %>
-
-<% if @bounds %> 
-data-mapbox-bounds-value="<%= @bounds.to_json %>"
-<% end %>
-
-data-mapbox-token-value="<%= Rails.env.local? ? ENV['MAPBOX_DEV_ACCESS_KEY'] : Rails.application.credentials.dig(:mapbox, :access_token) %>"
+<div
+  data-controller="map"
+  data-action="gotoproblem@window->map#gotoproblem gotoarea@window->map#gotoarea"
+  class="h-screen w-full relative"
+  data-map-locale-value="<%= I18n.locale %>"
+  data-map-manifest-url-value="<%= map_release_manifest_url %>"
+  data-map-style-value="<%= map_default_style %>"
+  data-map-contribute-value="<%= params[:contribute] ? "true" : "false" %>"
+  <% if params[:contribute] %>
+  data-map-contribute-source-value="<%= mapping_requests_path(format: :geojson) %>"
+  <% end %>
+  <% if @problem %>
+  data-map-problem-value="<%= @problem.to_json %>"
+  <% end %>
+  <% if @bounds %>
+  data-map-bounds-value="<%= @bounds.to_json %>"
+  <% end %>
 >
-  <div id="map"></div>
+  <div id="map" data-map-target="map"></div>
   <%= render "filters" %>
-
 </div>
