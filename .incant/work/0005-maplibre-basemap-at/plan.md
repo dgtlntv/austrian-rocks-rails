@@ -16,10 +16,13 @@ updated: 2026-06-09
 - Work item: `0005` / `maplibre-basemap-at`
 - Stage: review
 - Branch: `incant/0005-maplibre-basemap-at`
-- Current phase: `0005-P1` complete; awaiting phase review
+- Current phase: `0005-P1` review fix complete; awaiting phase re-review
 - Next step: run `/incant:review 0005`
-- Blockers: none
+- Blockers: none after addressing the open P1 major finding; awaiting reviewer confirmation
+- Review fixes:
+  - 2026-06-09: addressed open major finding from `.incant/work/0005-maplibre-basemap-at/review.md` by rejecting blank object keys, leading/trailing/empty object-key segments, and `public_cdn_host` query/fragment components; added regression assertions in `test/lib/map_tiles/configuration_test.rb`.
 - Verification evidence:
+  - 2026-06-09: review-fix gate passed: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/style_materializer_test.rb'` → `13 runs, 115 assertions, 0 failures, 0 errors, 0 skips`.
   - 2026-06-09: spec approval supplied by the human in the planning request.
   - 2026-06-09: staleness check: spec frontmatter `commit` is `7b6ff0f8`; current planning base is `3e7c73c0`; `git diff --stat 7b6ff0f8..HEAD -- . ':(exclude).incant/work/0005-maplibre-basemap-at/spec.md'` showed only incant artifact changes, so no app-code drift invalidates the approved spec.
   - 2026-06-09: human supplied basemap.at legal attribution requirements: show linked `Grundkarte: basemap.at` or `Datenquelle: basemap.at`, avoid misleading Google/Apple/Mapbox/OSM attribution, and do not include OpenStreetMap attribution for the basemap.at-only base map.

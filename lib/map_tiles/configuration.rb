@@ -125,7 +125,11 @@ module MapTiles
     end
 
     def public_url_for_object_key(key)
-      sanitized_key = key.to_s.split("/").map do |segment|
+      raw_key = key.to_s.strip
+      raise ArgumentError, "object_key is required" if raw_key.blank?
+      raise ArgumentError, "object_key must not contain empty path segments" if raw_key.start_with?("/") || raw_key.end_with?("/") || raw_key.include?("//")
+
+      sanitized_key = raw_key.split("/").map do |segment|
         sanitize_path_segment(segment, name: "object_key")
       end.join("/")
 
@@ -195,6 +199,8 @@ module MapTiles
       raise ArgumentError, "public_cdn_host must use https" unless uri.scheme == "https"
       raise ArgumentError, "public_cdn_host must not contain credentials" if uri.userinfo.present?
       raise ArgumentError, "public_cdn_host must not contain a path" if uri.path.present? && uri.path != "/"
+      raise ArgumentError, "public_cdn_host must not contain query parameters" if uri.query.present?
+      raise ArgumentError, "public_cdn_host must not contain a fragment" if uri.fragment.present?
 
       uri.to_s.delete_suffix("/")
     rescue URI::InvalidURIError => e

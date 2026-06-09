@@ -109,12 +109,25 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     configuration = MapTiles::Configuration.new(version: "2026-06-09", settings: settings)
 
     assert_raises(ArgumentError) { configuration.style_object_key("blue") }
+    assert_raises(ArgumentError) { configuration.public_url_for_object_key("") }
+    assert_raises(ArgumentError) { configuration.public_url_for_object_key("/map_tiles/austrian-rocks.pmtiles") }
+    assert_raises(ArgumentError) { configuration.public_url_for_object_key("map_tiles/austrian-rocks.pmtiles/") }
+    assert_raises(ArgumentError) { configuration.public_url_for_object_key("map_tiles//austrian-rocks.pmtiles") }
     assert_raises(ArgumentError) { configuration.public_url_for_object_key("map_tiles/../evil.pmtiles") }
     assert_raises(ArgumentError) do
       MapTiles::Configuration.new(version: "2026-06-09", settings: settings("public_cdn_host" => "http://cdn.example.test")).pmtiles_public_url
     end
     assert_raises(ArgumentError) do
       MapTiles::Configuration.new(version: "2026-06-09", settings: settings("public_cdn_host" => "https://user:pass@cdn.example.test")).pmtiles_public_url
+    end
+    assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("public_cdn_host" => "https://cdn.example.test/maps")).pmtiles_public_url
+    end
+    assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("public_cdn_host" => "https://cdn.example.test?token=x")).pmtiles_public_url
+    end
+    assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("public_cdn_host" => "https://cdn.example.test#tiles")).pmtiles_public_url
     end
   end
 
