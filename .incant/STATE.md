@@ -1,9 +1,9 @@
 # State
-- Updated: 2026-06-09 (0005 P3 review fix complete)
-- Current focus: 0005 — MapLibre/basemap.at Rails runtime awaiting P3 re-review
+- Updated: 2026-06-09 (0005 P3 re-review passed; P4 next)
+- Current focus: 0005 — MapLibre/basemap.at Rails runtime ready for P4 implementation
 
 ## Active
-- 0005 — review stage on branch `incant/0005-maplibre-basemap-at`; work dir `.incant/work/0005-maplibre-basemap-at/`; phase `0005-P3` replaces the Rails web map runtime with MapLibre/PMTiles manifest loading, safe popups, contribution overlays, and MapLibre markup/GeoJSON tests. The open P3 blocker has an implementation fix for PMTiles `problemId` popup links and needs re-review. Next gate: `/incant:review 0005`.
+- 0005 — implement stage on branch `incant/0005-maplibre-basemap-at`; work dir `.incant/work/0005-maplibre-basemap-at/`; phase `0005-P3` re-review recorded the PMTiles `problemId` popup-link blocker as addressed with no open blocker/major findings for P3. Next gate: `/incant:implement 0005` for P4 documentation, full release gates, and manual smoke evidence.
 
 ## Cross-cutting notes / blockers
 - Database commands/tests for map-data work should run against Docker-hosted PostgreSQL/PostGIS, not a host-created database.
