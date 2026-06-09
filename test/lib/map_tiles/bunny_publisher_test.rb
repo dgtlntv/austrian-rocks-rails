@@ -116,7 +116,7 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
       "public, max-age=31536000, immutable",
       "no-cache, max-age=0, must-revalidate"
     ], @s3_client.puts.map { |put| put.fetch(:cache_control) }
-    assert_not_includes out.string, "austrian-rocks-#{'latest'}.pmtiles"
+    assert_not_includes out.string, "austrian-rocks-#{'latest'}"
     assert_includes out.string, "maps/current.json"
   end
 
@@ -204,7 +204,11 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
       "basemap_at_style_url" => "https://mapsneu.wien.gv.at/basemapvectorneu/root.json",
       "basemap_at_attribution" => "Grundkarte: <a href=\"https://basemap.at/\" target=\"_blank\" rel=\"noopener noreferrer\">basemap.at</a>",
       "terrain_opacity" => 0.35,
-      "optional_production_layers" => []
+      "optional_production_layers" => [],
+      "automatic_publish_debounce_minutes" => "30",
+      "manifest_cache_ttl_seconds" => "60",
+      "pmtiles_cache_control" => "public, max-age=31536000, immutable",
+      "manifest_content_type" => "application/json"
     }.merge(overrides)
   end
 

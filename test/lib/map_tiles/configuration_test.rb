@@ -26,6 +26,10 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     assert_includes configuration.basemap_at_attribution, "https://basemap.at/"
     assert_equal 0.35, configuration.terrain_opacity
     assert_equal [], configuration.optional_production_layers
+    assert_equal 30.minutes, configuration.automatic_publish_debounce
+    assert_equal 60, configuration.manifest_cache_ttl_seconds
+    assert_equal "public, max-age=31536000, immutable", configuration.pmtiles_cache_control
+    assert_equal "application/json", configuration.manifest_content_type
   end
 
   test "supports environment-specific settings through injected Rails config" do
@@ -162,6 +166,34 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     assert_equal "explicit-version", configuration.version
   end
 
+  test "exposes automatic publish debounce duration" do
+    configuration = MapTiles::Configuration.new(settings: settings("automatic_publish_debounce_minutes" => "45"))
+
+    assert_equal 45.minutes, configuration.automatic_publish_debounce
+  end
+
+  test "exposes manifest cache TTL" do
+    configuration = MapTiles::Configuration.new(settings: settings("manifest_cache_ttl_seconds" => "120"))
+
+    assert_equal 120, configuration.manifest_cache_ttl_seconds
+  end
+
+  test "exposes PMTiles cache control header" do
+    configuration = MapTiles::Configuration.new(
+      settings: settings("pmtiles_cache_control" => "public, max-age=86400")
+    )
+
+    assert_equal "public, max-age=86400", configuration.pmtiles_cache_control
+  end
+
+  test "exposes manifest content type" do
+    configuration = MapTiles::Configuration.new(
+      settings: settings("manifest_content_type" => "application/vnd.custom+json")
+    )
+
+    assert_equal "application/vnd.custom+json", configuration.manifest_content_type
+  end
+
   private
 
   def settings(overrides = {})
@@ -177,7 +209,11 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
       "basemap_at_style_url" => "https://mapsneu.wien.gv.at/basemapvectorneu/root.json",
       "basemap_at_attribution" => "Grundkarte: <a href=\"https://basemap.at/\" target=\"_blank\" rel=\"noopener noreferrer\">basemap.at</a>",
       "terrain_opacity" => 0.35,
-      "optional_production_layers" => []
+      "optional_production_layers" => [],
+      "automatic_publish_debounce_minutes" => "30",
+      "manifest_cache_ttl_seconds" => "60",
+      "pmtiles_cache_control" => "public, max-age=31536000, immutable",
+      "manifest_content_type" => "application/json"
     }.merge(overrides)
   end
 end

@@ -1,4 +1,6 @@
 class WalkingPath < ApplicationRecord
+  include MapTiles::PublishStaleMarker
+
   has_many :walking_path_areas, dependent: :destroy
   has_many :areas, through: :walking_path_areas
   has_many :walking_path_clusters, dependent: :destroy

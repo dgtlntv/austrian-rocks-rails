@@ -3,6 +3,7 @@ class Poi < ApplicationRecord
   has_many :areas, through: :poi_routes
 
   include Geolocatable
+  include MapTiles::PublishStaleMarker
   geolocatable :location
 
   audited

@@ -19,6 +19,7 @@ class Area < ApplicationRecord
 
   scope :published, -> { where(published: true) }
   include HasTagsConcern
+  include MapTiles::PublishStaleMarker
 
   normalizes :name, :short_name, :description_de, :description_en, :warning_de, :warning_en, with: ->(s) { s.strip.presence }
 

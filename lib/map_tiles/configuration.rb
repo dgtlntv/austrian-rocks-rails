@@ -92,6 +92,22 @@ module MapTiles
       layers
     end
 
+    def automatic_publish_debounce
+      fetch_setting("automatic_publish_debounce_minutes").to_i.minutes
+    end
+
+    def manifest_cache_ttl_seconds
+      fetch_setting("manifest_cache_ttl_seconds").to_i
+    end
+
+    def pmtiles_cache_control
+      fetch_setting("pmtiles_cache_control").to_s.strip
+    end
+
+    def manifest_content_type
+      fetch_setting("manifest_content_type").to_s.strip
+    end
+
     def artifact_path
       output_dir.join("#{artifact_basename}-#{version}.pmtiles")
     end

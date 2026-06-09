@@ -13,7 +13,18 @@ class MapTiles::CLITest < ActiveSupport::TestCase
       "output_dir" => "tmp/cli_test/#{SecureRandom.hex(8)}",
       "public_cdn_host" => "https://cdn.example.test",
       "bunny_prefix" => "maps",
-      "optional_production_layers" => []
+      "style_prefix" => "map_styles",
+      "manifest_prefix" => "map_tiles",
+      "manifest_object_name" => "current.json",
+      "default_style" => "light",
+      "basemap_at_style_url" => "https://mapsneu.wien.gv.at/basemapvectorneu/root.json",
+      "basemap_at_attribution" => "Grundkarte: <a href=\"https://basemap.at/\" target=\"_blank\" rel=\"noopener noreferrer\">basemap.at</a>",
+      "terrain_opacity" => 0.35,
+      "optional_production_layers" => [],
+      "automatic_publish_debounce_minutes" => "30",
+      "manifest_cache_ttl_seconds" => "60",
+      "pmtiles_cache_control" => "public, max-age=31536000, immutable",
+      "manifest_content_type" => "application/json"
     }
     @configuration = MapTiles::Configuration.new(settings: @settings)
     @exporter_class = exporter_class(@calls)
@@ -76,6 +87,7 @@ class MapTiles::CLITest < ActiveSupport::TestCase
     assert_equal [ "--mode=production" ], @calls.fetch(:smokes).last.fetch(:argv)
     assert_equal "2026-06-07", @calls.fetch(:publishes).last.fetch(:version)
     assert_equal "2026-06-07", @calls.fetch(:cleans).last.fetch(:version)
+    assert_includes out.string, "current manifest -> https://cdn.example.test/map_tiles/current.json"
   end
 
   test "publish skip smoke is the only smoke bypass" do
@@ -178,6 +190,24 @@ class MapTiles::CLITest < ActiveSupport::TestCase
 
       define_method(:publish) do
         calls.fetch(:publishes) << { version: @configuration.version }
+        [
+          {
+            key: @configuration.versioned_object_key,
+            url: "https://cdn.example.test/#{@configuration.versioned_object_key}"
+          },
+          {
+            key: @configuration.style_object_key("light"),
+            url: "https://cdn.example.test/#{@configuration.style_object_key("light")}"
+          },
+          {
+            key: @configuration.style_object_key("dark"),
+            url: "https://cdn.example.test/#{@configuration.style_object_key("dark")}"
+          },
+          {
+            key: @configuration.manifest_object_key,
+            url: "https://cdn.example.test/#{@configuration.manifest_object_key}"
+          }
+        ]
       end
     end
   end
