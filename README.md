@@ -50,15 +50,16 @@ processing.
 
 -   `bin/dev`
 
-### Mapbox credentials
+### Map tiles and web map releases
 
--   Create an account on https://www.mapbox.com.
--   Go to the [Tokens](<[url](https://account.mapbox.com/access-tokens/)>) page
-    and create a public token with all the public `scopes` (or just use the
-    default token).
--   Back in the Rails app, copy the `.env.example` to `.env` and fill out
-    `MAPBOX_DEV_ACCESS_KEY` with your token
--   Restart the server
+-   The Rails web map uses MapLibre GL with Austrian Rocks-owned style JSONs
+    derived from basemap.at. No browser map token is required.
+-   Published map releases use immutable PMTiles/style objects plus a non-cached
+    manifest at `https://tiles.austrian.rocks/map_tiles/current.json`.
+-   Clients fetch the manifest and load `styles.light` for the Rails web map;
+    mobile clients can choose `styles.light` or `styles.dark`.
+-   Do not point clients at a mutable PMTiles URL. Each manifest entry references
+    the exact versioned PMTiles and style JSON for that release.
 
 ### Optional: JOSM
 

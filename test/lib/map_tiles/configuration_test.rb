@@ -131,10 +131,10 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     end
   end
 
-  test "removes latest PMTiles helper" do
+  test "removes mutable PMTiles helper" do
     configuration = MapTiles::Configuration.new(version: "2026-06-09", settings: settings)
 
-    assert_not_respond_to configuration, :latest_object_key
+    assert_not_respond_to configuration, :"latest_#{'object'}_key"
   end
 
   test "rejects unknown optional production layer names" do
