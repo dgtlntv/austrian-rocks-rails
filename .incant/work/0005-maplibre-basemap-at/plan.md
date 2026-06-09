@@ -4,26 +4,153 @@ slug: maplibre-basemap-at
 branch: incant/0005-maplibre-basemap-at
 title: Migrate Rails web maps from Mapbox to MapLibre with basemap.at
 stage: plan
-status: in-progress
+status: awaiting-approval
 created: 2026-06-08
-commit: 7b6ff0f8
-updated: 2026-06-08
+commit: 3e7c73c0
+updated: 2026-06-09
 ---
 
-# Migrate Rails web maps from Mapbox to MapLibre with basemap.at — plan
+# Plan — Migrate Rails web maps from Mapbox to MapLibre with basemap.at
 
 ## Status
-- Phase: 0005-P1 (of <n>) · stage: plan
-- Branch: incant/0005-maplibre-basemap-at
-- Next: <next concrete step>
+- Work item: `0005` / `maplibre-basemap-at`
+- Stage: plan
+- Branch: `incant/0005-maplibre-basemap-at`
+- Current phase: planning complete; awaiting human plan approval before implementation
+- Next step: approve this plan, then run `/incant:implement 0005`
 - Blockers: none
-- Decisions:
+- Verification evidence:
+  - 2026-06-09: spec approval supplied by the human in the planning request.
+  - 2026-06-09: staleness check: spec frontmatter `commit` is `7b6ff0f8`; current planning base is `3e7c73c0`; `git diff --stat 7b6ff0f8..HEAD -- . ':(exclude).incant/work/0005-maplibre-basemap-at/spec.md'` showed only incant artifact changes, so no app-code drift invalidates the approved spec.
+- Key decisions:
+  - Keep the Rails route/controller shape (`MapController#index` for public and contribution maps) and replace only the browser map runtime and data attributes.
+  - Rename the Stimulus controller from `mapbox` to `map` so new markup and JavaScript do not retain a Mapbox-specific public API.
+  - Have Rails pass a non-cached release-manifest URL to the browser; the browser fetches the manifest and loads the current light style URL from it.
+  - Keep Austrian Rocks PMTiles source and overlay layer styling in shared MapLibre style JSON files; Rails JavaScript only wires runtime interactions and the dynamic contribution overlay.
+  - Generate versioned style JSONs and the current manifest during `bin/build_pmtiles publish --version=2026-06-09` or another sanitized release version; the manifest is the only mutable client pointer.
 
 ## Files touched
-<!-- path (new|edit) — one-line purpose. Map these before writing phases. -->
--
+- `config/map_tiles.yml` — add stable style/manifest prefixes, manifest object name, default Rails style, basemap.at source metadata, and `gelände` opacity settings.
+- `lib/map_tiles/configuration.rb` — expose sanitized PMTiles/style/manifest object keys, public URLs, style template paths, manifest path, and default Rails style helpers while removing the latest PMTiles key helper.
+- `lib/map_tiles/style_materializer.rb` — new service that validates committed light/dark MapLibre style templates and materializes versioned style JSONs whose Austrian Rocks source points to the exact versioned PMTiles URL.
+- `lib/map_tiles/release_manifest.rb` — new value object/service that writes the non-cached current-release manifest with version, PMTiles URL, light style URL, and dark style URL.
+- `lib/map_tiles/bunny_publisher.rb` — upload one versioned PMTiles object, two versioned style JSON objects, and one current manifest with correct content types/cache controls and without any latest PMTiles behavior.
+- `lib/map_tiles/cli.rb` — keep publish orchestration wired to smoke before publication and use the expanded publisher return values in operator output.
+- `lib/map_tiles/local_artifact_cleaner.rb` — prune old local generated style JSON/manifest artifacts alongside PMTiles artifacts without deleting the just-published version.
+- `config/importmap.rb` — pin MapLibre GL JS and PMTiles protocol packages for importmap-based browser loading.
+- `config/map_styles/README.md` — new committed style contract explaining basemap.at derivation, attribution, `gelände`, Austrian Rocks PMTiles overlays, mobile consumption, and the manifest workflow.
+- `config/map_styles/austrian_rocks_light.json` — new committed MapLibre style version 8 JSON derived from basemap.at light vector styling plus Austrian Rocks PMTiles source/layers.
+- `config/map_styles/austrian_rocks_dark.json` — new committed MapLibre style version 8 JSON derived from basemap.at dark vector styling plus the same Austrian Rocks PMTiles source/layers.
+- `app/javascript/controllers/map_controller.js` — new Stimulus controller that initializes MapLibre, registers the PMTiles protocol, fetches the release manifest, loads the light shared style, and preserves public/contribution map interactions with safe popup DOM construction.
+- `app/javascript/controllers/mapbox_controller.js` — remove the old Mapbox-specific Stimulus controller after `map_controller.js` replaces it.
+- `app/views/layouts/map.html.erb` — replace Mapbox GL assets and popup CSS selectors with MapLibre GL equivalents and no Mapbox runtime URLs.
+- `app/views/map/index.html.erb` — switch data attributes/actions to the `map` controller, remove token injection, and pass locale, manifest URL, contribution GeoJSON URL, bounds, and problem data.
+- `app/views/map/_filters.html.erb` — update filter targets from `mapbox` to `map`.
+- `app/views/map/_filters_modal.html.erb` — update filter actions/targets from `mapbox` to `map`.
+- `app/helpers/map_helper.rb` — new helper that exposes the configured map release manifest URL and default style choice to the map view.
+- `app/controllers/map_controller.rb` — keep centering data shape stable and adjust only if helper/view tests expose a serialization mismatch.
+- `README.md` — replace Mapbox credential setup with MapLibre/basemap.at/manifest development notes.
+- `.incant/work/0005-maplibre-basemap-at/manual-smoke.md` — new manual browser smoke checklist/evidence template for MapLibre rendering and no-regression interactions.
+- `test/lib/map_tiles/configuration_test.rb` — cover sanitized versioned PMTiles/style/manifest keys, public URLs, and removal of latest PMTiles helpers.
+- `test/lib/map_tiles/style_materializer_test.rb` — validate both committed style JSONs as MapLibre style version 8, required attribution/source/layers, `gelände` opacity, and exact PMTiles URL materialization.
+- `test/lib/map_tiles/release_manifest_test.rb` — cover manifest JSON shape, safe version/URL values, and no-cache manifest semantics.
+- `test/lib/map_tiles/bunny_publisher_test.rb` — update publication tests for versioned PMTiles, light/dark styles, manifest upload, content types, cache controls, HEAD checks, and absence of latest PMTiles uploads.
+- `test/lib/map_tiles/cli_test.rb` — adjust publish expectations if publisher output or cleaner calls change with style/manifest artifacts.
+- `test/lib/map_tiles/local_artifact_cleaner_test.rb` — cover pruning generated style and manifest artifacts while preserving the current release.
+- `test/controllers/map_controller_test.rb` — new focused markup tests proving MapLibre assets/data attributes are present and Mapbox assets/tokens/style URLs are absent for public and contribution map routes.
+- `test/controllers/mapping/contribution_requests_controller_test.rb` — new or expanded GeoJSON regression coverage for open contribution-request marker properties used by the MapLibre contribution overlay.
 
-## Phase 0005-P1 — <phase name>
-- [ ] step 1:
-- [ ] step 2:
-**Quality gate:** `<exact command>` → <expected result>.
+## Phase 0005-P1 — shared style templates and release URL configuration
+Goal: provide validated Austrian Rocks-owned light/dark MapLibre style JSONs and sanitized release URL helpers before changing publisher or browser runtime code.
+
+- [ ] Read `config/map_tiles.yml`, `lib/map_tiles/configuration.rb`, `lib/map_tiles/layer_contract.rb`, `test/lib/map_tiles/configuration_test.rb`, and `docs/map_tiles.md` before editing map-release configuration.
+- [ ] In `config/map_tiles.yml`, add `style_prefix: map_styles`, `manifest_prefix: map_tiles`, `manifest_object_name: current.json`, `default_style: light`, `basemap_at_style_url: https://mapsneu.wien.gv.at/basemapvectorneu/root.json`, `basemap_at_attribution: "© basemap.at, © OpenStreetMap contributors"`, and `terrain_opacity: 0.35` to the shared default block; keep environment-specific `bunny_prefix` values unchanged.
+- [ ] In `lib/map_tiles/configuration.rb`, remove `latest_object_key` and add sanitized helpers: `style_prefix`, `manifest_prefix`, `manifest_object_name`, `default_style`, `terrain_opacity`, `basemap_at_style_url`, `basemap_at_attribution`, `style_template_path(style_name)`, `style_artifact_path(style_name)`, `manifest_artifact_path`, `style_object_key(style_name)`, `manifest_object_key`, `public_url_for_object_key(key)`, `pmtiles_public_url`, `style_public_url(style_name)`, and `manifest_public_url`.
+- [ ] In `lib/map_tiles/configuration.rb`, ensure `style_name` accepts only `light` and `dark`, object-key segments reject `/`, `.`, `..`, blank values, and unsafe characters, and `manifest_object_name` must end in `.json`.
+- [ ] Create `config/map_styles/README.md` explaining that `austrian_rocks_light.json` and `austrian_rocks_dark.json` are committed MapLibre style version 8 templates derived from `https://mapsneu.wien.gv.at/basemapvectorneu/root.json`, keep required basemap.at/OpenStreetMap attribution, lower the `gelände` terrain-shading layer to `terrain_opacity`, include one Austrian Rocks PMTiles source named `austrian-rocks`, and are materialized to immutable versioned URLs for web/iOS/Android via the manifest.
+- [ ] Create `config/map_styles/austrian_rocks_light.json` as valid MapLibre style version 8 JSON with `name: "Austrian Rocks Light"`, basemap.at vector sources/layers derived from the current basemap.at light root style, public attribution, a terrain/`gelände` layer whose paint opacity is `0.35`, an `austrian-rocks` vector source using the development-safe URL `pmtiles://https://tiles.austrian.rocks/map_tiles/e2e/austrian-rocks-dev.pmtiles`, and overlay layers for `region_hulls`, `regions`, `cluster_hulls`, `clusters`, `area_hulls`, `areas`, `boulders`, `walking_paths`, `pois`, `problems`, and `problems-texts`.
+- [ ] Create `config/map_styles/austrian_rocks_dark.json` as valid MapLibre style version 8 JSON with `name: "Austrian Rocks Dark"`, the same source/layer coverage as the light style, basemap.at-derived dark colors, public attribution, `gelände` opacity `0.35`, and the same development-safe Austrian Rocks PMTiles source URL.
+- [ ] In both style JSON files, use Rails/web-compatible layer IDs `regions`, `clusters`, `areas`, `areas-hulls`, `cluster-hulls`, `region-hulls`, `pois`, `problems`, and `problems-texts` for interactive layers, while each layer's `source-layer` remains the `MapTiles::LayerContract` snake_case name.
+- [ ] Add `lib/map_tiles/style_materializer.rb` with `MapTiles::StyleMaterializer#materialize` that reads both committed JSON files, asserts `version == 8`, asserts every `MapTiles::LayerContract.layer_names` source layer has at least one style layer, replaces `sources["austrian-rocks"]["url"]` with `pmtiles://#{configuration.pmtiles_public_url}`, writes minified JSON to `configuration.style_artifact_path("light")` and `configuration.style_artifact_path("dark")`, and returns `{ "light" => path, "dark" => path }`.
+- [ ] Add `test/lib/map_tiles/style_materializer_test.rb` covering both committed style files parse as JSON, style version 8, `austrian-rocks` source exists, source URL materializes to the exact versioned PMTiles public URL, no `mapbox://` URL appears, required attribution appears, `gelände`/terrain opacity equals config, and all `LayerContract.layer_names` source layers are styled.
+- [ ] Update `test/lib/map_tiles/configuration_test.rb` to assert versioned PMTiles keys remain `map_tiles/test/austrian-rocks-2026-06-09.pmtiles`, style keys are `map_styles/austrian-rocks-2026-06-09-light.json` and `map_styles/austrian-rocks-2026-06-09-dark.json`, manifest key is `map_tiles/current.json`, public URLs are HTTPS and sanitized, unsafe prefixes/object names/versions raise, and `latest_object_key` is no longer defined.
+
+**Quality gate:** `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/style_materializer_test.rb'` → configuration and style-materialization tests pass against Docker-hosted PostgreSQL/PostGIS without network access.
+
+## Phase 0005-P2 — immutable publish contract and current manifest
+Goal: make one publish create the versioned PMTiles, matching versioned light/dark style JSONs, and one non-cached current manifest, with all stale latest PMTiles behavior removed.
+
+- [ ] Read `lib/map_tiles/bunny_publisher.rb`, `lib/map_tiles/cli.rb`, `lib/map_tiles/local_artifact_cleaner.rb`, `test/lib/map_tiles/bunny_publisher_test.rb`, `test/lib/map_tiles/cli_test.rb`, `test/lib/map_tiles/local_artifact_cleaner_test.rb`, and `bin/build_pmtiles` before editing publication code.
+- [ ] Add `lib/map_tiles/release_manifest.rb` with `MapTiles::ReleaseManifest#write` that writes JSON to `configuration.manifest_artifact_path` with keys `version`, `pmtilesUrl`, `styles`, and `publishedAt`, where `styles` is `{ "light" => configuration.style_public_url("light"), "dark" => configuration.style_public_url("dark") }` and `pmtilesUrl` equals `configuration.pmtiles_public_url`.
+- [ ] In `MapTiles::ReleaseManifest`, validate that the version has already passed `Configuration#version`, the PMTiles/style URLs parse as HTTP(S) URLs, the manifest contains no credentials, and `publishedAt` is an ISO 8601 UTC timestamp supplied by an injectable clock in tests.
+- [ ] In `lib/map_tiles/bunny_publisher.rb`, require the PMTiles artifact to exist and be non-empty, call `StyleMaterializer#materialize`, call `ReleaseManifest#write`, and upload exactly four objects: `configuration.versioned_object_key`, `configuration.style_object_key("light")`, `configuration.style_object_key("dark")`, and `configuration.manifest_object_key`.
+- [ ] In `lib/map_tiles/bunny_publisher.rb`, use content type `application/octet-stream` for PMTiles, `application/json; charset=utf-8` for style JSON and manifest, immutable public cache headers for versioned PMTiles/style objects (`public, max-age=31536000, immutable`), and non-cached headers for the manifest (`no-cache, max-age=0, must-revalidate`).
+- [ ] In `lib/map_tiles/bunny_publisher.rb`, verify public HTTP `HEAD` reachability for the versioned PMTiles URL, both style URLs, and the manifest URL, report the URL/key pairs, and never verify or upload a latest PMTiles key.
+- [ ] In `lib/map_tiles/local_artifact_cleaner.rb`, clean old generated `austrian-rocks-*.pmtiles`, `austrian-rocks-*.metadata.json`, `austrian-rocks-*-light.json`, `austrian-rocks-*-dark.json`, and manifest artifacts older than the retention window while preserving the current version's artifacts.
+- [ ] Update `test/lib/map_tiles/bunny_publisher_test.rb` to cover required Bunny env, missing PMTiles artifact, style materializer invocation, manifest writer invocation, exact four upload keys, content types, cache-control values, four HEAD checks, failure messaging for style/manifest HEAD errors, no credential leakage, and no `austrian-rocks-latest.pmtiles` upload or output.
+- [ ] Update `test/lib/map_tiles/cli_test.rb` so `publish --version=2026-06-09` still runs production smoke first, then calls the expanded publisher and cleaner; keep `MAP_TILES_SKIP_SMOKE` ignored and `--skip-smoke` as the only explicit smoke bypass.
+- [ ] Update `test/lib/map_tiles/local_artifact_cleaner_test.rb` for style/manifest artifact pruning and current-version preservation.
+- [ ] Update `docs/map_tiles.md` locally and `README.md` in the repo so maintainer/client instructions say clients fetch `https://tiles.austrian.rocks/map_tiles/current.json`, then load the versioned `styles.light` URL (web) or `styles.light`/`styles.dark` (mobile), and never use a mutable latest PMTiles URL.
+- [ ] Run `rg -n 'latest_object_key|austrian-rocks-latest|latest\.pmtiles' lib test config README.md docs/map_tiles.md` and remove every non-incant match instead of adjusting tests to tolerate it.
+
+**Quality gate:** `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.invalid -e BUNNY_STORAGE_ACCESS_KEY_ID=dummy -e BUNNY_STORAGE_SECRET_ACCESS_KEY=dummy -e BUNNY_STORAGE_REGION=dummy -e BUNNY_STORAGE_BUCKET=dummy web bash -lc 'bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/style_materializer_test.rb test/lib/map_tiles/release_manifest_test.rb test/lib/map_tiles/bunny_publisher_test.rb test/lib/map_tiles/cli_test.rb test/lib/map_tiles/local_artifact_cleaner_test.rb && ! rg -n "latest_object_key|austrian-rocks-latest|latest\\.pmtiles" lib test config README.md docs/map_tiles.md'` → map-release publication tests pass and no stale latest PMTiles references remain outside incant artifacts.
+
+## Phase 0005-P3 — Rails MapLibre runtime and contribution overlay parity
+Goal: replace the Rails web map runtime with MapLibre GL + PMTiles while preserving current public and contribution route behaviours.
+
+- [ ] Read `app/javascript/controllers/mapbox_controller.js`, `app/views/map/index.html.erb`, `app/views/layouts/map.html.erb`, `app/views/map/_filters.html.erb`, `app/views/map/_filters_modal.html.erb`, `app/controllers/map_controller.rb`, `app/controllers/mapping/contribution_requests_controller.rb`, `config/importmap.rb`, and `test/test_helper.rb` before editing web runtime files.
+- [ ] Run `bin/importmap pin maplibre-gl pmtiles` and verify `config/importmap.rb` pins browser-loadable ESM packages for MapLibre GL JS and PMTiles; if the generated URLs point at a deprecated package version, pin explicit current stable package URLs in the same file and verify with `bin/importmap audit`.
+- [ ] Add `app/helpers/map_helper.rb` with `map_release_manifest_url` returning `MapTiles::Configuration.new.manifest_public_url` and `map_default_style` returning `MapTiles::Configuration.new.default_style`; include no secrets and no environment-variable map-token lookups.
+- [ ] Replace `app/javascript/controllers/mapbox_controller.js` with `app/javascript/controllers/map_controller.js`; add file-level JSDoc stating the controller owns MapLibre runtime wiring, PMTiles registration, release-manifest loading, web-only interactions, filters, search events, and contribution overlays while shared source/layer styling lives in the style JSONs.
+- [ ] In `map_controller.js`, import `maplibregl` from `maplibre-gl` and `{ Protocol }` from `pmtiles`, register `maplibregl.addProtocol("pmtiles", protocol.tile)`, fetch `this.manifestUrlValue` with `cache: "no-store"`, select `manifest.styles[this.styleValue]` with default `light`, and initialize `new maplibregl.Map({ container: this.mapTarget, locale: this.localeValue == "de" ? this.getDeLocale() : undefined, hash: true, style: selectedStyleUrl, bounds: [[9.430320338084726, 46.28576190178245], [17.230613306834925, 49.18126637161225]], padding: 5 })`.
+- [ ] In `map_controller.js`, keep scale, navigation, and geolocation controls through MapLibre classes; update German locale labels so they no longer refer to a Mapbox logo and still localize navigation/geolocation/attribution controls.
+- [ ] In `map_controller.js`, preserve `centerMap`, `cleanHistory`, `flyToBounds`, `gotoproblem`, and `gotoarea` behaviours with the existing bounds/problem data shapes from `MapController#index` and maintain URL hash sharing.
+- [ ] In `map_controller.js`, attach click and cursor handlers to the shared style layer IDs `problems`, `problems-texts`, `pois`, `areas`, `areas-hulls`, `clusters`, `cluster-hulls`, `regions`, and `region-hulls`; keep grade filtering applied to `problems` and `problems-texts`.
+- [ ] In `map_controller.js`, replace all popup raw HTML interpolation with safe DOM/text construction: problem links use `/#{locale}/redirects/new?problem_id=#{problemId}`, POI popups set the `googleUrl` as an anchor `href` only after URL parsing accepts HTTP(S), and contribution popups build one row per problem with text nodes for name/grade/ascents.
+- [ ] In `map_controller.js`, preserve contribution map behaviour by adding a dynamic GeoJSON source from `this.contributeSourceValue`, adding `contribute-problems` and `contribute-problems-texts` layers above the Austrian Rocks overlay layers, opening grouped contribution popups linking to `/#{locale}/mapping/problems/#{id}`, and centering `pid` deep links using the `problemValue` estimated contribution location supplied by Rails.
+- [ ] In `app/views/layouts/map.html.erb`, remove the `https://api.mapbox.com/mapbox-gl-js/v3.11.0/mapbox-gl.css` stylesheet tag and `https://api.mapbox.com/mapbox-gl-js/v3.11.0/mapbox-gl.js` script tag, add MapLibre GL CSS from the pinned package/CDN used by importmap, and update popup CSS selectors from `.mapboxgl-popup-content` to include `.maplibregl-popup-content`.
+- [ ] In `app/views/map/index.html.erb`, change `data-controller="mapbox"` to `data-controller="map"`, change window actions to `map#gotoproblem` and `map#gotoarea`, change all `data-mapbox-*` attributes to `data-map-*`, add `data-map-manifest-url-value="<%= map_release_manifest_url %>"`, add `data-map-style-value="<%= map_default_style %>"`, and remove `data-mapbox-token-value` entirely.
+- [ ] In `app/views/map/_filters.html.erb` and `app/views/map/_filters_modal.html.erb`, change every `data-mapbox-target` to `data-map-target`, `mapbox#didSelectFilter` to `map#didSelectFilter`, `mapbox#didSelectGradeMin` to `map#didSelectGradeMin`, `mapbox#didSelectGradeMax` to `map#didSelectGradeMax`, `mapbox#applyFilters` to `map#applyFilters`, and `mapbox#clearFilters` to `map#clearFilters`.
+- [ ] Add `test/controllers/map_controller_test.rb` with public `/en/map`, area `/en/map/test-area`, problem `/en/map?pid=123`, and contribution `/en/mapping/map` requests asserting successful responses, `data-controller="map"`, `data-map-manifest-url-value`, contribution source on contribution routes, bounds/problem data when applicable, MapLibre CSS/importmap presence, and absence of `MAPBOX_DEV_ACCESS_KEY`, `data-mapbox-token-value`, `api.mapbox.com`, `mapbox://`, and `mapbox-gl.js`.
+- [ ] Add or expand `test/controllers/mapping/contribution_requests_controller_test.rb` to create open and closed contribution requests with estimated locations and assert `.geojson` output includes only open grouped markers with `name`, `nameEn`, `problems`, `grade`, and `ascents` properties consumed by `map_controller.js`.
+
+**Quality gate:** `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/controllers/map_controller_test.rb test/controllers/mapping/contribution_requests_controller_test.rb && bin/importmap audit'` → Rails map markup/contribution GeoJSON tests pass, importmap packages audit cleanly, and rendered map pages expose no Mapbox runtime assets or token data.
+
+## Phase 0005-P4 — documentation, manual smoke evidence, and release gates
+Goal: prove the migration acceptance criteria at goal level with automated gates plus a documented browser smoke checklist.
+
+- [ ] Read `README.md`, `.incant/work/0005-maplibre-basemap-at/spec.md`, `.incant/work/0005-maplibre-basemap-at/plan.md`, and the implementation diffs from phases P1–P3 before writing final documentation or evidence.
+- [ ] Update `README.md` to remove the Mapbox credentials section and add a map development section covering MapLibre GL, PMTiles protocol, the non-cached current manifest URL, the light style used by Rails web, the dark style published for mobile, Docker/PostGIS expectations for map-tile tests, and no browser token requirement.
+- [ ] Create `.incant/work/0005-maplibre-basemap-at/manual-smoke.md` with dated checkboxes for `/en/map`, `/de/map`, one concrete area URL such as `/en/map/zillertal`, one concrete problem deep link such as `/en/map?pid=123`, and `/en/mapping/map`, plus observations for visible basemap.at-derived tiles, `gelände` shading, Austrian Rocks overlays, controls, popups, grade filters, search `gotoproblem`/`gotoarea` events, URL hash sharing, history cleanup, contribution markers/popups, console errors, and network requests proving no `api.mapbox.com`/`mapbox://` traffic.
+- [ ] Run `rg -n 'api\.mapbox\.com|mapbox://|MAPBOX_DEV_ACCESS_KEY|data-mapbox-token|latest_object_key|austrian-rocks-latest|latest\.pmtiles' app config lib test README.md docs/map_tiles.md` and remove every non-incant match; leave legacy non-runtime Mapbox admin/export code only if the search proves it does not match browser runtime URLs, token injection, or latest PMTiles guidance.
+- [ ] Run the full targeted map-tile contract suite: `bin/rails test test/lib/map_tiles` with Docker PostGIS and dummy Bunny variables.
+- [ ] Run the full Rails test suite with Docker PostGIS and dummy Bunny variables.
+- [ ] Run `bin/importmap audit` after all importmap changes.
+- [ ] Run `bin/rubocop -f github` and fix any offenses in Ruby, ERB, and committed JavaScript-adjacent files covered by RuboCop.
+- [ ] Run `bin/brakeman --no-pager` and fix any new security warnings, especially around map popup/link data and manifest/style URLs.
+- [ ] Paste fresh command outputs and manual smoke observations into the `## Status` verification evidence block of this plan before requesting review.
+
+**Quality gate:** `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.invalid -e BUNNY_STORAGE_ACCESS_KEY_ID=dummy -e BUNNY_STORAGE_SECRET_ACCESS_KEY=dummy -e BUNNY_STORAGE_REGION=dummy -e BUNNY_STORAGE_BUCKET=dummy web bash -lc 'bin/rails test test/lib/map_tiles && bin/rails test && bin/importmap audit && bin/rubocop -f github && bin/brakeman --no-pager'` plus completed `.incant/work/0005-maplibre-basemap-at/manual-smoke.md` → all automated gates pass and manual browser evidence covers MapLibre rendering/no-regression interactions before review.
+
+## Coverage self-review
+- Requirement 1 maps to P3 layout/view/controller replacement, P3 markup tests, and P4 no-Mapbox runtime search.
+- Requirement 2 maps to P3 preserved centering/search/control/popup/filter/history steps and P4 manual smoke coverage.
+- Requirement 3 maps to P3 contribution overlay steps and contribution GeoJSON tests plus P4 `/en/mapping/map` smoke.
+- Requirement 4 maps to P1 committed light/dark style JSONs and P3 default light-only Rails style selection.
+- Requirement 5 maps to P1 style README/templates/materializer tests for basemap.at layers, `gelände`, attribution, PMTiles source, and all `LayerContract` source layers.
+- Requirement 6 maps to P1 shared overlay style layers and P3 web-only event/dynamic contribution overlay steps.
+- Requirement 7 maps to P2 versioned PMTiles and style object uploads.
+- Requirement 8 maps to P2 release manifest generation/upload and P3 browser manifest loading with `cache: "no-store"`.
+- Requirement 9 maps to P1 removal of `latest_object_key`, P2 publisher/test/doc updates, and P4 stale latest search.
+- Requirement 10 maps to P1 configuration sanitization tests, P2 manifest URL validation, and publisher key tests.
+- Requirement 11 maps to P1 style coverage of the existing `LayerContract`; no PMTiles schema change is planned.
+- Requirement 12 maps to P1/P2 map-tile tests, P3 Rails markup/GeoJSON tests, P4 full automated gates, and P4 manual browser smoke evidence.
+- Config vs code consideration maps to P1 `config/map_tiles.yml`, style JSONs, and P3 helper-driven data attributes instead of scattered JavaScript literals.
+- Security consideration maps to P1/P2 sanitization, P3 safe popup DOM construction and token removal, P4 Brakeman/no-runtime-secret checks.
+- Testability consideration maps to every phase quality gate plus the P4 manual smoke checklist for browser-only behaviours.
+- Code documentation consideration maps to P1 `config/map_styles/README.md`, P2 Ruby invariant docs, P3 JSDoc, and P4 README updates.
+- Symbol/signature consistency checked: `Configuration#pmtiles_public_url`, `#style_public_url`, `#manifest_public_url`, `StyleMaterializer#materialize`, `ReleaseManifest#write`, `map_release_manifest_url`, `map_default_style`, and `map_controller.js` values/actions are named consistently across phases.
+- No placeholders remain in this plan; all phase IDs, file paths, commands, layer IDs, manifest keys, and quality gates are explicit.
+
+## Human approval checkpoint
+This plan is ready for human review. No implementation code should be changed until the human approves this plan and starts `/incant:implement 0005`.
