@@ -17,6 +17,11 @@ the editable sources and are **not** read by the pipeline.
 Every icon ships at 1x and 2x (`@2x` suffix, exactly double the 1x pixel size). The
 builder fails if either variant of a name is missing.
 
+The region/cluster/area icons deliberately share the same two-peaks glyph: the
+region→cluster→area hierarchy is internal and users are never taught it, so distinct
+glyphs carried no meaning. The three icon names are kept so the style layers and
+selection code stay untouched — only the artwork is identical.
+
 ## Design
 
 - **Resting**: colored disc (9px radius) with a white glyph and a 1.5px white ring,

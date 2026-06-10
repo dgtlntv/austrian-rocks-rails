@@ -85,7 +85,7 @@ module MapTiles
           landing: problem.landing,
           height: problem.height,
           parentProblemId: problem.parent_id
-        })
+        }.merge(problem_topo_properties(problem)))
       end
     end
 
@@ -321,7 +321,8 @@ module MapTiles
       {
         problemCount: problem_count_for_area_ids(area_ids),
         gradeMin: grade_min,
-        gradeMax: grade_max
+        gradeMax: grade_max,
+        gradeHistogramJson: grade_histogram_json_for_area_ids(area_ids)
       }
     end
 
@@ -341,6 +342,27 @@ module MapTiles
       return if grade_indexes.blank?
 
       [ Problem::GRADE_VALUES.fetch(grade_indexes.min), Problem::GRADE_VALUES.fetch(grade_indexes.max) ]
+    end
+
+    # Problem counts per letter grade ("6a" buckets "6a", "6a/+" and "6a+"),
+    # serialized as a sparse JSON object because tile properties are scalars.
+    def grade_histogram_json_for_area_ids(area_ids)
+      return if area_ids.blank?
+
+      counts_by_grade = Problem.joins(:area).
+        where(area_id: area_ids, areas: { published: true }).
+        where.not(grade: [ nil, "" ]).
+        group(:grade).
+        count
+
+      buckets = Hash.new(0)
+      counts_by_grade.each do |grade, count|
+        bucket = grade[0, 2]
+        buckets[bucket] += count if bucket.match?(/\A[1-9][abc]\z/)
+      end
+      return if buckets.empty?
+
+      JSON.generate(buckets.sort.to_h)
     end
 
     def card_properties(record)
@@ -363,12 +385,26 @@ module MapTiles
       }
     end
 
+    def problem_topo_properties(problem)
+      line = problem.lines.published.with_coordinates.includes(topo: { photo_attachment: :blob }).first
+      return {} if line.blank? || line.topo.blank? || !line.topo.photo.attached?
+
+      {
+        topoPhotoUrl: cdn_variant_url(line.topo.photo.variant(:medium)),
+        lineCoordinatesJson: JSON.generate(line.coordinates)
+      }
+    end
+
     def cover_photo_url(record)
       cover = effective_cover_attachment(record)
       return unless cover&.attached?
 
+      cdn_variant_url(cover.variant(:medium))
+    end
+
+    def cdn_variant_url(variant)
       Rails.application.routes.url_helpers.cdn_image_url(
-        cover.variant(:medium),
+        variant,
         expires_in: nil,
         host: Rails.application.config.asset_host.presence || "http://localhost:3000"
       )

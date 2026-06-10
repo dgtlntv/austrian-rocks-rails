@@ -283,6 +283,18 @@ class MapTiles::StyleMaterializerTest < ActiveSupport::TestCase
   end
 
   PIN_LAYERS = { "regions" => "ar-pin-region", "clusters" => "ar-pin-cluster", "areas" => "ar-pin-area" }.freeze
+  PIN_TEXT_OFFSETS = {
+    "regions" => [ 0.9, 0 ],
+    "clusters" => [ 1.0, 0 ],
+    "areas" => [ 1.0, 0 ],
+    "pois" => [ 1.0, 0 ]
+  }.freeze
+  PIN_TEXT_SIZES = {
+    "regions" => [ "interpolate", [ "linear" ], [ "zoom" ], 0, 16, 9.5, 24 ],
+    "clusters" => 16,
+    "areas" => [ "interpolate", [ "linear" ], [ "zoom" ], 12, 9, 15, 14 ],
+    "pois" => 9
+  }.freeze
   SELECTED_ID_PROPERTIES = {
     "regions-selected" => "regionId",
     "clusters-selected" => "clusterId",
@@ -296,8 +308,11 @@ class MapTiles::StyleMaterializerTest < ActiveSupport::TestCase
       layer = overlay_layer(style, layer_id)
       assert_equal icon, layer.dig("layout", "icon-image")
       assert_equal true, layer.dig("layout", "icon-allow-overlap")
+      assert_equal 1.08, layer.dig("layout", "icon-size") if layer_id == "regions"
       assert_equal "left", layer.dig("layout", "text-anchor")
-      assert_equal [ 1.1, 0 ], layer.dig("layout", "text-offset")
+      assert_equal true, layer.dig("layout", "text-optional")
+      assert_equal PIN_TEXT_OFFSETS.fetch(layer_id), layer.dig("layout", "text-offset")
+      assert_equal PIN_TEXT_SIZES.fetch(layer_id), layer.dig("layout", "text-size")
       assert_nil layer.dig("layout", "text-variable-anchor")
       # Pin and label fade in and out together.
       assert_equal layer.dig("paint", "text-opacity"), layer.dig("paint", "icon-opacity")
@@ -306,6 +321,9 @@ class MapTiles::StyleMaterializerTest < ActiveSupport::TestCase
     pois = overlay_layer(style, "pois")
     assert_equal [ "match", [ "get", "poiType" ], "train_station", "ar-pin-train", "ar-pin-parking" ], pois.dig("layout", "icon-image")
     assert_equal "left", pois.dig("layout", "text-anchor")
+    assert_equal true, pois.dig("layout", "text-optional")
+    assert_equal PIN_TEXT_OFFSETS.fetch("pois"), pois.dig("layout", "text-offset")
+    assert_equal PIN_TEXT_SIZES.fetch("pois"), pois.dig("layout", "text-size")
     assert_nil pois.dig("layout", "text-variable-anchor")
     assert_equal pois.dig("paint", "text-opacity"), pois.dig("paint", "icon-opacity")
   end
@@ -326,8 +344,10 @@ class MapTiles::StyleMaterializerTest < ActiveSupport::TestCase
     %w[regions-selected clusters-selected areas-selected pois-selected].each do |layer_id|
       layer = overlay_layer(style, layer_id)
       assert_equal "symbol", layer.fetch("type")
-      assert_equal 1, layer.dig("layout", "icon-size")
+      expected_icon_size = layer_id == "regions-selected" ? 1.08 : 1
+      assert_equal expected_icon_size, layer.dig("layout", "icon-size")
       assert_equal true, layer.dig("layout", "icon-allow-overlap")
+      assert_equal true, layer.dig("layout", "text-optional")
       # The balloon anchors on its location dot (4px above the canvas bottom at 1x).
       assert_equal "bottom", layer.dig("layout", "icon-anchor")
       assert_equal [ 0, 4 ], layer.dig("layout", "icon-offset")

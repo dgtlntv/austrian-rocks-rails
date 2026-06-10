@@ -15,6 +15,10 @@ const AUSTRIA_BOUNDS = [
     [9.430320338084726, 46.28576190178245],
     [17.230613306834925, 49.18126637161225],
 ]
+const AUSTRIA_MAX_BOUNDS = [
+    [8.75, 45.7],
+    [17.95, 49.75],
+]
 const GRADE_FILTER_LAYERS = ["problems"]
 const ALL_GRADES = [
     "1a", "1a/+", "1a+", "1b", "1b/+", "1b+", "1c", "1c/+", "1c+",
@@ -121,12 +125,14 @@ export default class extends Controller {
             hash: true,
             style: styleUrl,
             bounds: AUSTRIA_BOUNDS,
+            maxBounds: AUSTRIA_MAX_BOUNDS,
             padding: 5,
         })
 
         this.addControls()
 
         this.map.on("load", () => {
+            this.constrainMinimumZoom()
             this.selection = new MapSelection(this.map)
             if (this.hasCardTarget) {
                 this.infoCard = new InfoCard(this.cardTarget, this.cardStringsValue, this.localeValue)
@@ -136,6 +142,16 @@ export default class extends Controller {
             this.cleanHistory()
             this.setupClickEvents()
         })
+    }
+
+    /**
+     * Prevents zooming out so far that Austria becomes a small island, while
+     * keeping a padded max-bounds envelope for easy border-region exploration.
+     * @returns {void}
+     */
+    constrainMinimumZoom() {
+        const camera = this.map.cameraForBounds(AUSTRIA_MAX_BOUNDS, { padding: 20 })
+        if (camera?.zoom !== undefined) this.map.setMinZoom(camera.zoom)
     }
 
     /**
@@ -257,18 +273,18 @@ export default class extends Controller {
      * @returns {void}
      */
     setupClickEvents() {
-        this.registerPointerLayer("problems")
+        this.registerPointerLayer("problems", (zoom) => zoom >= 15)
         this.registerPointerLayer("pois", (zoom) => zoom >= 12)
-        this.registerPointerLayer("areas", (zoom) => zoom < 15)
+        this.registerPointerLayer("areas", (zoom) => zoom < 16)
         this.registerPointerLayer("areas-hulls", (zoom) => zoom < 15)
         this.registerPointerLayer("clusters", (zoom) => zoom <= 12)
         this.registerPointerLayer("cluster-hulls", (zoom) => zoom <= 12)
         this.registerPointerLayer("regions", (zoom) => zoom <= 10)
         this.registerPointerLayer("region-hulls", (zoom) => zoom <= 10)
         this.registerContributionClicks()
-        this.registerSelectClicks("problems", "problem")
+        this.registerSelectClicks("problems", "problem", (zoom) => zoom >= 15)
         this.registerSelectClicks("pois", "poi", (zoom) => zoom >= 12)
-        this.registerSelectClicks("areas", "area", (zoom) => zoom < 15)
+        this.registerSelectClicks("areas", "area", (zoom) => zoom < 16)
         this.registerSelectClicks("areas-hulls", "area", (zoom) => zoom < 15)
         this.registerSelectClicks("clusters", "cluster", (zoom) => zoom <= 12)
         this.registerSelectClicks("cluster-hulls", "cluster", (zoom) => zoom <= 12)
@@ -305,6 +321,7 @@ export default class extends Controller {
         this.map.on("click", layerId, (event) => {
             if (!zoomPredicate(this.map.getZoom())) return
 
+            this.lastInteractiveClickEvent = event.originalEvent
             const feature = event.features[0]
             const id = feature.properties[`${kind}Id`]
             if (id === undefined || id === null) return
@@ -321,6 +338,7 @@ export default class extends Controller {
     registerBackgroundClicks() {
         this.map.on("click", (event) => {
             if (!this.selection.current) return
+            if (event.originalEvent && event.originalEvent === this.lastInteractiveClickEvent) return
 
             const features = this.map.queryRenderedFeatures(event.point, {
                 layers: this.interactiveLayerIds(),
@@ -447,13 +465,13 @@ export default class extends Controller {
     }
 
     /**
-     * Clears the selection, hides the card, and resets the sheet padding.
+     * Clears the selection and hides the card, leaving any user-visible camera
+     * padding in place instead of snapping the map back on close.
      * @returns {void}
      */
     clearSelection() {
         this.selection.clear()
         this.infoCard?.hide()
-        this.map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 })
     }
 
     /**
@@ -464,17 +482,45 @@ export default class extends Controller {
      * @returns {void}
      */
     showSelectionOnMap(kind, properties) {
-        const bounds = kind === "region" && properties.mainClusterSouthWestLat !== undefined
-            ? [
+        const bounds = this.selectionBounds(kind, properties)
+        if (!bounds) return
+
+        this.flyToBounds(bounds)
+        this.clearSelection()
+    }
+
+    /**
+     * Returns valid bounds for the selected entity, preferring a region's
+     * baked main-cluster bounds when present.
+     * @param {string} kind Entity kind: region/cluster/area/poi/problem.
+     * @param {Object} properties Tile feature properties with bounds.
+     * @returns {Array<Array<number>>|null} Southwest/northeast bounds or null.
+     */
+    selectionBounds(kind, properties) {
+        if (kind === "region") {
+            const mainClusterBounds = this.validBounds([
                 [properties.mainClusterSouthWestLon, properties.mainClusterSouthWestLat],
                 [properties.mainClusterNorthEastLon, properties.mainClusterNorthEastLat],
-            ]
-            : [
-                [properties.southWestLon, properties.southWestLat],
-                [properties.northEastLon, properties.northEastLat],
-            ]
-        if (bounds[0][0] !== undefined) this.flyToBounds(bounds)
-        this.clearSelection()
+            ])
+            if (mainClusterBounds) return mainClusterBounds
+        }
+
+        return this.validBounds([
+            [properties.southWestLon, properties.southWestLat],
+            [properties.northEastLon, properties.northEastLat],
+        ])
+    }
+
+    /**
+     * Normalizes a candidate bounds array, rejecting missing/blank values.
+     * @param {Array<Array<unknown>>} bounds Southwest/northeast candidates.
+     * @returns {Array<Array<number>>|null} Numeric bounds or null.
+     */
+    validBounds(bounds) {
+        if (bounds.flat().some((value) => value === undefined || value === null || value === "")) return null
+
+        const numericBounds = bounds.map((corner) => corner.map((value) => Number(value)))
+        return numericBounds.flat().every(Number.isFinite) ? numericBounds : null
     }
 
     /**
@@ -494,41 +540,63 @@ export default class extends Controller {
     }
 
     /**
-     * Pads the map by the bottom-sheet height and eases to the selected
-     * coordinate when the sheet covers it.
+     * Smoothly nudges the map only when the bottom sheet covers the selected
+     * coordinate.
      * @param {maplibregl.LngLat} lngLat Selected coordinate.
      * @returns {void}
      */
     adjustBottomSheetPadding(lngLat) {
-        const sheetHeight = this.cardTarget.offsetHeight
-        this.map.setPadding({ top: 0, bottom: sheetHeight, left: 0, right: 0 })
         if (!lngLat) return
 
+        const sheetHeight = this.cardTarget.offsetHeight
         const point = this.map.project(lngLat)
-        if (point.y > this.map.getContainer().clientHeight - sheetHeight) {
-            this.map.easeTo({ center: lngLat, duration: 300 })
+        const margin = 16
+        const safeBottom = this.map.getContainer().clientHeight - sheetHeight - margin
+        if (point.y > safeBottom) {
+            this.easeSelectedPointTo(lngLat, { x: point.x, y: safeBottom })
         }
     }
 
     /**
-     * Reserves left padding for the docked panel and eases to the selected
-     * coordinate when the panel covers it. The card target is fixed-position,
-     * so its rect is mapped into map-container coordinates first.
+     * Smoothly nudges the map only when the docked panel covers the selected
+     * coordinate. The card target is absolutely positioned in the map
+     * container, so its rect is mapped into map-container coordinates first.
      * @param {maplibregl.LngLat} lngLat Selected coordinate.
      * @returns {void}
      */
     adjustDockedPanelPadding(lngLat) {
-        const cardRect = this.cardTarget.getBoundingClientRect()
-        const containerRect = this.map.getContainer().getBoundingClientRect()
-        const panelRight = Math.max(0, cardRect.right - containerRect.left)
-        this.map.setPadding({ top: 0, bottom: 0, left: panelRight, right: 0 })
         if (!lngLat) return
 
+        const cardRect = this.cardTarget.getBoundingClientRect()
+        const containerRect = this.map.getContainer().getBoundingClientRect()
+        const panelLeft = Math.max(0, cardRect.left - containerRect.left)
+        const panelRight = Math.max(0, cardRect.right - containerRect.left)
+        const panelTop = Math.max(0, cardRect.top - containerRect.top)
+        const panelBottom = Math.max(0, cardRect.bottom - containerRect.top)
         const margin = 16
         const point = this.map.project(lngLat)
-        const covered = point.x < panelRight + margin
-            && point.y < cardRect.bottom - containerRect.top + margin
-        if (covered) this.map.easeTo({ center: lngLat, duration: 300 })
+        const covered = point.x > panelLeft - margin
+            && point.x < panelRight + margin
+            && point.y > panelTop - margin
+            && point.y < panelBottom + margin
+        if (covered) this.easeSelectedPointTo(lngLat, { x: panelRight + margin, y: point.y })
+    }
+
+    /**
+     * Computes the smallest center change needed to move a selected coordinate
+     * to a target screen point, avoiding full re-centers and persistent padding.
+     * @param {maplibregl.LngLatLike} lngLat Selected coordinate.
+     * @param {Object} targetPoint Desired screen point: { x, y }.
+     * @returns {void}
+     */
+    easeSelectedPointTo(lngLat, targetPoint) {
+        const point = this.map.project(lngLat)
+        const centerPoint = this.map.project(this.map.getCenter())
+        const newCenter = this.map.unproject([
+            centerPoint.x + point.x - targetPoint.x,
+            centerPoint.y + point.y - targetPoint.y,
+        ])
+        this.map.easeTo({ center: newCenter, duration: 300 })
     }
 
     /**
@@ -540,6 +608,7 @@ export default class extends Controller {
             if (!this.map.getLayer(layerId)) return
 
             this.map.on("click", layerId, (event) => {
+                this.lastInteractiveClickEvent = event.originalEvent
                 const feature = event.features[0]
                 this.createPopup()
                     .setLngLat(feature.geometry.coordinates.slice())

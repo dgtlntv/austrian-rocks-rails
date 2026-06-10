@@ -14,5 +14,5 @@ class Guidebook < ApplicationRecord
   normalizes :title, :author, :url, with: ->(s) { s.strip.presence }
 
   validates :title, presence: true
-  validates :url, presence: true, format: { with: %r{\Ahttps?://}i, message: "must be an http(s) URL" }
+  validates :url, presence: true, format: { with: %r{\Ahttps?://\S+\z}i, message: "must be an http(s) URL" }
 end

@@ -39,13 +39,13 @@ class MapControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, 'data-map-target="card"'
     assert_includes response.body, "data-map-card-strings-value="
-    assert_includes response.body, "Show on map"
+    assert_includes response.body, "Zoom to place"
     assert_not_includes response.body, "data-map-area-id-value"
 
     get "/de/map"
 
     assert_response :success
-    assert_includes response.body, "Auf der Karte zeigen"
+    assert_includes response.body, "Zum Ort zoomen"
   end
 
   test "area slug deep link renders the area id for MapLibre controller" do
@@ -82,6 +82,13 @@ class MapControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes controller_source, "problemPopupContent"
     assert_not_includes controller_source, "poiPopupContent"
     assert_not_includes controller_source, "Math.max(15,"
+    assert_includes controller_source, "maxBounds: AUSTRIA_MAX_BOUNDS"
+    assert_includes controller_source, "setMinZoom"
+    assert_includes controller_source, 'registerSelectClicks("problems", "problem", (zoom) => zoom >= 15)'
+    assert_includes controller_source, 'registerSelectClicks("areas", "area", (zoom) => zoom < 16)'
+    assert_includes controller_source, "lastInteractiveClickEvent"
+    assert_includes controller_source, "selectionBounds"
+    assert_not_includes controller_source, "map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 })"
   end
 
   test "MapLibre controller keeps default attribution control clickable without temporary zoom readout" do

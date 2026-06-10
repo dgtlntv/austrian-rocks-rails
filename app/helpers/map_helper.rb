@@ -17,6 +17,7 @@ module MapHelper
       directions: t("views.map.card.directions"),
       guidebook: t("views.map.card.guidebook"),
       problems: t("views.map.card.problems"),
+      grade_distribution: t("views.map.card.grade_distribution"),
       warning: t("views.map.card.warning"),
       close: t("views.map.card.close"),
       details: t("views.map.card.details"),

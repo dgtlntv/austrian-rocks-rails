@@ -16,9 +16,25 @@ updated: 2026-06-10
 - Work item: `0006` / `maplibre-web-interactions`
 - Stage: implement
 - Branch: `incant/0006-maplibre-web-interactions`
-- Current phase: `0006-P6` pending after P5 re-review; `0006-P7` added for human-smoke UX polish before final release
-- Next step: `/incant:implement 0006` for `0006-P6`; then `/incant:implement 0006` for `0006-P7` to address the captured interaction concerns before final review/release
-- Blockers: human smoke surfaced UX concerns captured in `0006-P7`; do not release until they are addressed or explicitly resolved
+- Current phase: `0006-P7` done (2026-06-11, human smoked iteratively in-session); `0006-P6` done except step 2 — the recorded manual smoke in `manual-smoke.md` is still a blank template and needs the human tester
+- Next step: `/incant:review 0006`; fill or explicitly accept the manual smoke record before release
+- Blockers: manual smoke record (P6 step 2) not yet filled — do not finalize/release without it or an explicit human waiver
+- P7/P6 wrap-up (2026-06-11):
+  - Unified the region/cluster/area pin glyph: all three resting discs and selected balloons now share the region two-peaks artwork (the hierarchy is internal, distinct glyphs carried no user meaning); icon names/layers unchanged, sprite README documents the intentional sharing; PNGs regenerated via the documented vips command.
+  - Card stats redesigned: the grade-range text is replaced by a per-letter-grade distribution chart. New `gradeHistogramJson` tile property (sparse `{"6a":12,...}` object; sub-grades fold into letter grades) emitted by the exporter for regions/clusters/areas, allowed in the layer contract, and documented in the interaction contract. The card renders trimmed/padded full-width columns, grade labels under every bar, relative-intensity brand color tiers (300/400/500), hover count bubbles, and falls back to the `gradeMin – gradeMax` text for tiles without the property. New `grade_distribution` de/en string for the chart aria-label.
+  - Brakeman release-gate fix: `Guidebook` URL format validation now anchors both ends (`%r{\Ahttps?://\S+\z}i`).
+  - Gate evidence (2026-06-11, Docker/PostGIS): full release gate `bin/rails db:prepare && bin/rails test && bin/importmap audit && bin/rubocop -f github && bin/brakeman --no-pager` → 231 runs, 3383 assertions, 0 failures/errors; no vulnerable packages; rubocop clean; brakeman "No warnings found". Stale-reference sweep output contains only the negative guard assertions/comments inside tests (expected); no real stale references.
+- P7 fixes (2026-06-10):
+  - Reduced and tightened pin label sizing/spacing in both light/dark style templates; region pins are slightly larger.
+  - Changed card CTA copy to EN “Zoom to place” / DE “Zum Ort zoomen” and made bounds handling validate main-cluster/full-bounds fallback before flying.
+  - Moved the card into the map container, fixed the close button to a square circular hover target, and changed card stats to a compact `shared/_area_levels`-style numbered grade indicator plus problem-count text.
+  - Root-caused the region/cluster selected-state failure: unlike areas/POIs, region/cluster symbol layers lacked `text-optional: true`, so MapLibre symbol placement could suppress the selected balloon when its label collided; both base and selected region/cluster layers now allow the icon to render even when the label cannot.
+  - Reverted the delayed base-pin hiding experiment; selection again excludes the resting base pin immediately and relies on the selected layer rendering correctly. Added a selected→unselected shrink animation for deselect/close and a slower, smoother damped `icon-rotate` wiggle during the selected grow/settle animation so the selected balloon pivots around the pin anchor/location dot rather than translating around the sprite center.
+  - Changed map camera adjustment to a minimal coordinate nudge only when the selected point is actually under the bottom sheet/docked card; no persistent padding reset on close.
+  - Limited problem click/pointer handling to z15+ and widened area-pin click/pointer handling to the full visible area-pin range (`z < 16`); cluster/area hull+pin click handlers remain wired.
+  - Removed the experimental grade visualizer and restored the simpler card stat line: problem count, middot, grade range.
+  - Added problem topo preview data to the tile contract/exporter: `topoPhotoUrl` and `lineCoordinatesJson` are emitted for problems with a published line, coordinates, and attached topo photo; the problem card renders the safe CDN image with an SVG line overlay and start dot. Follow-up polish fixes the preview to an explicit 4:3 frame/viewBox so lines do not appear squished, makes the problem grade more prominent, and moves media-card close buttons into a high-contrast top-right overlay on photos/topos.
+  - Fresh automated gate evidence (Docker/PostGIS): `bin/rails db:prepare && bin/rails test test/controllers/map_controller_test.rb && bin/importmap audit && bin/rubocop -f github` → 9 runs, 196 assertions, 0 failures/errors; importmap audit clean; rubocop clean.
 - Review fixes (P5 revise loop, 2026-06-10):
   - Blocker `app/controllers/map_controller.rb:16` / `?problem=` deep links: map index
     now resolves `problem_id` from `params[:pid]` or `params[:problem]`, preserving the
@@ -527,7 +543,7 @@ legacy problem/POI popups are gone; region drill-in lands on the main cluster.
 Goal: the shared contract is documented for the mobile apps, the whole suite is green,
 and the visual/interactive behaviour is verified in a real browser and recorded.
 
-- [ ] step 1: read `docs/map_tiles.md`; add an **Interaction contract** section: pin →
+- [x] step 1: read `docs/map_tiles.md`; add an **Interaction contract** section: pin →
       selected-state model (dedicated `-selected` layers, id filters, sentinel `-1`, no
       `feature-state`), card field → tile-property mapping per entity kind, CTA semantics
       ("Show on map" = entity bounds; region = main-cluster bounds with full-bounds
@@ -550,7 +566,7 @@ and the visual/interactive behaviour is verified in a real browser and recorded.
       (`bin/rails "map_tiles:publish[<version>]"` flow) and record concrete
       observations — explicitly avoiding the thin smoke evidence accepted as wontfix
       in 0005.
-- [ ] step 3: run the full automated release gate (command below) and the stale-reference
+- [x] step 3: run the full automated release gate (command below) and the stale-reference
       sweep `rg -n 'basemap-download/webapp/api/sprites|flugplatz|problemPopupContent|poiPopupContent|Math\.max\(15' app config lib test docs/map_tiles.md` → expect no output.
 - [ ] step 4: check every spec acceptance criterion against evidence; update this plan's
       Status block and `.incant/STATE.md`; request `/incant:review 0006`.
@@ -562,23 +578,23 @@ and the visual/interactive behaviour is verified in a real browser and recorded.
 Goal: address the human-smoke UX concerns before final release. Keep this phase focused on
 polishing the shipped interaction model rather than redesigning the map from scratch.
 
-- [ ] Pin labels: reduce the font sizes beside pins, especially region labels; tighten the
+- [x] Pin labels: reduce the font sizes beside pins, especially region labels; tighten the
       region pin-to-text spacing so labels feel sized to the new pin icons rather than the old
       text-only map.
-- [ ] Selection animation: preserve/restore the grow transition when opening the first card,
+- [x] Selection animation: preserve/restore the grow transition when opening the first card,
       not only when switching while a card is already open; add a tasteful Apple-Maps-like
       wiggle/settle on selection without making it distracting.
-- [ ] Card CTA: rename the German/English “Show on map” copy to something that means “zoom
+- [x] Card CTA: rename the German/English “Show on map” copy to something that means “zoom
       to this place/area” instead of implying the user is not already on the map; also fix the
       CTA if it does nothing in manual smoke.
-- [ ] Card close button: make the close hover background a true circle, not a squashed oval.
-- [ ] Card placement: keep the card within the map area so it does not cover the search bar.
-- [ ] Map padding/camera shift: only shift the map when the card would actually cover the
+- [x] Card close button: make the close hover background a true circle, not a squashed oval.
+- [x] Card placement: keep the card within the map area so it does not cover the search bar.
+- [x] Map padding/camera shift: only shift the map when the card would actually cover the
       selected pin; make that shift smooth; do not automatically “unshift” the map on close.
-- [ ] Card stats: present problem count and grade range more nicely, using existing grade-range
+- [x] Card stats: present problem count and grade range more nicely, using existing grade-range
       indicator patterns where possible. Consider showing a small set of popular routes only if
       the data contract supports it or the phase intentionally extends the tile properties.
-- [ ] Region pins: evaluate making region pins slightly larger in both selected and unselected
+- [x] Region pins: evaluate making region pins slightly larger in both selected and unselected
       states while keeping label sizing balanced.
 
 **Quality gate:** rerun the relevant automated gate for the touched files (at minimum the map

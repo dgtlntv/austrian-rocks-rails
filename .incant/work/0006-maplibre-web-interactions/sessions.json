@@ -62,7 +62,13 @@
   {
     "id": "019eb256-1d62-7108-9f9c-9e78889c5b55",
     "path": "/Users/maximilianblazek/.pi/agent/sessions/--Users-maximilianblazek-Documents-GitHub-austrian-rocks-rails--/2026-06-10T16-20-48-610Z_019eb256-1d62-7108-9f9c-9e78889c5b55.jsonl",
-    "linked": "2026-06-10T16:21:01.831Z",
+    "linked": "2026-06-10T16:58:14.313Z",
     "timestamp": "2026-06-10T16:20:48.610Z"
+  },
+  {
+    "id": "019eb28d-0e3f-7530-90bf-346298d7f14a",
+    "path": "/Users/maximilianblazek/.pi/agent/sessions/--Users-maximilianblazek-Documents-GitHub-austrian-rocks-rails--/2026-06-10T17-20-49-216Z_019eb28d-0e3f-7530-90bf-346298d7f14a.jsonl",
+    "linked": "2026-06-10T17:21:18.168Z",
+    "timestamp": "2026-06-10T17:20:49.216Z"
   }
 ]

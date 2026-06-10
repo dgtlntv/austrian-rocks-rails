@@ -13,9 +13,15 @@
  */
 
 const CLEARED_SENTINEL = -1
-const GROW_DURATION_MS = 180
+const GROW_DURATION_MS = 520
+const CLEAR_DURATION_MS = 220
 const ICON_GROW_SCALE = 1.25
+const ICON_CLEAR_SCALE = 0.72
 const CIRCLE_GROW_SCALE = 1.4
+const CIRCLE_CLEAR_SCALE = 1
+const ICON_SETTLE_OVERSHOOT = 0.1
+const CIRCLE_SETTLE_OVERSHOOT = 0.08
+const ICON_WIGGLE_DEGREES = 5
 
 const SELECTABLE_KINDS = {
     region: { selectedLayerId: "regions-selected", baseLayerId: "regions", idProperty: "regionId" },
@@ -38,6 +44,7 @@ export default class MapSelection {
         this.growFrame = null
         this.originalBaseFilters = new Map()
         this.originalGrowValues = new Map()
+        this.originalIconRotations = new Map()
     }
 
     /**
@@ -49,7 +56,7 @@ export default class MapSelection {
     select(kind, id) {
         const config = SELECTABLE_KINDS[kind]
         if (!config || !this.map.getLayer(config.selectedLayerId)) return
-        if (this.current) this.clear()
+        if (this.current) this.clear({ animated: false })
 
         this.map.setFilter(config.selectedLayerId, ["==", ["get", config.idProperty], id])
         this.excludeFromBaseLayer(config, id)
@@ -59,14 +66,35 @@ export default class MapSelection {
 
     /**
      * Clears the current selection and restores all touched layer state.
+     * @param {Object} options Clear options.
+     * @param {boolean} options.animated Whether to play the selected→resting shrink.
      * @returns {void}
      */
-    clear() {
+    clear({ animated = true } = {}) {
         if (!this.current) return
 
-        const config = SELECTABLE_KINDS[this.current.kind]
+        const current = this.current
+        const config = SELECTABLE_KINDS[current.kind]
         this.cancelGrowTween()
+
+        if (animated) {
+            this.startClearTween(config, () => this.finishClear(config, current))
+        } else {
+            this.finishClear(config, current)
+        }
+    }
+
+    /**
+     * Finalizes clearing after the optional shrink animation.
+     * @param {Object} config Selectable kind configuration.
+     * @param {Object} current Selection being cleared.
+     * @returns {void}
+     */
+    finishClear(config, current) {
+        if (this.current !== current) return
+
         this.applyGrowScale(config, 1)
+        this.restoreIconRotation(config)
         this.map.setFilter(config.selectedLayerId, ["==", ["get", config.idProperty], CLEARED_SENTINEL])
         this.restoreBaseLayer(config)
         this.current = null
@@ -103,7 +131,7 @@ export default class MapSelection {
     }
 
     /**
-     * Runs the ~180ms ease-out grow tween on the selected layer.
+     * Runs a quick grow + settle tween on the selected layer.
      * @param {Object} config Selectable kind configuration.
      * @returns {void}
      */
@@ -111,14 +139,57 @@ export default class MapSelection {
         this.cancelGrowTween()
 
         const targetScale = config.circle ? CIRCLE_GROW_SCALE : ICON_GROW_SCALE
+        const overshoot = config.circle ? CIRCLE_SETTLE_OVERSHOOT : ICON_SETTLE_OVERSHOOT
         const start = performance.now()
         const step = (now) => {
             const progress = Math.min((now - start) / GROW_DURATION_MS, 1)
-            const eased = 1 - Math.pow(1 - progress, 3)
-            this.applyGrowScale(config, 1 + (targetScale - 1) * eased)
+            this.applySelectionFrame(config, this.settleScale(progress, targetScale, overshoot), progress)
             this.growFrame = progress < 1 ? requestAnimationFrame(step) : null
         }
         this.growFrame = requestAnimationFrame(step)
+    }
+
+    /**
+     * Runs the selected→resting shrink before the selected layer is hidden.
+     * @param {Object} config Selectable kind configuration.
+     * @param {Function} finish Called after the animation completes.
+     * @returns {void}
+     */
+    startClearTween(config, finish) {
+        const startScale = config.circle ? CIRCLE_GROW_SCALE : ICON_GROW_SCALE
+        const endScale = config.circle ? CIRCLE_CLEAR_SCALE : ICON_CLEAR_SCALE
+        const start = performance.now()
+        const step = (now) => {
+            const progress = Math.min((now - start) / CLEAR_DURATION_MS, 1)
+            const eased = 1 - Math.pow(1 - progress, 3)
+            this.applySelectionFrame(config, startScale + (endScale - startScale) * eased, 1)
+            if (progress < 1) {
+                this.growFrame = requestAnimationFrame(step)
+            } else {
+                this.growFrame = null
+                finish()
+            }
+        }
+        this.growFrame = requestAnimationFrame(step)
+    }
+
+    /**
+     * Eases past the final grow size, then gently settles back for a
+     * lightweight Apple-Maps-like selection pop without a distracting bounce.
+     * @param {number} progress Tween progress, clamped 0..1.
+     * @param {number} targetScale Final scale factor.
+     * @param {number} overshoot Extra scale at the peak.
+     * @returns {number} Current scale factor.
+     */
+    settleScale(progress, targetScale, overshoot) {
+        if (progress < 0.55) {
+            const eased = 1 - Math.pow(1 - (progress / 0.55), 3)
+            return 1 + ((targetScale + overshoot) - 1) * eased
+        }
+
+        const settle = (progress - 0.55) / 0.45
+        const wave = Math.sin(settle * Math.PI * 2) * (1 - settle) * (overshoot * 0.55)
+        return targetScale + wave
     }
 
     /**
@@ -130,6 +201,19 @@ export default class MapSelection {
 
         cancelAnimationFrame(this.growFrame)
         this.growFrame = null
+    }
+
+    /**
+     * Applies one animation frame: icon-size + a subtle rotation wiggle for
+     * symbol layers, circle-radius for the selected problems circle layer.
+     * @param {Object} config Selectable kind configuration.
+     * @param {number} scale Current scale factor (1 = resting style value).
+     * @param {number} progress Tween progress, clamped 0..1.
+     * @returns {void}
+     */
+    applySelectionFrame(config, scale, progress) {
+        this.applyGrowScale(config, scale)
+        if (!config.circle) this.applyIconWiggle(config, progress)
     }
 
     /**
@@ -152,6 +236,35 @@ export default class MapSelection {
     }
 
     /**
+     * Adds a tiny damped rotation wiggle to selected symbol layers. MapLibre
+     * rotates the icon around its anchor, so the selected balloon pivots around
+     * the pin's location dot instead of around the sprite center.
+     * @param {Object} config Selectable kind configuration.
+     * @param {number} progress Tween progress, clamped 0..1.
+     * @returns {void}
+     */
+    applyIconWiggle(config, progress) {
+        if (!this.map.getLayer(config.selectedLayerId)) return
+
+        const base = this.originalIconRotation(config)
+        const easedProgress = 1 - Math.pow(1 - progress, 2)
+        const amplitude = ICON_WIGGLE_DEGREES * Math.max(0, 1 - easedProgress)
+        const rotation = base + (Math.sin(easedProgress * Math.PI * 2.5) * amplitude)
+        this.map.setLayoutProperty(config.selectedLayerId, "icon-rotate", rotation)
+    }
+
+    /**
+     * Restores the selected symbol layer's style-declared icon rotation.
+     * @param {Object} config Selectable kind configuration.
+     * @returns {void}
+     */
+    restoreIconRotation(config) {
+        if (config.circle || !this.originalIconRotations.has(config.selectedLayerId)) return
+
+        this.map.setLayoutProperty(config.selectedLayerId, "icon-rotate", this.originalIconRotations.get(config.selectedLayerId))
+    }
+
+    /**
      * Returns the layer's style-declared grow-property value, captured once
      * before the first tween mutates it.
      * @param {Object} config Selectable kind configuration.
@@ -163,6 +276,18 @@ export default class MapSelection {
             this.originalGrowValues.set(config.selectedLayerId, read())
         }
         return this.originalGrowValues.get(config.selectedLayerId)
+    }
+
+    /**
+     * Returns the style-declared icon rotation for a selected symbol layer.
+     * @param {Object} config Selectable kind configuration.
+     * @returns {number} Original icon rotation.
+     */
+    originalIconRotation(config) {
+        if (!this.originalIconRotations.has(config.selectedLayerId)) {
+            this.originalIconRotations.set(config.selectedLayerId, this.map.getLayoutProperty(config.selectedLayerId, "icon-rotate") || 0)
+        }
+        return this.originalIconRotations.get(config.selectedLayerId)
     }
 
     /**

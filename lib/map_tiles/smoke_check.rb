@@ -25,7 +25,7 @@ module MapTiles
     PMTILES_INTERNAL_COMPRESSION_OFFSET = 97
     PMTILES_COMPRESSION_NONE = 1
     PMTILES_COMPRESSION_GZIP = 2
-    ALLOWED_URL_FIELDS = %w[coverPhotoUrl googleUrl guidebookUrl parkingGoogleUrl].freeze
+    ALLOWED_URL_FIELDS = %w[coverPhotoUrl googleUrl guidebookUrl parkingGoogleUrl topoPhotoUrl].freeze
 
     attr_reader :configuration, :argv, :out, :mode, :allowed_empty_layers
 

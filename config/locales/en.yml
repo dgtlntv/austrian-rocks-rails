@@ -182,10 +182,11 @@ en:
                     description:
                         Interactive map for climbing in %{area} in Austria
             card:
-                show_on_map: Show on map
+                show_on_map: Zoom to place
                 directions: Directions
                 guidebook: Guidebook
                 problems: problems
+                grade_distribution: Grades
                 warning: Warning
                 close: Close
                 details: Details

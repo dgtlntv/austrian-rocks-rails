@@ -191,10 +191,11 @@ de:
                         Interaktive Karte für das Klettergebiet %{area} in
                         Österreich
             card:
-                show_on_map: Auf der Karte zeigen
+                show_on_map: Zum Ort zoomen
                 directions: Route
                 guidebook: Kletterführer
                 problems: Routen
+                grade_distribution: Schwierigkeitsgrade
                 warning: Warnung
                 close: Schließen
                 details: Details

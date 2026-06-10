@@ -136,20 +136,38 @@ class MapTiles::GeojsonExporterTest < ActiveSupport::TestCase
 
     paths = MapTiles::GeojsonExporter.new(configuration: @configuration).export
 
+    expected_histogram = { "5a" => 1, "6a" => 1 }
+
     area = feature_properties(paths.fetch("areas"), "areaId", @area.id)
     assert_equal 2, area.fetch("problemCount")
     assert_equal "5a", area.fetch("gradeMin")
     assert_equal "6a", area.fetch("gradeMax")
+    assert_equal expected_histogram, JSON.parse(area.fetch("gradeHistogramJson"))
 
     cluster = feature_properties(paths.fetch("clusters"), "clusterId", @cluster.id)
     assert_equal 2, cluster.fetch("problemCount")
     assert_equal "5a", cluster.fetch("gradeMin")
     assert_equal "6a", cluster.fetch("gradeMax")
+    assert_equal expected_histogram, JSON.parse(cluster.fetch("gradeHistogramJson"))
 
     region = feature_properties(paths.fetch("regions"), "regionId", @region.id)
     assert_equal 2, region.fetch("problemCount")
     assert_equal "5a", region.fetch("gradeMin")
     assert_equal "6a", region.fetch("gradeMax")
+    assert_equal expected_histogram, JSON.parse(region.fetch("gradeHistogramJson"))
+
+    ungraded_area = create_area_with_boulder(cluster: @cluster, name: "Ungraded area")
+    Problem.create!(
+      area: ungraded_area,
+      boulder: ungraded_area.boulders.first,
+      name: "Ungraded problem",
+      steepness: "wall",
+      location: point(16.32, 48.32)
+    )
+    paths = MapTiles::GeojsonExporter.new(configuration: @configuration).export
+    ungraded = feature_properties(paths.fetch("areas"), "areaId", ungraded_area.id)
+    assert_equal 1, ungraded.fetch("problemCount")
+    assert_not_includes ungraded, "gradeHistogramJson"
   end
 
   test "exports region main cluster bounds when configured" do
@@ -203,6 +221,31 @@ class MapTiles::GeojsonExporterTest < ActiveSupport::TestCase
     assert_not_includes area, "coverPhotoUrl"
     assert_not_includes cluster, "coverPhotoUrl"
     assert_not_includes region, "coverPhotoUrl"
+  end
+
+  test "exports problem topo preview URL and line coordinates when available" do
+    topo = Topo.new(published: true, boulder: @boulder)
+    topo.photo.attach(
+      io: StringIO.new(Base64.decode64(PNG_FIXTURE)),
+      filename: "topo.png",
+      content_type: "image/png"
+    )
+    topo.save!
+    Line.create!(
+      problem: @problem,
+      topo: topo,
+      coordinates: [ { "x" => 0.25, "y" => 0.8 }, { "x" => 0.5, "y" => 0.35 }, { "x" => 0.7, "y" => 0.2 } ]
+    )
+
+    paths = MapTiles::GeojsonExporter.new(configuration: @configuration).export
+    problem = feature_properties(paths.fetch("problems"), "problemId", @problem.id)
+
+    assert_match(%r{/rails/active_storage/representations/proxy/}, problem.fetch("topoPhotoUrl"))
+    assert_equal [ { "x" => 0.25, "y" => 0.8 }, { "x" => 0.5, "y" => 0.35 }, { "x" => 0.7, "y" => 0.2 } ], JSON.parse(problem.fetch("lineCoordinatesJson"))
+
+    problem_without_line = feature_properties(paths.fetch("problems"), "problemId", Problem.find_by!(name: "Ignored Boulder Problem").id)
+    assert_not_includes problem_without_line, "topoPhotoUrl"
+    assert_not_includes problem_without_line, "lineCoordinatesJson"
   end
 
   test "encodes POI access area metadata as a scalar JSON string" do
@@ -360,7 +403,7 @@ class MapTiles::GeojsonExporterTest < ActiveSupport::TestCase
 
   def assert_no_canonical_url(properties)
     properties.each_key do |key|
-      next if %w[coverPhotoUrl guidebookUrl googleUrl parkingGoogleUrl].include?(key)
+      next if %w[coverPhotoUrl guidebookUrl googleUrl parkingGoogleUrl topoPhotoUrl].include?(key)
 
       assert_no_match(/url/i, key)
     end

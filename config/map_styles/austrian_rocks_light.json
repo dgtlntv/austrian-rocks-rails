@@ -7747,14 +7747,14 @@
       ],
       "layout": {
         "text-optional": true,
-        "text-size": 10,
+        "text-size": 9,
         "icon-offset": [
           0,
           0
         ],
         "icon-allow-overlap": true,
         "text-offset": [
-          1.1,
+          1.0,
           0
         ],
         "text-anchor": "left",
@@ -7827,14 +7827,14 @@
       ],
       "layout": {
         "text-optional": true,
-        "text-size": 10,
+        "text-size": 9,
         "icon-offset": [
           0,
           4
         ],
         "icon-allow-overlap": true,
         "text-offset": [
-          1.1,
+          1.0,
           0
         ],
         "text-anchor": "left",
@@ -7895,9 +7895,9 @@
             "zoom"
           ],
           12,
-          10,
+          9,
           15,
-          18
+          14
         ],
         "symbol-sort-key": [
           "step",
@@ -7918,7 +7918,7 @@
         "icon-allow-overlap": true,
         "text-padding": 0,
         "text-offset": [
-          1.1,
+          1.0,
           0
         ],
         "text-field": [
@@ -8005,9 +8005,9 @@
             "zoom"
           ],
           12,
-          10,
+          9,
           15,
-          18
+          14
         ],
         "symbol-sort-key": [
           "step",
@@ -8028,7 +8028,7 @@
         "icon-allow-overlap": true,
         "text-padding": 0,
         "text-offset": [
-          1.1,
+          1.0,
           0
         ],
         "text-field": [
@@ -8085,7 +8085,7 @@
         false
       ],
       "layout": {
-        "text-size": 20,
+        "text-size": 16,
         "icon-offset": [
           0,
           0
@@ -8093,7 +8093,7 @@
         "icon-allow-overlap": true,
         "text-padding": 10,
         "text-offset": [
-          1.1,
+          1.0,
           0
         ],
         "text-field": [
@@ -8108,7 +8108,8 @@
           "Roboto-Regular"
         ],
         "icon-image": "ar-pin-cluster",
-        "text-anchor": "left"
+        "text-anchor": "left",
+        "text-optional": true
       },
       "paint": {
         "text-color": "#ef3340",
@@ -8158,7 +8159,7 @@
         -1
       ],
       "layout": {
-        "text-size": 20,
+        "text-size": 16,
         "icon-offset": [
           0,
           4
@@ -8166,7 +8167,7 @@
         "icon-allow-overlap": true,
         "text-padding": 10,
         "text-offset": [
-          1.1,
+          1.0,
           0
         ],
         "text-field": [
@@ -8183,7 +8184,8 @@
         "icon-image": "ar-pin-cluster-selected",
         "text-anchor": "left",
         "icon-size": 1,
-        "icon-anchor": "bottom"
+        "icon-anchor": "bottom",
+        "text-optional": true
       },
       "paint": {
         "text-color": "#ef3340",
@@ -8219,9 +8221,9 @@
             "zoom"
           ],
           0,
-          25,
+          16,
           9.5,
-          40
+          24
         ],
         "icon-offset": [
           0,
@@ -8230,7 +8232,7 @@
         "icon-allow-overlap": true,
         "text-padding": 10,
         "text-offset": [
-          1.1,
+          0.9,
           0
         ],
         "text-field": [
@@ -8245,7 +8247,9 @@
           "Roboto-Regular"
         ],
         "icon-image": "ar-pin-region",
-        "text-anchor": "left"
+        "text-anchor": "left",
+        "icon-size": 1.08,
+        "text-optional": true
       },
       "paint": {
         "text-color": "#ef3340",
@@ -8303,9 +8307,9 @@
             "zoom"
           ],
           0,
-          25,
+          16,
           9.5,
-          40
+          24
         ],
         "icon-offset": [
           0,
@@ -8314,7 +8318,7 @@
         "icon-allow-overlap": true,
         "text-padding": 10,
         "text-offset": [
-          1.1,
+          0.9,
           0
         ],
         "text-field": [
@@ -8330,8 +8334,9 @@
         ],
         "icon-image": "ar-pin-region-selected",
         "text-anchor": "left",
-        "icon-size": 1,
-        "icon-anchor": "bottom"
+        "icon-size": 1.08,
+        "icon-anchor": "bottom",
+        "text-optional": true
       },
       "paint": {
         "text-color": "#ef3340",
