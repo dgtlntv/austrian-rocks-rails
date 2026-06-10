@@ -403,14 +403,28 @@ export default class extends Controller {
     }
 
     /**
-     * Below the lg breakpoint the card is a bottom sheet: pads the map by the
-     * sheet height and eases to the selected coordinate when it is covered.
+     * Keeps the selected pin visible next to the open card: below the lg
+     * breakpoint the card is a bottom sheet, at lg and up a docked panel.
      * @param {maplibregl.LngLat} lngLat Selected coordinate.
      * @returns {void}
      */
     adjustSheetPadding(lngLat) {
-        if (!this.hasCardTarget || window.matchMedia("(min-width: 1024px)").matches) return
+        if (!this.hasCardTarget) return
 
+        if (window.matchMedia("(min-width: 1024px)").matches) {
+            this.adjustDockedPanelPadding(lngLat)
+        } else {
+            this.adjustBottomSheetPadding(lngLat)
+        }
+    }
+
+    /**
+     * Pads the map by the bottom-sheet height and eases to the selected
+     * coordinate when the sheet covers it.
+     * @param {maplibregl.LngLat} lngLat Selected coordinate.
+     * @returns {void}
+     */
+    adjustBottomSheetPadding(lngLat) {
         const sheetHeight = this.cardTarget.offsetHeight
         this.map.setPadding({ top: 0, bottom: sheetHeight, left: 0, right: 0 })
         if (!lngLat) return
@@ -419,6 +433,27 @@ export default class extends Controller {
         if (point.y > this.map.getContainer().clientHeight - sheetHeight) {
             this.map.easeTo({ center: lngLat, duration: 300 })
         }
+    }
+
+    /**
+     * Reserves left padding for the docked panel and eases to the selected
+     * coordinate when the panel covers it. The card target is fixed-position,
+     * so its rect is mapped into map-container coordinates first.
+     * @param {maplibregl.LngLat} lngLat Selected coordinate.
+     * @returns {void}
+     */
+    adjustDockedPanelPadding(lngLat) {
+        const cardRect = this.cardTarget.getBoundingClientRect()
+        const containerRect = this.map.getContainer().getBoundingClientRect()
+        const panelRight = Math.max(0, cardRect.right - containerRect.left)
+        this.map.setPadding({ top: 0, bottom: 0, left: panelRight, right: 0 })
+        if (!lngLat) return
+
+        const margin = 16
+        const point = this.map.project(lngLat)
+        const covered = point.x < panelRight + margin
+            && point.y < cardRect.bottom - containerRect.top + margin
+        if (covered) this.map.easeTo({ center: lngLat, duration: 300 })
     }
 
     /**

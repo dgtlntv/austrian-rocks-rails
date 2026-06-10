@@ -16,9 +16,21 @@ updated: 2026-06-10
 - Work item: `0006` / `maplibre-web-interactions`
 - Stage: implement
 - Branch: `incant/0006-maplibre-web-interactions`
-- Current phase: `0006-P4` complete (gate green, awaiting review)
-- Next step: `/incant:review 0006` for the P4 phase gate; then `/incant:implement 0006` for `0006-P5`
+- Current phase: `0006-P4` complete (gate green, revise loop fix applied, awaiting re-review)
+- Next step: `/incant:review 0006` to re-review the P4 blocker fix; then `/incant:implement 0006` for `0006-P5`
 - Blockers: none
+- Review fixes (P4 revise loop, 2026-06-10):
+  - Blocker `map_controller.js:411-421` / docked-card pin visibility: `adjustSheetPadding`
+    now branches by breakpoint — below `lg` the existing bottom-sheet logic
+    (`adjustBottomSheetPadding`); at `lg`+ the new `adjustDockedPanelPadding` maps the
+    fixed-position card rect into map-container coordinates, reserves left map padding up
+    to the panel's right edge, and `easeTo`s the selected coordinate when its projected
+    point falls under the card rect (16px margin), so the selected pin stays visible in
+    the docked-panel layout. `clearSelection` already resets padding for both layouts.
+  - Fresh gate evidence (this session, Docker/PostGIS): `bin/rails db:prepare && bin/rails
+    test test/controllers/map_controller_test.rb test/controllers/mapping/contribution_requests_controller_test.rb
+    && bin/importmap audit && bin/rubocop -f github` → 9 runs, 171 assertions, 0
+    failures/errors; no vulnerable packages; rubocop clean.
 - P4 as-built deviations from the plan text:
   - `MapSelection` also excludes the selected id from the base symbol layer's filter
     (per the P3 note below) so the resting pin does not render under the balloon; the
