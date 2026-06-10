@@ -66,12 +66,13 @@ class MapControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "6a"
   end
 
-  test "public problem popups use PMTiles problem ids" do
+  test "MapLibre controller selects cards for search and deep links without legacy problem popups" do
     controller_source = Rails.root.join("app/javascript/controllers/map_controller.js").read
 
-    assert_includes controller_source, "problem.id ?? problem.problemId"
-    assert_includes controller_source, "encodeURIComponent(problemId)"
-    assert_not_includes controller_source, "problem_id=${encodeURIComponent(problem.id)}"
+    assert_includes controller_source, "selectFeatureWhenIdle"
+    assert_not_includes controller_source, "problemPopupContent"
+    assert_not_includes controller_source, "poiPopupContent"
+    assert_not_includes controller_source, "Math.max(15,"
   end
 
   test "MapLibre controller keeps default attribution control clickable without temporary zoom readout" do

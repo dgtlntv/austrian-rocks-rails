@@ -59,7 +59,6 @@ export default class extends Controller {
      */
     async connect() {
         this.allGrades = ALL_GRADES
-        this.popup = null
         this.protocol = new Protocol()
         maplibregl.addProtocol("pmtiles", this.protocol.tile)
 
@@ -136,13 +135,6 @@ export default class extends Controller {
             this.centerMap()
             this.cleanHistory()
             this.setupClickEvents()
-        })
-
-        this.map.on("moveend", () => {
-            if (this.popup != null) {
-                this.popup.addTo(this.map)
-                this.popup = null
-            }
         })
     }
 
@@ -237,17 +229,15 @@ export default class extends Controller {
                 [bounds.southWestLon, bounds.southWestLat],
                 [bounds.northEastLon, bounds.northEastLat],
             ])
+            if (this.hasAreaIdValue) {
+                this.selectFeatureWhenIdle("areas", "areaId", this.areaIdValue, "area")
+            }
         }
 
         if (this.hasProblemValue) {
             const problem = this.problemValue
             this.map.flyTo({ center: [problem.lon, problem.lat], zoom: 20, speed: 2 })
-
-            if (!this.contributeValue) {
-                this.popup = this.createPopup()
-                    .setLngLat([problem.lon, problem.lat])
-                    .setDOMContent(this.problemPopupContent(problem))
-            }
+            this.selectFeatureWhenIdle("problems", "problemId", problem.id, "problem")
         }
     }
 
@@ -355,11 +345,96 @@ export default class extends Controller {
     }
 
     /**
+     * After camera movement settles, finds a tile feature by id and selects it.
+     * The source query handles off-screen tile data; rendered features are a
+     * fallback for style-loaded features. Missing features are retried once and
+     * then ignored so stale deep links never break the map.
+     * @param {string} sourceLayer PMTiles source-layer name.
+     * @param {string} idProperty Feature id property to filter by.
+     * @param {number|string} id Feature id to select.
+     * @param {string} kind Entity kind: region/cluster/area/poi/problem.
+     * @param {number} attemptsRemaining Retry budget after this idle event.
+     * @returns {void}
+     */
+    selectFeatureWhenIdle(sourceLayer, idProperty, id, kind, attemptsRemaining = 1) {
+        if (id === undefined || id === null) return
+
+        this.map.once("idle", () => {
+            try {
+                const filter = ["==", ["get", idProperty], id]
+                const feature = this.findSelectableFeature(sourceLayer, kind, filter)
+                if (feature) {
+                    this.selectFeature(kind, id, feature.properties || {}, this.featureLngLat(feature))
+                } else if (attemptsRemaining > 0) {
+                    this.selectFeatureWhenIdle(sourceLayer, idProperty, id, kind, attemptsRemaining - 1)
+                }
+            } catch (_error) {
+                // Deep-link/search selection is best-effort; leave the map usable.
+            }
+        })
+    }
+
+    /**
+     * Finds a selectable feature from source tiles, falling back to rendered layers.
+     * @param {string} sourceLayer PMTiles source-layer name.
+     * @param {string} kind Entity kind used to choose rendered fallback layers.
+     * @param {Array} filter MapLibre filter expression.
+     * @returns {Object|undefined} First matching feature.
+     */
+    findSelectableFeature(sourceLayer, kind, filter) {
+        const sourceFeatures = this.map.querySourceFeatures("austrian-rocks", { sourceLayer, filter })
+        if (sourceFeatures.length > 0) return sourceFeatures[0]
+
+        const layers = this.renderedLayersForKind(kind)
+        if (layers.length === 0) return undefined
+
+        return this.map.queryRenderedFeatures({ layers, filter })[0]
+    }
+
+    /**
+     * Returns existing rendered layers for a feature kind.
+     * @param {string} kind Entity kind: region/cluster/area/poi/problem.
+     * @returns {string[]} Existing layer IDs.
+     */
+    renderedLayersForKind(kind) {
+        const layerIds = {
+            problem: ["problems", "problems-selected"],
+            poi: ["pois", "pois-selected"],
+            area: ["areas", "areas-selected", "areas-hulls"],
+            cluster: ["clusters", "clusters-selected", "cluster-hulls"],
+            region: ["regions", "regions-selected", "region-hulls"],
+        }[kind] || []
+
+        return layerIds.filter((layerId) => this.map.getLayer(layerId))
+    }
+
+    /**
+     * Returns a representative coordinate for a feature to keep visible by the card.
+     * @param {Object} feature MapLibre feature.
+     * @returns {Array<number>|undefined} LngLat-like coordinate.
+     */
+    featureLngLat(feature) {
+        if (feature.geometry?.type === "Point") return feature.geometry.coordinates.slice()
+
+        const properties = feature.properties || {}
+        const west = Number(properties.southWestLon)
+        const east = Number(properties.northEastLon)
+        const south = Number(properties.southWestLat)
+        const north = Number(properties.northEastLat)
+        if (![west, east, south, north].every(Number.isFinite)) return undefined
+
+        return [
+            (west + east) / 2,
+            (south + north) / 2,
+        ]
+    }
+
+    /**
      * Applies a selection: grows the selected pin and opens the info card.
      * @param {string} kind Entity kind: region/cluster/area/poi/problem.
      * @param {number} id Entity id from the tile properties.
      * @param {Object} properties Tile feature properties for the card.
-     * @param {maplibregl.LngLat} lngLat Selected coordinate for sheet handling.
+     * @param {maplibregl.LngLatLike} lngLat Selected coordinate for sheet handling.
      * @returns {void}
      */
     selectFeature(kind, id, properties, lngLat) {
@@ -475,33 +550,6 @@ export default class extends Controller {
     }
 
     /**
-     * Builds a localized problem-popup DOM tree without raw HTML interpolation.
-     * @param {Object} problem Problem feature properties.
-     * @returns {HTMLElement} Popup content element.
-     */
-    problemPopupContent(problem) {
-        const container = document.createElement("div")
-        const problemId = this.problemFeatureId(problem)
-
-        if (problemId !== undefined && problemId !== null && problemId !== "") {
-            const link = document.createElement("a")
-            link.href = `/${this.localeValue}/redirects/new?problem_id=${encodeURIComponent(problemId)}`
-            link.target = "_blank"
-            link.rel = "noopener noreferrer"
-            link.textContent = this.localizedName(problem)
-            container.appendChild(link)
-        } else {
-            container.appendChild(document.createTextNode(this.localizedName(problem)))
-        }
-
-        const grade = document.createElement("span")
-        grade.className = "text-gray-400 ml-1"
-        grade.textContent = problem.grade || ""
-        container.appendChild(grade)
-        return container
-    }
-
-    /**
      * Builds a grouped contribution-request popup without raw HTML interpolation.
      * @param {Object} group Contribution GeoJSON properties.
      * @returns {HTMLElement} Popup content element.
@@ -559,15 +607,6 @@ export default class extends Controller {
     }
 
     /**
-     * Returns the problem ID from either Rails deep-link data or PMTiles feature properties.
-     * @param {Object} problem Problem feature properties.
-     * @returns {string|number|undefined|null} Problem identifier.
-     */
-    problemFeatureId(problem) {
-        return problem.id ?? problem.problemId
-    }
-
-    /**
      * Creates a consistent MapLibre popup instance.
      * @returns {maplibregl.Popup} Configured popup.
      */
@@ -576,7 +615,7 @@ export default class extends Controller {
     }
 
     /**
-     * Flies the map to a bounding box while keeping the current minimum zoom behaviour.
+     * Flies the map to a bounding box while fitting the target bounds.
      * @param {Array<Array<number>>} bounds Southwest and northeast coordinate pairs.
      * @returns {void}
      */
@@ -584,7 +623,6 @@ export default class extends Controller {
         const cameraOptions = this.map.cameraForBounds(bounds, {
             padding: { top: 20, bottom: 100, left: 20, right: 20 },
         })
-        cameraOptions.zoom = Math.max(15, cameraOptions.zoom)
         cameraOptions.speed = 2
         this.map.flyTo(cameraOptions)
     }
@@ -711,10 +749,7 @@ export default class extends Controller {
      */
     gotoproblem(event) {
         this.map.flyTo({ center: [event.detail.lon, event.detail.lat], zoom: 20, speed: 2 })
-        this.createPopup()
-            .setLngLat([event.detail.lon, event.detail.lat])
-            .setDOMContent(this.problemPopupContent(event.detail))
-            .addTo(this.map)
+        this.selectFeatureWhenIdle("problems", "problemId", event.detail.id, "problem")
     }
 
     /**
@@ -727,5 +762,6 @@ export default class extends Controller {
             [event.detail.south_west_lon, event.detail.south_west_lat],
             [event.detail.north_east_lon, event.detail.north_east_lat],
         ])
+        this.selectFeatureWhenIdle("areas", "areaId", event.detail.id, "area")
     }
 }

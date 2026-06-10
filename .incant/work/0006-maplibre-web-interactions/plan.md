@@ -16,8 +16,8 @@ updated: 2026-06-10
 - Work item: `0006` / `maplibre-web-interactions`
 - Stage: implement
 - Branch: `incant/0006-maplibre-web-interactions`
-- Current phase: `0006-P4` complete (gate green, revise loop fix applied, awaiting re-review)
-- Next step: `/incant:review 0006` to re-review the P4 blocker fix; then `/incant:implement 0006` for `0006-P5`
+- Current phase: `0006-P5` complete (gate green, awaiting review)
+- Next step: `/incant:review 0006` to review P5; then `/incant:implement 0006` for `0006-P6`
 - Blockers: none
 - Review fixes (P4 revise loop, 2026-06-10):
   - Blocker `map_controller.js:411-421` / docked-card pin visibility: `adjustSheetPadding`
@@ -96,6 +96,7 @@ updated: 2026-06-10
   - `0006-P2` review fixes (2026-06-10): accepted the intentionally ignored `/docs/` contract note as `wontfix`; added exporter coverage for area cover URLs cascading to cluster main-area and region main-cluster→main-area card properties, plus absent-cover fallback. Docker gate re-run green — `bin/rails db:prepare && bin/rails test test/lib/map_tiles && bin/rubocop lib/map_tiles test/lib/map_tiles -f github` → 66 runs, 1947 assertions, 0 failures, 0 errors; rubocop exit 0.
   - `0006-P3` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/lib/map_tiles && bin/rubocop lib/map_tiles test/lib/map_tiles -f github` → 76 runs, 2531 assertions, 0 failures, 0 errors; rubocop exit 0. Sprite pipeline (builder + 4 versioned uploads + manifest `spriteUrl` + materializer sprite rewrite/validation), 10 committed icons (20 PNGs + SVG sources + README), both templates carry pin/selected layers with `-1` sentinel filters, z14→15 hull/boulder crossfade, dev sprite URL, and no Bergwerk sprite references (`flugplatz` gone; style test proves every `icon-image` resolves to a committed icon). Icons visually verified via rendered previews during authoring.
   - `0006-P4` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/controllers/map_controller_test.rb test/controllers/mapping/contribution_requests_controller_test.rb && bin/importmap audit && bin/rubocop -f github` → 9 runs, 171 assertions, 0 failures, 0 errors; no vulnerable packages; rubocop exit 0 (`GATE_EXIT=0`). New `map/selection.js` (single-selection invariant, `-1` sentinel filters, base-layer exclusion, 180ms ease-out grow tween) and `map/info_card.js` (safe-DOM card, bottom sheet / `lg:` docked panel), importmap `pin_all_from app/javascript/map`, controller select wiring + background-click deselect + sheet padding, `map_card_strings` helper + `views.map.card.*` de/en locales, card target + data attributes in the view, new markup tests.
+  - `0006-P5` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/controllers/map_controller_test.rb && bin/rubocop -f github` → 8 runs, 163 assertions, 0 failures, 0 errors; rubocop exit 0. Search and `?pid=`/`?slug=` deep links now select tile features and open cards via `selectFeatureWhenIdle`, legacy problem popup code/deferred popup replay is removed, and the `flyToBounds` zoom-15 clamp is gone.
 
 ## Files touched
 
@@ -473,7 +474,7 @@ responsive, localized info card; tapping elsewhere/closing deselects.
 Goal: every entry point (search, `?pid=`, `?slug=`) lands in the new selected-card model;
 legacy problem/POI popups are gone; region drill-in lands on the main cluster.
 
-- [ ] step 1: read `app/javascript/controllers/map_controller.js` again as left by P4;
+- [x] step 1: read `app/javascript/controllers/map_controller.js` again as left by P4;
       then:
       - `flyToBounds`: delete `cameraOptions.zoom = Math.max(15, cameraOptions.zoom)` —
         every drill-in now fits its target bounds (the Maltatal camera fix);
@@ -498,17 +499,17 @@ legacy problem/POI popups are gone; region drill-in lands on the main cluster.
         from tile properties; Rails deep links supply the id explicitly);
         `cleanHistory` and `hash: true` stay untouched so URL/history behaviour is
         unchanged.
-- [ ] step 2: read then update `test/controllers/map_controller_test.rb`: deep-link
+- [x] step 2: read then update `test/controllers/map_controller_test.rb`: deep-link
       `?pid=` page still embeds `data-map-problem-value`; assert the served controller
       JS (`app/javascript/controllers/map_controller.js`) no longer contains
       `problemPopupContent`, `poiPopupContent`, or a `Math.max(15,` zoom clamp, and does
       contain `selectFeatureWhenIdle` (string assertions on the file, matching how 0005
       regression-checked controller code).
-- [ ] step 3: grep `app/views` and `app/javascript` for now-dead references
+- [x] step 3: grep `app/views` and `app/javascript` for now-dead references
       (`problemPopupContent`, `poiPopupContent`, popup-only CSS hooks) and remove
       leftovers.
 
-**Quality gate:** `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.invalid -e BUNNY_STORAGE_ACCESS_KEY_ID=dummy -e BUNNY_STORAGE_SECRET_ACCESS_KEY=dummy -e BUNNY_STORAGE_REGION=dummy -e BUNNY_STORAGE_BUCKET=dummy web bash -lc 'bin/rails db:prepare && bin/rails test test/controllers/map_controller_test.rb && bin/rubocop -f github'` → all green. Narrower gate is sufficient: only the map controller JS and its markup tests changed; the full suite and manual smoke follow in P6.
+**Quality gate:** `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.invalid -e BUNNY_STORAGE_ACCESS_KEY_ID=dummy -e BUNNY_STORAGE_SECRET_ACCESS_KEY=dummy -e BUNNY_STORAGE_REGION=dummy -e BUNNY_STORAGE_BUCKET=dummy web bash -lc 'bin/rails db:prepare && bin/rails test test/controllers/map_controller_test.rb && bin/rubocop -f github'` → 8 runs, 163 assertions, 0 failures, 0 errors; rubocop exit 0. Narrower gate is sufficient: only the map controller JS and its markup tests changed; the full suite and manual smoke follow in P6.
 
 ## Phase 0006-P6 — interaction contract docs, release gate, manual smoke
 
