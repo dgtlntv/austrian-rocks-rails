@@ -66,6 +66,15 @@ class MapControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "6a"
   end
 
+  test "problem query alias renders problem data for MapLibre controller" do
+    get "/en/map", params: { problem: @problem.id }
+
+    assert_response :success
+    assert_maplibre_page
+    assert_includes response.body, "data-map-problem-value="
+    assert_includes response.body, "Test Problem"
+  end
+
   test "MapLibre controller selects cards for search and deep links without legacy problem popups" do
     controller_source = Rails.root.join("app/javascript/controllers/map_controller.js").read
 

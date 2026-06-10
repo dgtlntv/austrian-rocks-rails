@@ -16,9 +16,19 @@ updated: 2026-06-10
 - Work item: `0006` / `maplibre-web-interactions`
 - Stage: implement
 - Branch: `incant/0006-maplibre-web-interactions`
-- Current phase: `0006-P5` complete (gate green, awaiting review)
-- Next step: `/incant:review 0006` to review P5; then `/incant:implement 0006` for `0006-P6`
+- Current phase: `0006-P5` complete after review fix (gate green, awaiting re-review)
+- Next step: `/incant:review 0006` to re-review P5; then `/incant:implement 0006` for `0006-P6`
 - Blockers: none
+- Review fixes (P5 revise loop, 2026-06-10):
+  - Blocker `app/controllers/map_controller.rb:16` / `?problem=` deep links: map index
+    now resolves `problem_id` from `params[:pid]` or `params[:problem]`, preserving the
+    existing `pid` path while honoring the approved spec's `?problem=<id>` alias so the
+    view emits `data-map-problem-value` for the new selected-card JS path.
+  - Added `test/controllers/map_controller_test.rb` coverage for the `problem` query
+    alias rendering problem data.
+  - Fresh gate evidence (this session, Docker/PostGIS): `bin/rails db:prepare && bin/rails
+    test test/controllers/map_controller_test.rb && bin/rubocop -f github` → 9 runs,
+    182 assertions, 0 failures/errors; rubocop clean.
 - Review fixes (P4 revise loop, 2026-06-10):
   - Blocker `map_controller.js:411-421` / docked-card pin visibility: `adjustSheetPadding`
     now branches by breakpoint — below `lg` the existing bottom-sheet logic
@@ -97,6 +107,7 @@ updated: 2026-06-10
   - `0006-P3` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/lib/map_tiles && bin/rubocop lib/map_tiles test/lib/map_tiles -f github` → 76 runs, 2531 assertions, 0 failures, 0 errors; rubocop exit 0. Sprite pipeline (builder + 4 versioned uploads + manifest `spriteUrl` + materializer sprite rewrite/validation), 10 committed icons (20 PNGs + SVG sources + README), both templates carry pin/selected layers with `-1` sentinel filters, z14→15 hull/boulder crossfade, dev sprite URL, and no Bergwerk sprite references (`flugplatz` gone; style test proves every `icon-image` resolves to a committed icon). Icons visually verified via rendered previews during authoring.
   - `0006-P4` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/controllers/map_controller_test.rb test/controllers/mapping/contribution_requests_controller_test.rb && bin/importmap audit && bin/rubocop -f github` → 9 runs, 171 assertions, 0 failures, 0 errors; no vulnerable packages; rubocop exit 0 (`GATE_EXIT=0`). New `map/selection.js` (single-selection invariant, `-1` sentinel filters, base-layer exclusion, 180ms ease-out grow tween) and `map/info_card.js` (safe-DOM card, bottom sheet / `lg:` docked panel), importmap `pin_all_from app/javascript/map`, controller select wiring + background-click deselect + sheet padding, `map_card_strings` helper + `views.map.card.*` de/en locales, card target + data attributes in the view, new markup tests.
   - `0006-P5` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/controllers/map_controller_test.rb && bin/rubocop -f github` → 8 runs, 163 assertions, 0 failures, 0 errors; rubocop exit 0. Search and `?pid=`/`?slug=` deep links now select tile features and open cards via `selectFeatureWhenIdle`, legacy problem popup code/deferred popup replay is removed, and the `flyToBounds` zoom-15 clamp is gone.
+  - `0006-P5` review fixes (2026-06-10): addressed the open `?problem=` deep-link blocker by accepting it as a `pid` alias and covering it in `test/controllers/map_controller_test.rb`. Docker gate re-run green — `bin/rails db:prepare && bin/rails test test/controllers/map_controller_test.rb && bin/rubocop -f github` → 9 runs, 182 assertions, 0 failures, 0 errors; rubocop exit 0.
 
 ## Files touched
 
