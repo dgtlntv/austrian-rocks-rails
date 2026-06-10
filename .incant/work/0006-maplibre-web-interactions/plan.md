@@ -16,9 +16,23 @@ updated: 2026-06-10
 - Work item: `0006` / `maplibre-web-interactions`
 - Stage: implement
 - Branch: `incant/0006-maplibre-web-interactions`
-- Current phase: `0006-P2` complete and reviewed
-- Next step: `/incant:implement 0006` for `0006-P3`
+- Current phase: `0006-P3` complete (gate green, awaiting review)
+- Next step: `/incant:review 0006` for the P3 phase gate; then `/incant:implement 0006` for `0006-P4`
 - Blockers: none
+- P3 as-built deviations from the plan text:
+  - Icon design reworked per human feedback during the phase (Apple-Maps direction):
+    resting pins are 20×20 colored discs with white glyphs + label beside; selected pins
+    are 34×45 balloons (bubble + small tail) with an anchor dot on the feature location,
+    rendered via `icon-anchor: bottom` + `icon-offset: [0, 4]`. Parking is blue
+    `#3173de`, train stations slate `#5a6b7a`, climbing entities brand red `#ef3340`.
+  - `SpriteBuilder` packs icons by inserting onto a transparent canvas (tight packing
+    with mixed icon sizes) instead of `arrayjoin`, which pads cells to uniform size.
+  - `lib/map_tiles/local_artifact_cleaner.rb` (+ test) also extended so old local sprite
+    artifacts are pruned like styles/PMTiles (not in the planned file list).
+  - Note for P4: the base symbol layers keep rendering the selected feature underneath
+    the balloon; the P4 runtime should also exclude the selected id from the base
+    layer's filter (same single-id mechanism as the `-selected` filter) and P6 must
+    document that in the interaction contract.
 - Key decisions:
   - **Sprite delivery: single self-hosted Austrian Rocks sprite** (not MapLibre multi-sprite).
     The only Bergwerk sprite icon the committed styles use is `flugplatz` on the two
@@ -55,6 +69,7 @@ updated: 2026-06-10
   - `0006-P1` review fixes (2026-06-10): addressed all P1 review findings — guidebook destroy now refuses with a flash error when assigned to regions/clusters/areas (new controller test), `flash.now` on re-render branches, redundant `null: true` removed from the FK migration. Docker gate re-run green: 112 runs, 415 assertions, 0 failures, 0 errors; rubocop exit 0.
   - `0006-P2` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/lib/map_tiles && bin/rubocop lib/map_tiles test/lib/map_tiles -f github` → 66 runs, 1939 assertions, 0 failures, 0 errors; rubocop exit 0. Exporter now emits cascaded warning/guidebook/parking fields, cover URLs, aggregate problem counts/grade ranges, and main-cluster bounds; layer/smoke contracts allow the new card URL fields.
   - `0006-P2` review fixes (2026-06-10): accepted the intentionally ignored `/docs/` contract note as `wontfix`; added exporter coverage for area cover URLs cascading to cluster main-area and region main-cluster→main-area card properties, plus absent-cover fallback. Docker gate re-run green — `bin/rails db:prepare && bin/rails test test/lib/map_tiles && bin/rubocop lib/map_tiles test/lib/map_tiles -f github` → 66 runs, 1947 assertions, 0 failures, 0 errors; rubocop exit 0.
+  - `0006-P3` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/lib/map_tiles && bin/rubocop lib/map_tiles test/lib/map_tiles -f github` → 76 runs, 2531 assertions, 0 failures, 0 errors; rubocop exit 0. Sprite pipeline (builder + 4 versioned uploads + manifest `spriteUrl` + materializer sprite rewrite/validation), 10 committed icons (20 PNGs + SVG sources + README), both templates carry pin/selected layers with `-1` sentinel filters, z14→15 hull/boulder crossfade, dev sprite URL, and no Bergwerk sprite references (`flugplatz` gone; style test proves every `icon-image` resolves to a committed icon). Icons visually verified via rendered previews during authoring.
 
 ## Files touched
 
@@ -248,7 +263,7 @@ Goal: both shared styles render sprite-based pins with labels beside them and a 
 hull→boulder crossfade; the sprite publishes as versioned immutable objects through the
 existing Bunny flow. (Pins reference only style-declared sprite icons — no `map.addImage`.)
 
-- [ ] step 1: create `config/map_styles/sprite/` with icon assets. Author SVG sources
+- [x] step 1: create `config/map_styles/sprite/` with icon assets. Author SVG sources
       (`ar-pin-region.svg`, `ar-pin-cluster.svg`, `ar-pin-area.svg`, `ar-pin-parking.svg`,
       `ar-pin-train.svg`, plus a `-selected` variant of each — selected = filled/darker
       brand-red `#ef3340` pin so the grow animation lands on a visually distinct state);
@@ -256,7 +271,13 @@ existing Bunny flow. (Pins reference only style-declared sprite icons — no `ma
       authoring-time only, not a pipeline dependency). Add
       `config/map_styles/sprite/README.md` documenting the icon list, sizes, and the
       regeneration command.
-- [ ] step 2: `lib/map_tiles/sprite_builder.rb` — `MapTiles::SpriteBuilder` with
+      *(As built, per human feedback during the phase: Apple-Maps-style icons instead of
+      classic teardrops — resting = 20×20 colored disc with white glyph, selected =
+      34×45 balloon with tail + anchor dot, `icon-anchor: bottom` + `icon-offset: [0,4]`;
+      parking is blue `#3173de`, train slate `#5a6b7a`, climbing entities brand red.
+      PNGs rendered with librsvg-backed vips in the dev container because host
+      ImageMagick drops SVG strokes — command documented in the sprite README.)*
+- [x] step 2: `lib/map_tiles/sprite_builder.rb` — `MapTiles::SpriteBuilder` with
       `initialize(configuration:)` and `#build` that, per pixel ratio (1, 2): loads every
       `config/map_styles/sprite/*.png` (suffix `@2x` selects ratio 2) via
       `Vips::Image.new_from_file`, packs them left-to-right into one sheet
@@ -265,23 +286,23 @@ existing Bunny flow. (Pins reference only style-declared sprite icons — no `ma
       `.json` index `{ "<icon-name>": { "x":, "y":, "width":, "height":, "pixelRatio": } }`,
       and returns `{ "sprite.png" => path, "sprite.json" => path, "sprite@2x.png" => …, "sprite@2x.json" => … }`.
       Raise a named error when an icon is missing its 2x counterpart.
-- [ ] step 3: read then extend `lib/map_tiles/configuration.rb`: `sprite_basename` =
+- [x] step 3: read then extend `lib/map_tiles/configuration.rb`: `sprite_basename` =
       `"#{artifact_basename}-#{version}-sprite"`, `sprite_artifact_path(suffix)`,
       `sprite_object_key(suffix)` under `style_prefix`
       (`map_styles/austrian-rocks-<version>-sprite.png|.json|@2x.png|@2x.json`),
       `sprite_public_url(suffix)`, and `sprite_public_base_url` (no extension — the
       MapLibre style `sprite` value).
-- [ ] step 4: read then extend `lib/map_tiles/style_materializer.rb`: validate the
+- [x] step 4: read then extend `lib/map_tiles/style_materializer.rb`: validate the
       template declares a non-empty string `sprite`; on materialize set
       `style["sprite"] = configuration.sprite_public_base_url`.
-- [ ] step 5: read then extend `lib/map_tiles/bunny_publisher.rb`: instantiate
+- [x] step 5: read then extend `lib/map_tiles/bunny_publisher.rb`: instantiate
       `SpriteBuilder` (injectable like `style_materializer`), call it in `publish`, add
       its four artifacts to `upload_plan` as versioned immutable uploads (`image/png`
       content type for the PNGs, `JSON_CONTENT_TYPE` for the indexes) so they upload and
       HEAD-verify before the manifest like every other versioned object.
-- [ ] step 6: read then extend `lib/map_tiles/release_manifest.rb`: add
+- [x] step 6: read then extend `lib/map_tiles/release_manifest.rb`: add
       `"spriteUrl" => configuration.sprite_public_base_url` validated like the other URLs.
-- [ ] step 7: edit **both** style templates (`config/map_styles/austrian_rocks_light.json`,
+- [x] step 7: edit **both** style templates (`config/map_styles/austrian_rocks_light.json`,
       `…_dark.json`):
       - set top-level `"sprite"` to the dev value
         `https://tiles.austrian.rocks/map_styles/e2e/austrian-rocks-dev-sprite`
@@ -309,7 +330,7 @@ existing Bunny flow. (Pins reference only style-declared sprite icons — no `ma
         `[…, 14, 1, 15, 0]` with `maxzoom` 15; `boulders` gains
         `fill-opacity [..., 14, 0, 15, 1]` with `minzoom` 14; `boulders-outline`
         `minzoom` 13→14 and `line-opacity` stops `[…, 14, 0, 15, 1]`.
-- [ ] step 8: tests —
+- [x] step 8: tests —
       - new `test/lib/map_tiles/sprite_builder_test.rb`: builds from the committed
         sprite dir; JSON index covers every committed icon name at both pixel ratios;
         rects are disjoint and within the sheet; missing-2x raises;
@@ -332,7 +353,7 @@ existing Bunny flow. (Pins reference only style-declared sprite icons — no `ma
         zoom stops, not hard-coded z-values, so by-eye tuning inside the templates
         doesn't break the falsifiable property (no full-opacity overlap, no early
         boulders).
-- [ ] step 9: update `docs/map_tiles.md` artifact/delivery rules: sprite objects, their
+- [x] step 9: update `docs/map_tiles.md` artifact/delivery rules: sprite objects, their
       key pattern, immutability, and the manifest `spriteUrl` field; note the styles no
       longer reference the Bergwerk sprite.
 

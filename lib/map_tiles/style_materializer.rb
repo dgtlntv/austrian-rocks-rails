@@ -24,6 +24,7 @@ module MapTiles
         apply_configured_opacity!(style)
         validate_style!(style, style_name)
         style.fetch("sources").fetch(SOURCE_NAME)["url"] = "pmtiles://#{configuration.pmtiles_public_url}"
+        style["sprite"] = configuration.sprite_public_base_url
 
         path = configuration.style_artifact_path(style_name)
         FileUtils.mkdir_p(path.dirname)
@@ -59,6 +60,9 @@ module MapTiles
       raise Error, "#{style_name} style must define sources" unless style["sources"].is_a?(Hash)
       raise Error, "#{style_name} style must define layers" unless style["layers"].is_a?(Array)
       raise Error, "#{style_name} style must define #{SOURCE_NAME} source" unless style.fetch("sources").key?(SOURCE_NAME)
+      # Pin icons must come from the style-declared sprite (no runtime map.addImage),
+      # so a template without one would silently break every icon layer.
+      raise Error, "#{style_name} style must declare a sprite URL" unless style["sprite"].is_a?(String) && style["sprite"].strip.present?
 
       assert_layer_contract_coverage!(style, style_name)
     end

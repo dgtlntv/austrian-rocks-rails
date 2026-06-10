@@ -1,7 +1,7 @@
 {
   "version": 8,
   "name": "Austrian Rocks Light",
-  "sprite": "https://basemap.bergwerk-gis.at/basemap-download/webapp/api/sprites/spritesheet",
+  "sprite": "https://tiles.austrian.rocks/map_styles/e2e/austrian-rocks-dev-sprite",
   "glyphs": "https://basemap.bergwerk-gis.at/basemap-download/webapp/fonts/{fontstack}/{range}.pbf",
   "sources": {
     "basemap-at-gelaende": {
@@ -5735,25 +5735,6 @@
         1
       ],
       "layout": {
-        "icon-image": "flugplatz",
-        "icon-allow-overlap": true,
-        "icon-ignore-placement": true,
-        "icon-size": {
-          "stops": [
-            [
-              12,
-              0.4
-            ],
-            [
-              15,
-              0.6
-            ],
-            [
-              17,
-              0.9
-            ]
-          ]
-        },
         "text-field": "{feat_name}",
         "text-font": [
           "Roboto-MediumItalic"
@@ -5764,9 +5745,7 @@
         "text-offset": [
           0,
           -1.5
-        ],
-        "icon-text-fit": "none",
-        "icon-optional": false
+        ]
       },
       "paint": {
         "text-halo-width": 1,
@@ -5785,25 +5764,6 @@
         0
       ],
       "layout": {
-        "icon-image": "flugplatz",
-        "icon-allow-overlap": true,
-        "icon-ignore-placement": true,
-        "icon-size": {
-          "stops": [
-            [
-              12,
-              0.6
-            ],
-            [
-              15,
-              0.8
-            ],
-            [
-              17,
-              1.1
-            ]
-          ]
-        },
         "text-field": "{feat_name}",
         "text-font": [
           "Roboto-MediumItalic"
@@ -5814,9 +5774,7 @@
         "text-offset": [
           0,
           -1.2
-        ],
-        "icon-text-fit": "none",
-        "icon-optional": false
+        ]
       },
       "paint": {
         "text-halo-width": 1,
@@ -7453,9 +7411,9 @@
           ],
           0,
           1,
-          15,
+          14,
           1,
-          16,
+          15,
           0
         ],
         "fill-outline-color": [
@@ -7473,7 +7431,7 @@
         ]
       },
       "minzoom": 11,
-      "maxzoom": 16
+      "maxzoom": 15
     },
     {
       "id": "areas-hulls-outline",
@@ -7519,9 +7477,9 @@
           ],
           0,
           1,
-          15,
+          14,
           1,
-          16,
+          15,
           0
         ],
         "line-width": [
@@ -7535,13 +7493,11 @@
           10,
           5,
           15,
-          5,
-          16,
-          0
+          5
         ]
       },
       "minzoom": 11,
-      "maxzoom": 16
+      "maxzoom": 15
     },
     {
       "id": "boulders",
@@ -7566,6 +7522,19 @@
         "fill-translate": [
           0,
           0
+        ],
+        "fill-opacity": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          0,
+          15,
+          1
         ]
       },
       "minzoom": 14
@@ -7615,18 +7584,14 @@
           [
             "zoom"
           ],
-          0,
-          0,
-          13,
-          0,
           14,
-          1,
-          22,
+          0,
+          15,
           1
         ],
         "line-color": "#b3b3b3"
       },
-      "minzoom": 13
+      "minzoom": 14
     },
     {
       "id": "walking-paths",
@@ -7730,6 +7695,41 @@
       }
     },
     {
+      "id": "problems-selected",
+      "type": "circle",
+      "source": "austrian-rocks",
+      "source-layer": "problems",
+      "minzoom": 15,
+      "filter": [
+        "==",
+        [
+          "get",
+          "problemId"
+        ],
+        -1
+      ],
+      "paint": {
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          15,
+          5,
+          18,
+          7,
+          22,
+          13
+        ],
+        "circle-color": "#878A8D",
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#ffffff"
+      }
+    },
+    {
       "id": "pois",
       "type": "symbol",
       "source": "austrian-rocks",
@@ -7748,20 +7748,16 @@
       "layout": {
         "text-optional": true,
         "text-size": 10,
-        "text-variable-anchor": [
-          "top",
-          "bottom"
-        ],
         "icon-offset": [
           0,
           0
         ],
         "icon-allow-overlap": true,
         "text-offset": [
-          0,
-          1.5
+          1.1,
+          0
         ],
-        "text-anchor": "top",
+        "text-anchor": "left",
         "text-field": [
           "to-string",
           [
@@ -7771,6 +7767,16 @@
         ],
         "text-font": [
           "Roboto-Regular"
+        ],
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "poiType"
+          ],
+          "train_station",
+          "ar-pin-train",
+          "ar-pin-parking"
         ]
       },
       "paint": {
@@ -7789,7 +7795,76 @@
           1,
           14,
           1
+        ],
+        "icon-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          0,
+          11,
+          0,
+          11.5,
+          1,
+          14,
+          1
         ]
+      },
+      "minzoom": 11
+    },
+    {
+      "id": "pois-selected",
+      "type": "symbol",
+      "source": "austrian-rocks",
+      "source-layer": "pois",
+      "filter": [
+        "==",
+        [
+          "get",
+          "poiId"
+        ],
+        -1
+      ],
+      "layout": {
+        "text-optional": true,
+        "text-size": 10,
+        "icon-offset": [
+          0,
+          4
+        ],
+        "icon-allow-overlap": true,
+        "text-offset": [
+          1.1,
+          0
+        ],
+        "text-anchor": "left",
+        "text-field": [
+          "to-string",
+          [
+            "get",
+            "name"
+          ]
+        ],
+        "text-font": [
+          "Roboto-Regular"
+        ],
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "poiType"
+          ],
+          "train_station",
+          "ar-pin-train-selected",
+          "ar-pin-parking-selected"
+        ],
+        "icon-size": 1,
+        "icon-anchor": "bottom"
+      },
+      "paint": {
+        "text-color": "#285ea8",
+        "text-halo-color": "hsl(0, 0%, 100%)",
+        "text-halo-width": 1
       },
       "minzoom": 11
     },
@@ -7824,7 +7899,6 @@
           15,
           18
         ],
-        "text-radial-offset": 0.1,
         "symbol-sort-key": [
           "step",
           [
@@ -7837,11 +7911,6 @@
           3,
           3
         ],
-        "text-variable-anchor": [
-          "center",
-          "bottom",
-          "top"
-        ],
         "icon-offset": [
           0,
           0
@@ -7849,10 +7918,9 @@
         "icon-allow-overlap": true,
         "text-padding": 0,
         "text-offset": [
-          0,
+          1.1,
           0
         ],
-        "icon-size": 1.2,
         "text-field": [
           "to-string",
           [
@@ -7863,7 +7931,9 @@
         "text-max-width": 5,
         "text-font": [
           "Roboto-Regular"
-        ]
+        ],
+        "icon-image": "ar-pin-area",
+        "text-anchor": "left"
       },
       "paint": {
         "text-color": "#ef3340",
@@ -7902,16 +7972,96 @@
           [
             "zoom"
           ],
-          0,
-          0,
-          12,
-          0,
-          13,
-          1,
           15.5,
           1,
           16,
           0
+        ]
+      },
+      "minzoom": 12,
+      "maxzoom": 16
+    },
+    {
+      "id": "areas-selected",
+      "type": "symbol",
+      "source": "austrian-rocks",
+      "source-layer": "areas",
+      "filter": [
+        "==",
+        [
+          "get",
+          "areaId"
+        ],
+        -1
+      ],
+      "layout": {
+        "text-optional": true,
+        "text-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          10,
+          15,
+          18
+        ],
+        "symbol-sort-key": [
+          "step",
+          [
+            "get",
+            "priority"
+          ],
+          1,
+          2,
+          2,
+          3,
+          3
+        ],
+        "icon-offset": [
+          0,
+          4
+        ],
+        "icon-allow-overlap": true,
+        "text-padding": 0,
+        "text-offset": [
+          1.1,
+          0
+        ],
+        "text-field": [
+          "to-string",
+          [
+            "get",
+            "name"
+          ]
+        ],
+        "text-max-width": 5,
+        "text-font": [
+          "Roboto-Regular"
+        ],
+        "icon-image": "ar-pin-area-selected",
+        "text-anchor": "left",
+        "icon-size": 1,
+        "icon-anchor": "bottom"
+      },
+      "paint": {
+        "text-color": "#ef3340",
+        "text-halo-color": "hsl(0, 4%, 100%)",
+        "text-halo-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          1,
+          15,
+          2
         ]
       },
       "minzoom": 12,
@@ -7936,12 +8086,6 @@
       ],
       "layout": {
         "text-size": 20,
-        "text-radial-offset": 0.2,
-        "text-variable-anchor": [
-          "center",
-          "bottom",
-          "top"
-        ],
         "icon-offset": [
           0,
           0
@@ -7949,7 +8093,7 @@
         "icon-allow-overlap": true,
         "text-padding": 10,
         "text-offset": [
-          0,
+          1.1,
           0
         ],
         "text-field": [
@@ -7962,7 +8106,9 @@
         "text-max-width": 6,
         "text-font": [
           "Roboto-Regular"
-        ]
+        ],
+        "icon-image": "ar-pin-cluster",
+        "text-anchor": "left"
       },
       "paint": {
         "text-color": "#ef3340",
@@ -7980,7 +8126,69 @@
           1,
           12,
           0
+        ],
+        "icon-opacity": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          11.5,
+          1,
+          12,
+          0
         ]
+      },
+      "minzoom": 9
+    },
+    {
+      "id": "clusters-selected",
+      "type": "symbol",
+      "source": "austrian-rocks",
+      "source-layer": "clusters",
+      "maxzoom": 12,
+      "filter": [
+        "==",
+        [
+          "get",
+          "clusterId"
+        ],
+        -1
+      ],
+      "layout": {
+        "text-size": 20,
+        "icon-offset": [
+          0,
+          4
+        ],
+        "icon-allow-overlap": true,
+        "text-padding": 10,
+        "text-offset": [
+          1.1,
+          0
+        ],
+        "text-field": [
+          "to-string",
+          [
+            "get",
+            "name"
+          ]
+        ],
+        "text-max-width": 6,
+        "text-font": [
+          "Roboto-Regular"
+        ],
+        "icon-image": "ar-pin-cluster-selected",
+        "text-anchor": "left",
+        "icon-size": 1,
+        "icon-anchor": "bottom"
+      },
+      "paint": {
+        "text-color": "#ef3340",
+        "text-halo-color": "hsl(0, 0%, 100%)",
+        "text-halo-width": 2
       },
       "minzoom": 9
     },
@@ -8015,12 +8223,6 @@
           9.5,
           40
         ],
-        "text-radial-offset": 0.2,
-        "text-variable-anchor": [
-          "center",
-          "bottom",
-          "top"
-        ],
         "icon-offset": [
           0,
           0
@@ -8028,7 +8230,7 @@
         "icon-allow-overlap": true,
         "text-padding": 10,
         "text-offset": [
-          0,
+          1.1,
           0
         ],
         "text-field": [
@@ -8041,7 +8243,9 @@
         "text-max-width": 6,
         "text-font": [
           "Roboto-Regular"
-        ]
+        ],
+        "icon-image": "ar-pin-region",
+        "text-anchor": "left"
       },
       "paint": {
         "text-color": "#ef3340",
@@ -8059,7 +8263,80 @@
           1,
           9.5,
           0
+        ],
+        "icon-opacity": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          9,
+          1,
+          9.5,
+          0
         ]
+      }
+    },
+    {
+      "id": "regions-selected",
+      "type": "symbol",
+      "source": "austrian-rocks",
+      "source-layer": "regions",
+      "maxzoom": 9.5,
+      "filter": [
+        "==",
+        [
+          "get",
+          "regionId"
+        ],
+        -1
+      ],
+      "layout": {
+        "text-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          0,
+          25,
+          9.5,
+          40
+        ],
+        "icon-offset": [
+          0,
+          4
+        ],
+        "icon-allow-overlap": true,
+        "text-padding": 10,
+        "text-offset": [
+          1.1,
+          0
+        ],
+        "text-field": [
+          "to-string",
+          [
+            "get",
+            "name"
+          ]
+        ],
+        "text-max-width": 6,
+        "text-font": [
+          "Roboto-Regular"
+        ],
+        "icon-image": "ar-pin-region-selected",
+        "text-anchor": "left",
+        "icon-size": 1,
+        "icon-anchor": "bottom"
+      },
+      "paint": {
+        "text-color": "#ef3340",
+        "text-halo-color": "hsl(0, 0%, 100%)",
+        "text-halo-width": 2
       }
     },
     {

@@ -39,6 +39,7 @@ module MapTiles
         configuration.output_dir.join("#{basename}-*.metadata.json").to_s,
         configuration.output_dir.join("#{basename}-*-light.json").to_s,
         configuration.output_dir.join("#{basename}-*-dark.json").to_s,
+        *Configuration::SPRITE_SUFFIXES.map { |suffix| configuration.output_dir.join("#{basename}-*-sprite#{suffix}").to_s },
         configuration.output_dir.join(configuration.manifest_object_name).to_s
       ]
     end
@@ -53,6 +54,7 @@ module MapTiles
         configuration.metadata_path,
         configuration.style_artifact_path("light"),
         configuration.style_artifact_path("dark"),
+        *Configuration::SPRITE_SUFFIXES.map { |suffix| configuration.sprite_artifact_path(suffix) },
         configuration.manifest_artifact_path
       ].map(&:to_s).include?(path.to_s)
     end

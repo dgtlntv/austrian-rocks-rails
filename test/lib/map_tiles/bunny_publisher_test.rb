@@ -16,6 +16,7 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
     @head_urls = []
     @http_head = ->(uri) { @head_urls << uri.to_s; FakeHeadResponse.new(200) }
     @style_materializer = FakeStyleMaterializer.new(@configuration)
+    @sprite_builder = FakeSpriteBuilder.new(@configuration)
     @release_manifest = FakeReleaseManifest.new(@configuration)
   end
 
@@ -84,12 +85,17 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
     published = publisher.publish
 
     assert @style_materializer.called
+    assert @sprite_builder.called
     assert @release_manifest.called
     assert_equal(
       %w[
         maps/austrian-rocks-2026-06-07.pmtiles
         styles/austrian-rocks-2026-06-07-light.json
         styles/austrian-rocks-2026-06-07-dark.json
+        styles/austrian-rocks-2026-06-07-sprite.png
+        styles/austrian-rocks-2026-06-07-sprite.json
+        styles/austrian-rocks-2026-06-07-sprite@2x.png
+        styles/austrian-rocks-2026-06-07-sprite@2x.json
         maps/current.json
       ],
       @s3_client.puts.map { |put| put.fetch(:key) }
@@ -99,6 +105,10 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
         "https://cdn.example.test/maps/austrian-rocks-2026-06-07.pmtiles",
         "https://cdn.example.test/styles/austrian-rocks-2026-06-07-light.json",
         "https://cdn.example.test/styles/austrian-rocks-2026-06-07-dark.json",
+        "https://cdn.example.test/styles/austrian-rocks-2026-06-07-sprite.png",
+        "https://cdn.example.test/styles/austrian-rocks-2026-06-07-sprite.json",
+        "https://cdn.example.test/styles/austrian-rocks-2026-06-07-sprite@2x.png",
+        "https://cdn.example.test/styles/austrian-rocks-2026-06-07-sprite@2x.json",
         "https://cdn.example.test/maps/current.json"
       ],
       @head_urls
@@ -108,9 +118,17 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
       "application/octet-stream",
       "application/json; charset=utf-8",
       "application/json; charset=utf-8",
+      "image/png",
+      "application/json; charset=utf-8",
+      "image/png",
+      "application/json; charset=utf-8",
       "application/json; charset=utf-8"
     ], @s3_client.puts.map { |put| put.fetch(:content_type) }
     assert_equal [
+      "public, max-age=31536000, immutable",
+      "public, max-age=31536000, immutable",
+      "public, max-age=31536000, immutable",
+      "public, max-age=31536000, immutable",
       "public, max-age=31536000, immutable",
       "public, max-age=31536000, immutable",
       "public, max-age=31536000, immutable",
@@ -132,9 +150,23 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
         maps/austrian-rocks-2026-06-07.pmtiles
         styles/austrian-rocks-2026-06-07-light.json
         styles/austrian-rocks-2026-06-07-dark.json
+        styles/austrian-rocks-2026-06-07-sprite.png
+        styles/austrian-rocks-2026-06-07-sprite.json
+        styles/austrian-rocks-2026-06-07-sprite@2x.png
+        styles/austrian-rocks-2026-06-07-sprite@2x.json
       ],
       @s3_client.puts.map { |put| put.fetch(:key) }
     )
+  end
+
+  test "fails before publishing the manifest when a sprite public HEAD check is not successful" do
+    publisher = build_publisher(http_head: ->(uri) { FakeHeadResponse.new(uri.to_s.include?("-sprite@2x.png") ? 500 : 200) })
+
+    error = assert_raises(MapTiles::BunnyPublisher::VerificationError) { publisher.publish }
+
+    assert_includes error.message, "returned 500"
+    assert_includes error.message, "https://cdn.example.test/styles/austrian-rocks-2026-06-07-sprite@2x.png"
+    assert_not_includes @s3_client.puts.map { |put| put.fetch(:key) }, "maps/current.json"
   end
 
   test "fails when the manifest public HEAD check is not successful" do
@@ -144,7 +176,7 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
 
     assert_includes error.message, "returned 404"
     assert_includes error.message, "https://cdn.example.test/maps/current.json"
-    assert_equal 4, @s3_client.puts.length
+    assert_equal 8, @s3_client.puts.length
   end
 
   test "does not leak credentials in upload errors" do
@@ -165,6 +197,7 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
     http_head: @http_head,
     out: StringIO.new,
     style_materializer: @style_materializer,
+    sprite_builder: @sprite_builder,
     release_manifest: @release_manifest
   )
     MapTiles::BunnyPublisher.new(
@@ -173,6 +206,7 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
       http_head: http_head,
       out: out,
       style_materializer: style_materializer,
+      sprite_builder: sprite_builder,
       release_manifest: release_manifest
     )
   end
@@ -227,6 +261,25 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
         FileUtils.mkdir_p(path.dirname)
         path.write("{\"style\":\"#{style_name}\"}")
         [ style_name, path ]
+      end
+    end
+  end
+
+  class FakeSpriteBuilder
+    attr_reader :called
+
+    def initialize(configuration)
+      @configuration = configuration
+      @called = false
+    end
+
+    def build
+      @called = true
+      MapTiles::Configuration::SPRITE_SUFFIXES.to_h do |suffix|
+        path = @configuration.sprite_artifact_path(suffix)
+        FileUtils.mkdir_p(path.dirname)
+        path.binwrite(suffix.end_with?(".png") ? "png-bytes" : "{}")
+        [ "sprite#{suffix}", path ]
       end
     end
   end

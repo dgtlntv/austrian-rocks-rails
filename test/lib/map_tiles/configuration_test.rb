@@ -77,6 +77,34 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     assert_equal "https://cdn.example.test/map_tiles/current.json", configuration.manifest_public_url
   end
 
+  test "exposes versioned sprite artifact paths object keys and public urls" do
+    configuration = MapTiles::Configuration.new(version: "2026-06-09", settings: settings)
+
+    assert_equal "austrian-rocks-2026-06-09-sprite", configuration.sprite_basename
+    assert_equal Rails.root.join("#{@output_dir}/austrian-rocks-2026-06-09-sprite.png"), configuration.sprite_artifact_path(".png")
+    assert_equal Rails.root.join("#{@output_dir}/austrian-rocks-2026-06-09-sprite@2x.json"), configuration.sprite_artifact_path("@2x.json")
+    assert_equal "map_styles/austrian-rocks-2026-06-09-sprite.png", configuration.sprite_object_key(".png")
+    assert_equal "map_styles/austrian-rocks-2026-06-09-sprite.json", configuration.sprite_object_key(".json")
+    assert_equal "map_styles/austrian-rocks-2026-06-09-sprite@2x.png", configuration.sprite_object_key("@2x.png")
+    assert_equal "map_styles/austrian-rocks-2026-06-09-sprite@2x.json", configuration.sprite_object_key("@2x.json")
+    assert_equal "https://cdn.example.test/map_styles/austrian-rocks-2026-06-09-sprite", configuration.sprite_public_base_url
+    assert_equal "https://cdn.example.test/map_styles/austrian-rocks-2026-06-09-sprite@2x.png", configuration.sprite_public_url("@2x.png")
+  end
+
+  test "rejects unknown sprite suffixes unsafe sprite versions and missing sprite versions" do
+    configuration = MapTiles::Configuration.new(version: "2026-06-09", settings: settings)
+
+    assert_raises(ArgumentError) { configuration.sprite_artifact_path(".gif") }
+    assert_raises(ArgumentError) { configuration.sprite_object_key("png") }
+    assert_raises(ArgumentError) { configuration.sprite_public_url("/../sprite.png") }
+    assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026/06/09", settings: settings).sprite_object_key(".png")
+    end
+    assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(settings: settings).sprite_basename
+    end
+  end
+
   test "requires explicit version for artifact-specific methods only" do
     configuration = MapTiles::Configuration.new(settings: settings)
 

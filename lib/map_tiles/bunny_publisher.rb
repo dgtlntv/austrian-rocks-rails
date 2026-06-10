@@ -5,6 +5,7 @@ require "net/http"
 require "uri"
 require "map_tiles/configuration"
 require "map_tiles/release_manifest"
+require "map_tiles/sprite_builder"
 require "map_tiles/style_materializer"
 
 module MapTiles
@@ -16,6 +17,7 @@ module MapTiles
 
     PMTILES_CONTENT_TYPE = "application/octet-stream"
     JSON_CONTENT_TYPE = "application/json; charset=utf-8"
+    PNG_CONTENT_TYPE = "image/png"
     IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable"
     MANIFEST_CACHE_CONTROL = "no-cache, max-age=0, must-revalidate"
     REQUIRED_BUNNY_ENV = %w[
@@ -25,14 +27,15 @@ module MapTiles
       BUNNY_STORAGE_ACCESS_KEY_ID
       BUNNY_STORAGE_SECRET_ACCESS_KEY
     ].freeze
-    attr_reader :configuration, :s3_client, :http_head, :out, :style_materializer, :release_manifest
+    attr_reader :configuration, :s3_client, :http_head, :out, :style_materializer, :sprite_builder, :release_manifest
 
-    def initialize(configuration: Configuration.new, s3_client: nil, http_head: nil, out: $stdout, style_materializer: nil, release_manifest: nil)
+    def initialize(configuration: Configuration.new, s3_client: nil, http_head: nil, out: $stdout, style_materializer: nil, sprite_builder: nil, release_manifest: nil)
       @configuration = configuration
       @s3_client = s3_client
       @http_head = http_head || method(:net_http_head)
       @out = out
       @style_materializer = style_materializer || StyleMaterializer.new(configuration: configuration)
+      @sprite_builder = sprite_builder || SpriteBuilder.new(configuration: configuration)
       @release_manifest = release_manifest || ReleaseManifest.new(configuration: configuration)
     end
 
@@ -42,8 +45,9 @@ module MapTiles
       validate_artifact!(pmtiles_path, "PMTiles")
 
       style_paths = style_materializer.materialize
+      sprite_paths = sprite_builder.build
       manifest_path = release_manifest.write
-      uploads = upload_plan(pmtiles_path: pmtiles_path, style_paths: style_paths, manifest_path: manifest_path)
+      uploads = upload_plan(pmtiles_path: pmtiles_path, style_paths: style_paths, sprite_paths: sprite_paths, manifest_path: manifest_path)
       uploads.each { |upload| validate_artifact!(upload.fetch(:path), upload.fetch(:label)) }
 
       versioned_uploads, manifest_upload = split_upload_plan(uploads)
@@ -75,6 +79,11 @@ module MapTiles
       configuration.style_public_url("light")
       configuration.style_public_url("dark")
       configuration.manifest_public_url
+      configuration.sprite_public_base_url
+      Configuration::SPRITE_SUFFIXES.each do |suffix|
+        configuration.sprite_object_key(suffix)
+        configuration.sprite_public_url(suffix)
+      end
     rescue ArgumentError => e
       raise ConfigurationError, e.message
     end
@@ -92,7 +101,7 @@ module MapTiles
       [ versioned_uploads, manifest_upload ]
     end
 
-    def upload_plan(pmtiles_path:, style_paths:, manifest_path:)
+    def upload_plan(pmtiles_path:, style_paths:, sprite_paths:, manifest_path:)
       [
         {
           label: "PMTiles",
@@ -118,6 +127,7 @@ module MapTiles
           content_type: JSON_CONTENT_TYPE,
           cache_control: IMMUTABLE_CACHE_CONTROL
         },
+        *sprite_upload_plan(sprite_paths),
         {
           label: "manifest",
           key: configuration.manifest_object_key,
@@ -128,7 +138,22 @@ module MapTiles
         }
       ]
     rescue KeyError => e
-      raise ConfigurationError, "Style materializer did not return #{e.key.inspect} style artifact"
+      raise ConfigurationError, "Map release build did not produce the #{e.key.inspect} artifact"
+    end
+
+    # The sprite ships as four versioned immutable objects beside the styles so
+    # they upload and HEAD-verify before the manifest pointer moves.
+    def sprite_upload_plan(sprite_paths)
+      Configuration::SPRITE_SUFFIXES.map do |suffix|
+        {
+          label: "sprite#{suffix}",
+          key: configuration.sprite_object_key(suffix),
+          path: sprite_paths.fetch("sprite#{suffix}"),
+          url: configuration.sprite_public_url(suffix),
+          content_type: suffix.end_with?(".png") ? PNG_CONTENT_TYPE : JSON_CONTENT_TYPE,
+          cache_control: IMMUTABLE_CACHE_CONTROL
+        }
+      end
     end
 
     def upload_object(upload)
