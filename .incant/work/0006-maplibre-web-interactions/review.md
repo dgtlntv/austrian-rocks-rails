@@ -3,81 +3,37 @@ id: "0006"
 slug: maplibre-web-interactions
 stage: review
 reviewed: 2026-06-10
-commit: d0c11809
+commit: b91fa590
 ---
 
 # Maplibre Web Interactions — review
 <!-- Single fresh-eyes pass against spec + plan + acceptance + active principles. -->
 <!-- Each finding: file:line — what's wrong; why it matters; how to fix. status: open|addressed|wontfix (+ note). -->
 
-> Scope of this pass: **phase gate for 0006-P1** (commit d0c11809, the only phase committed).
-> P2–P6 and the remaining acceptance criteria are reviewed at later gates / before release.
+> Scope of this pass: **phase gate for 0006-P2** through review-fix commit `b91fa590`.
+> Prior P1 review findings remain addressed; P3–P6 and the remaining UI/style/release acceptance criteria are reviewed at later gates / before release.
 
 ### Strengths
-- db/migrate/20260610090000–20260610090002 — migrations mirror existing conventions exactly:
-  `text` warning columns matching `areas.warning_de/_en`, `add_reference` with real FKs and
-  indexes (`parking_poi_id → pois` via `to_table`), schema regenerated cleanly to 2026_06_10_090002.
-- app/models/guidebook.rb:1-4 — the class comment documents the cascade intent (area → cluster →
-  region inheritance at tile export), exactly the "Ruby docs at module boundaries" the spec's
-  code-documentation consideration asked for; `audited` + `MapTiles::PublishStaleMarker` are both
-  present so guidebook edits schedule a tile republish.
-- app/models/guidebook.rb:17 — guidebook URL validated as http(s) at the model layer per the
-  spec's security consideration; test/models/guidebook_test.rb:17-20 proves `javascript:` and
-  bare-word URLs are rejected.
-- app/models/area.rb:79, cluster.rb:35, region.rb:32 — `parking_poi_must_be_parking` reuses the
-  existing `Poi#parking?` predicate instead of the plan's literal `poi_type == "parking"` string
-  comparison; a small, justified improvement.
-- Region/Cluster/Area already include `MapTiles::PublishStaleMarker`, so every new cascade-relevant
-  field (warnings, guidebook_id, parking_poi_id) marks tiles stale with no extra wiring.
-- Tests verify real behaviour: association round-trips with reload, the train-station rejection
-  case on all three entities, blank-warning normalization, admin invalid-URL re-render with 422
-  (test/controllers/admin/guidebooks_controller_test.rb:34-43), and persistence of every new
-  permitted param through the real admin update actions.
-- app/views/admin/guidebooks/index.html.erb:32 — outbound guidebook links get
-  `target="_blank" rel="noopener noreferrer"`, honouring the spec's outbound-link rule already in
-  the admin UI.
-- Commit subject `incant 0006-P1: warnings, guidebooks, parking links (DB + admin)` follows the
-  phase-token convention; quality gate re-run fresh this session: 111 runs, 409 assertions,
-  0 failures/errors, rubocop clean (Docker PostGIS, exit 0) — matches the plan's recorded evidence.
-
-**Deviations from plan (judged intentional/justified — implementer to confirm):**
-- app/views/layouts/admin.html.erb:53 — a "Guidebooks" nav link was added; not in the plan's
-  Files-touched list but necessary for the CRUD to be reachable. Improvement.
-- Plan step 12 said "extend existing admin region/cluster/area controller tests", but no such
-  files existed; new focused test files were created instead. Correct response to a plan
-  assumption that didn't hold.
+- lib/map_tiles/geojson_exporter.rb:282-293 — the cascade seam is explicit and documented; `effective_card_attributes` resolves warnings, guidebook, and parking once at export time, matching the shared web/native contract and avoiding client-side divergence.
+- lib/map_tiles/geojson_exporter.rb:231-279,318-363 — area/cluster/region properties now consistently merge bounds, aggregate `problemCount`/`gradeMin`/`gradeMax`, and scalar card fields, so the card contract is baked into both point and hull features.
+- lib/map_tiles/geojson_exporter.rb:366-387 — cover-photo URLs use the CDN image route with `expires_in: nil` and follow the main-area/main-cluster chain for higher-level entities, which aligns with the spec's deterministic tile-data requirement.
+- lib/map_tiles/geojson_exporter.rb:390-401 — region `mainCluster*` bounds are exported separately from full region bounds, giving P4/P5 the data needed for the Maltatal/main-cluster camera fix without overloading existing bounds fields.
+- lib/map_tiles/layer_contract.rb:27-60 and lib/map_tiles/smoke_check.rb:28,225-227 — the layer contract and smoke checker were extended together, including a narrow URL-field allowlist (`coverPhotoUrl`, `guidebookUrl`, `parkingGoogleUrl`, plus existing `googleUrl`) instead of weakening the URL guard globally.
+- test/lib/map_tiles/geojson_exporter_test.rb:71-203 — exporter tests exercise the cascade matrix, published-area-only aggregates, main-cluster bounds, deterministic/non-expiring cover URL output, and cluster/region main-child cover fallback through real model records and exported GeoJSON.
+- test/lib/map_tiles/layer_contract_test.rb:40-47 — contract tests pin representative new properties across point and hull layers, reducing the chance that schema updates drift from exporter output.
+- Commit history follows incant conventions (`incant 0006-P2: exporter cascade and card tile contract`, `incant 0006-P2: address exporter review findings`). Fresh review-fix gate run in this session passed: `bin/rails db:prepare && bin/rails test test/lib/map_tiles && bin/rubocop lib/map_tiles test/lib/map_tiles -f github` in Docker/PostGIS → 66 runs, 1947 assertions, 0 failures/errors; rubocop exit 0.
 
 ### Blocker
 (none)
 
 ### Major
-(none)
+- .incant/work/0006-maplibre-web-interactions/plan.md:237-240 + .gitignore:29 + docs/map_tiles.md:3 — P2 is checked off as having updated `docs/map_tiles.md`, but `/docs/` is ignored and the P2 commit contains no docs change. status: wontfix — human confirmed `/docs/` is intentionally gitignored for this project; the local ignored contract note is accepted as the intended documentation location for this phase.
 
 ### Minor
-- app/controllers/admin/guidebooks_controller.rb:39-44 — `destroy` on a guidebook referenced by
-  any region/cluster/area raises `ActiveRecord::InvalidForeignKey` → admin 500 with no feedback.
-  Sibling controllers (regions/clusters) share this naked-destroy pattern today, but guidebooks
-  are *designed* to be shared across many entities, so an in-use delete is the likely case, and
-  the index/edit views offer a Delete button that will 500. Fix: rescue
-  `ActiveRecord::InvalidForeignKey` (or check `regions/clusters/areas.exists?` first) and
-  re-render with a flash error naming the entities still referencing it. status: addressed —
-  destroy now checks `regions/clusters/areas.exists?` and redirects to the edit page with a flash
-  error naming the assigning entity types; covered by the new "destroy refuses when guidebook is
-  still assigned" controller test.
+- test/lib/map_tiles/geojson_exporter_test.rb:172-203 — the cover-photo test proves area cover URLs are deterministic, but it never exercises the required cluster/region main-child cover fallback implemented in `effective_cover_attachment`. The code path looks correct, but this is an exporter-contract edge that can regress silently and affects cards on higher-level pins. Add assertions for cluster main-area cover and region main-cluster→main-area cover fallback (including absent-cover behavior). status: addressed — test now sets `cluster.main_area_id` and `region.main_cluster_id`, asserts the cluster and region `coverPhotoUrl` equal the area cover URL across two exports, and asserts all three omit `coverPhotoUrl` after purging the cover; gate re-run green (66 runs/1947 assertions, rubocop clean).
 
 ### Nit
-- app/controllers/admin/guidebooks_controller.rb:17 + 34 — `flash[:error]` (not `flash.now`) set
-  before a `render` leaks the message into the *next* request as well. Copied from the sibling
-  `Admin::PoisController#update`, so consistent house style; noting it so the pattern doesn't
-  spread further in P4/P5 views. status: addressed — both render branches use `flash.now[:error]`
-  (sibling controllers left untouched; out of this item's scope).
-- db/migrate/20260610090002_add_guidebook_and_parking_to_climbing_entities.rb:4-5 — `null: true`
-  on `add_reference` is the default and redundant. No functional impact. status: addressed —
-  removed; no-op for the already-generated schema.
+(none)
 
 ### Verdict
-Ready to release? **Yes** (for the P1 phase gate — the item as a whole continues with P2–P6). No
-blockers or majors; the phase delivers everything P1 promised (warnings on clusters/regions,
-Guidebook model + admin CRUD, parking-POI links, admin forms/strong-params, tests). All findings
-from this pass were addressed in the same session and the gate re-ran green after the fixes:
-112 runs, 415 assertions, 0 failures/errors, rubocop clean (Docker PostGIS). Proceed to `0006-P2`.
+Ready to release? **Yes** for the P2 phase gate. No open blockers or majors remain (the docs finding is accepted `wontfix` by human decision, and the cover-fallback test gap is addressed); the review-fix gate is green. Proceed to `/incant:implement 0006` for `0006-P3`.
