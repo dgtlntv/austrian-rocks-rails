@@ -15,6 +15,8 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
     @s3_client = FakeS3Client.new
     @head_urls = []
     @http_head = ->(uri) { @head_urls << uri.to_s; FakeHeadResponse.new(200) }
+    @style_materializer = FakeStyleMaterializer.new(@configuration)
+    @release_manifest = FakeReleaseManifest.new(@configuration)
   end
 
   teardown do
@@ -27,7 +29,7 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
       env: @env.except("BUNNY_STORAGE_SECRET_ACCESS_KEY"),
       settings: map_tile_settings
     )
-    publisher = MapTiles::BunnyPublisher.new(configuration: configuration, s3_client: @s3_client, http_head: @http_head)
+    publisher = build_publisher(configuration: configuration)
 
     error = assert_raises(MapTiles::BunnyPublisher::ConfigurationError) { publisher.publish }
 
@@ -38,7 +40,7 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
 
   test "requires config-backed publication settings" do
     configuration = MapTiles::Configuration.new(version: "2026-06-07", env: @env, settings: map_tile_settings("public_cdn_host" => ""))
-    publisher = MapTiles::BunnyPublisher.new(configuration: configuration, s3_client: @s3_client, http_head: @http_head)
+    publisher = build_publisher(configuration: configuration)
 
     error = assert_raises(MapTiles::BunnyPublisher::ConfigurationError) { publisher.publish }
 
@@ -46,106 +48,134 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
     assert_not_includes error.message, "MAP_TILES_PUBLIC_CDN_HOST"
   end
 
-  test "constructs sanitized versioned and latest manifest object keys" do
+  test "requires existing non-empty PMTiles artifact" do
+    @configuration.artifact_path.delete
+
+    missing = assert_raises(MapTiles::BunnyPublisher::ConfigurationError) { build_publisher.publish }
+    assert_includes missing.message, "PMTiles artifact is missing"
+
+    @configuration.artifact_path.binwrite("")
+    empty = assert_raises(MapTiles::BunnyPublisher::ConfigurationError) { build_publisher.publish }
+    assert_includes empty.message, "PMTiles artifact is empty"
+  end
+
+  test "constructs sanitized versioned style and manifest object keys" do
     assert_equal "maps/austrian-rocks-2026-06-07.pmtiles", @configuration.versioned_object_key
-    assert_equal "maps/austrian-rocks-latest.json", @configuration.latest_manifest_object_key
-    assert_equal "maps/austrian-rocks-latest.pmtiles", @configuration.latest_object_key
+    assert_equal "styles/austrian-rocks-2026-06-07-light.json", @configuration.style_object_key("light")
+    assert_equal "styles/austrian-rocks-2026-06-07-dark.json", @configuration.style_object_key("dark")
+    assert_equal "maps/current.json", @configuration.manifest_object_key
+    assert_not_respond_to @configuration, :"latest_#{'object'}_key"
 
     bad_configuration = MapTiles::Configuration.new(version: "2026/06/07", env: @env, settings: map_tile_settings)
 
     assert_raises(ArgumentError) { bad_configuration.versioned_object_key }
 
     blank_prefix_configuration = MapTiles::Configuration.new(version: "2026-06-07", env: @env, settings: map_tile_settings("bunny_prefix" => "/"))
-    publisher = MapTiles::BunnyPublisher.new(configuration: blank_prefix_configuration, s3_client: @s3_client, http_head: @http_head)
+    publisher = build_publisher(configuration: blank_prefix_configuration)
 
     error = assert_raises(MapTiles::BunnyPublisher::ConfigurationError) { publisher.publish }
     assert_includes error.message, "Configured Bunny prefix"
   end
 
-  test "uploads immutable PMTiles and latest manifest and verifies both public urls" do
+  test "uploads immutable PMTiles and styles plus non-cached manifest and verifies public urls" do
     out = StringIO.new
-    publisher = MapTiles::BunnyPublisher.new(
-      configuration: @configuration,
-      s3_client: @s3_client,
-      http_head: @http_head,
-      out: out,
-      clock: -> { Time.utc(2026, 6, 8, 16, 45, 30) }
-    )
+    publisher = build_publisher(out: out)
 
     published = publisher.publish
 
-    assert_equal %w[maps/austrian-rocks-2026-06-07.pmtiles maps/austrian-rocks-latest.json], @s3_client.puts.map { |put| put.fetch(:key) }
-    assert_equal [ "https://cdn.example.test/maps/austrian-rocks-2026-06-07.pmtiles", "https://cdn.example.test/maps/austrian-rocks-latest.json" ], @head_urls
-    assert_equal "https://cdn.example.test/maps/austrian-rocks-2026-06-07.pmtiles", published.fetch(:pmtiles).fetch(:url)
-    assert_equal "https://cdn.example.test/maps/austrian-rocks-latest.json", published.fetch(:manifest).fetch(:url)
-    assert_equal "application/octet-stream", @s3_client.puts.first.fetch(:content_type)
-    assert_equal "public, max-age=31536000, immutable", @s3_client.puts.first.fetch(:cache_control)
-    assert_equal "application/json", @s3_client.puts.second.fetch(:content_type)
-    assert_equal "public, max-age=60", @s3_client.puts.second.fetch(:cache_control)
-    assert_equal "pmtiles", @s3_client.puts.first.fetch(:body)
-
-    manifest = JSON.parse(@s3_client.puts.second.fetch(:body))
-    assert_equal "2026-06-07", manifest.fetch("version")
-    assert_equal "https://cdn.example.test/maps/austrian-rocks-2026-06-07.pmtiles", manifest.fetch("pmtiles_url")
-    assert_equal "2026-06-08T16:45:30Z", manifest.fetch("published_at")
-    assert_equal "austrian-rocks", manifest.fetch("artifact_basename")
-    assert_equal "maps/austrian-rocks-2026-06-07.pmtiles", manifest.fetch("pmtiles_object_key")
-    assert_equal "austrian-rocks-2026-06-07.pmtiles", manifest.fetch("pmtiles_object_basename")
-    assert_includes out.string, "austrian-rocks-latest.json"
-    assert_not_includes out.string, "austrian-rocks-latest.pmtiles"
-  end
-
-  test "latest manifest upload overwrites the stable object key" do
-    MapTiles::BunnyPublisher.new(configuration: @configuration, s3_client: @s3_client, http_head: @http_head).publish
-    MapTiles::BunnyPublisher.new(configuration: @configuration, s3_client: @s3_client, http_head: @http_head).publish
-
-    latest_puts = @s3_client.puts.select { |put| put.fetch(:key) == "maps/austrian-rocks-latest.json" }
-    latest_pmtiles_puts = @s3_client.puts.select { |put| put.fetch(:key) == "maps/austrian-rocks-latest.pmtiles" }
-
-    assert_equal 2, latest_puts.length
-    assert_empty latest_pmtiles_puts
-  end
-
-  test "fails when a public HEAD check is not successful" do
-    publisher = MapTiles::BunnyPublisher.new(
-      configuration: @configuration,
-      s3_client: @s3_client,
-      http_head: ->(_uri) { FakeHeadResponse.new(404) }
+    assert @style_materializer.called
+    assert @release_manifest.called
+    assert_equal(
+      %w[
+        maps/austrian-rocks-2026-06-07.pmtiles
+        styles/austrian-rocks-2026-06-07-light.json
+        styles/austrian-rocks-2026-06-07-dark.json
+        maps/current.json
+      ],
+      @s3_client.puts.map { |put| put.fetch(:key) }
     )
+    assert_equal(
+      [
+        "https://cdn.example.test/maps/austrian-rocks-2026-06-07.pmtiles",
+        "https://cdn.example.test/styles/austrian-rocks-2026-06-07-light.json",
+        "https://cdn.example.test/styles/austrian-rocks-2026-06-07-dark.json",
+        "https://cdn.example.test/maps/current.json"
+      ],
+      @head_urls
+    )
+    assert_equal @head_urls, published.map { |object| object.fetch(:url) }
+    assert_equal [
+      "application/octet-stream",
+      "application/json; charset=utf-8",
+      "application/json; charset=utf-8",
+      "application/json; charset=utf-8"
+    ], @s3_client.puts.map { |put| put.fetch(:content_type) }
+    assert_equal [
+      "public, max-age=31536000, immutable",
+      "public, max-age=31536000, immutable",
+      "public, max-age=31536000, immutable",
+      "no-cache, max-age=0, must-revalidate"
+    ], @s3_client.puts.map { |put| put.fetch(:cache_control) }
+    assert_not_includes out.string, "austrian-rocks-#{'latest'}"
+    assert_includes out.string, "maps/current.json"
+  end
+
+  test "fails before publishing the manifest when a versioned asset public HEAD check is not successful" do
+    publisher = build_publisher(http_head: ->(uri) { FakeHeadResponse.new(uri.to_s.include?("-dark.json") ? 503 : 200) })
 
     error = assert_raises(MapTiles::BunnyPublisher::VerificationError) { publisher.publish }
 
-    assert_includes error.message, "returned 404"
-    assert_includes error.message, "https://cdn.example.test/maps/austrian-rocks-2026-06-07.pmtiles"
-    assert_equal %w[maps/austrian-rocks-2026-06-07.pmtiles], @s3_client.puts.map { |put| put.fetch(:key) }
+    assert_includes error.message, "returned 503"
+    assert_includes error.message, "https://cdn.example.test/styles/austrian-rocks-2026-06-07-dark.json"
+    assert_equal(
+      %w[
+        maps/austrian-rocks-2026-06-07.pmtiles
+        styles/austrian-rocks-2026-06-07-light.json
+        styles/austrian-rocks-2026-06-07-dark.json
+      ],
+      @s3_client.puts.map { |put| put.fetch(:key) }
+    )
   end
 
   test "fails when the manifest public HEAD check is not successful" do
-    responses = [ FakeHeadResponse.new(200), FakeHeadResponse.new(404) ]
-    publisher = MapTiles::BunnyPublisher.new(
-      configuration: @configuration,
-      s3_client: @s3_client,
-      http_head: ->(_uri) { responses.shift }
-    )
+    publisher = build_publisher(http_head: ->(uri) { FakeHeadResponse.new(uri.to_s.end_with?("current.json") ? 404 : 200) })
 
     error = assert_raises(MapTiles::BunnyPublisher::VerificationError) { publisher.publish }
 
     assert_includes error.message, "returned 404"
-    assert_includes error.message, "https://cdn.example.test/maps/austrian-rocks-latest.json"
-    assert_equal %w[maps/austrian-rocks-2026-06-07.pmtiles maps/austrian-rocks-latest.json], @s3_client.puts.map { |put| put.fetch(:key) }
+    assert_includes error.message, "https://cdn.example.test/maps/current.json"
+    assert_equal 4, @s3_client.puts.length
   end
 
   test "does not leak credentials in upload errors" do
     leaking_client = FakeS3Client.new(error: Aws::S3::Errors::ServiceError.new(nil, "super-secret"))
-    publisher = MapTiles::BunnyPublisher.new(configuration: @configuration, s3_client: leaking_client, http_head: @http_head)
+    publisher = build_publisher(s3_client: leaking_client)
 
     error = assert_raises(MapTiles::BunnyPublisher::UploadError) { publisher.publish }
 
-    assert_includes error.message, "Bunny PMTiles upload failed"
+    assert_includes error.message, "Bunny map release upload failed"
     assert_not_includes error.message, "super-secret"
   end
 
   private
+
+  def build_publisher(
+    configuration: @configuration,
+    s3_client: @s3_client,
+    http_head: @http_head,
+    out: StringIO.new,
+    style_materializer: @style_materializer,
+    release_manifest: @release_manifest
+  )
+    MapTiles::BunnyPublisher.new(
+      configuration: configuration,
+      s3_client: s3_client,
+      http_head: http_head,
+      out: out,
+      style_materializer: style_materializer,
+      release_manifest: release_manifest
+    )
+  end
 
   def publication_env
     {
@@ -167,12 +197,55 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
       "output_dir" => @output_dir.to_s,
       "public_cdn_host" => "https://cdn.example.test/",
       "bunny_prefix" => "/maps/",
+      "style_prefix" => "styles",
+      "manifest_prefix" => "maps",
+      "manifest_object_name" => "current.json",
+      "default_style" => "light",
+      "basemap_at_style_url" => "https://basemap.bergwerk-gis.at/api/styles/basemap-at-farbe",
+      "basemap_at_attribution" => "Grundkarte: <a href=\"https://basemap.at/\" target=\"_blank\" rel=\"noopener noreferrer\">basemap.at</a>",
+      "terrain_opacity" => 0.35,
       "optional_production_layers" => [],
       "automatic_publish_debounce_minutes" => "30",
       "manifest_cache_ttl_seconds" => "60",
       "pmtiles_cache_control" => "public, max-age=31536000, immutable",
       "manifest_content_type" => "application/json"
     }.merge(overrides)
+  end
+
+  class FakeStyleMaterializer
+    attr_reader :called
+
+    def initialize(configuration)
+      @configuration = configuration
+      @called = false
+    end
+
+    def materialize
+      @called = true
+      MapTiles::Configuration::STYLE_NAMES.to_h do |style_name|
+        path = @configuration.style_artifact_path(style_name)
+        FileUtils.mkdir_p(path.dirname)
+        path.write("{\"style\":\"#{style_name}\"}")
+        [ style_name, path ]
+      end
+    end
+  end
+
+  class FakeReleaseManifest
+    attr_reader :called
+
+    def initialize(configuration)
+      @configuration = configuration
+      @called = false
+    end
+
+    def write
+      @called = true
+      path = @configuration.manifest_artifact_path
+      FileUtils.mkdir_p(path.dirname)
+      path.write("{\"version\":\"#{@configuration.version}\"}")
+      path
+    end
   end
 
   class FakeS3Client

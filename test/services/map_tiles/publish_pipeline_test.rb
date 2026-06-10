@@ -36,9 +36,9 @@ class MapTiles::PublishPipelineTest < ActiveSupport::TestCase
     assert_equal "succeeded", attempt.status
     assert_equal "2026-06-08T16-45-30Z", attempt.version
     assert_equal "https://tiles.example/map_tiles/test/austrian-rocks-2026-06-08T16-45-30Z.pmtiles", attempt.pmtiles_url
-    assert_equal "https://tiles.example/map_tiles/test/austrian-rocks-latest.json", attempt.manifest_url
+    assert_equal "https://tiles.example/map_tiles/current.json", attempt.manifest_url
     assert_equal "map_tiles/test/austrian-rocks-2026-06-08T16-45-30Z.pmtiles", attempt.pmtiles_object_key
-    assert_equal "map_tiles/test/austrian-rocks-latest.json", attempt.manifest_object_key
+    assert_equal "map_tiles/current.json", attempt.manifest_object_key
     assert_equal attempt.id, MapTilePublishState.current!.last_successful_attempt_id
     assert_nil MapTilePublishState.current!.running_attempt_id
   end
@@ -161,6 +161,13 @@ class MapTiles::PublishPipelineTest < ActiveSupport::TestCase
       "output_dir" => "tmp/map_tiles",
       "public_cdn_host" => "tiles.example",
       "bunny_prefix" => "map_tiles/test",
+      "style_prefix" => "map_styles",
+      "manifest_prefix" => "map_tiles",
+      "manifest_object_name" => "current.json",
+      "default_style" => "light",
+      "basemap_at_style_url" => "https://basemap.bergwerk-gis.at/api/styles/basemap-at-farbe",
+      "basemap_at_attribution" => "Grundkarte: <a href=\"https://basemap.at/\" target=\"_blank\" rel=\"noopener noreferrer\">basemap.at</a>",
+      "terrain_opacity" => 0.35,
       "optional_production_layers" => [],
       "automatic_publish_debounce_minutes" => 30,
       "manifest_cache_ttl_seconds" => 60,
@@ -237,16 +244,24 @@ class MapTiles::PublishPipelineTest < ActiveSupport::TestCase
         raise error if error
 
         calls << [ :publish, @configuration.version ]
-        {
-          pmtiles: {
+        [
+          {
             key: @configuration.versioned_object_key,
             url: "https://tiles.example/#{@configuration.versioned_object_key}"
           },
-          manifest: {
-            key: @configuration.latest_manifest_object_key,
-            url: "https://tiles.example/#{@configuration.latest_manifest_object_key}"
+          {
+            key: @configuration.style_object_key("light"),
+            url: "https://tiles.example/#{@configuration.style_object_key("light")}"
+          },
+          {
+            key: @configuration.style_object_key("dark"),
+            url: "https://tiles.example/#{@configuration.style_object_key("dark")}"
+          },
+          {
+            key: @configuration.manifest_object_key,
+            url: "https://tiles.example/#{@configuration.manifest_object_key}"
           }
-        }
+        ]
       end
     end
   end

@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
 require "pathname"
+require "uri"
 require "map_tiles/layer_contract"
 
 module MapTiles
   class Configuration
     VERSION_REQUIRED_MESSAGE = "--version is required for build, smoke, and publish"
+    STYLE_NAMES = %w[light dark].freeze
 
     attr_reader :env
 
@@ -41,12 +43,42 @@ module MapTiles
     end
 
     def bunny_prefix
-      prefix = fetch_setting("bunny_prefix").to_s.strip.gsub(%r{\A/+|/+\z}, "")
-      return "" if prefix.blank?
+      sanitized_prefix("bunny_prefix")
+    end
 
-      prefix.split("/").map do |segment|
-        sanitize_path_segment(segment, name: "bunny_prefix")
-      end.join("/")
+    def style_prefix
+      sanitized_prefix("style_prefix")
+    end
+
+    def manifest_prefix
+      sanitized_prefix("manifest_prefix")
+    end
+
+    def manifest_object_name
+      object_name = sanitize_path_segment(fetch_setting("manifest_object_name"), name: "manifest_object_name")
+      raise ArgumentError, "manifest_object_name must end in .json" unless object_name.end_with?(".json")
+
+      object_name
+    end
+
+    def default_style
+      sanitize_style_name(fetch_setting("default_style"), name: "default_style")
+    end
+
+    def terrain_opacity
+      opacity_setting("terrain_opacity")
+    end
+
+    def contour_opacity
+      opacity_setting("contour_opacity")
+    end
+
+    def basemap_at_style_url
+      fetch_setting("basemap_at_style_url").to_s.strip
+    end
+
+    def basemap_at_attribution
+      fetch_setting("basemap_at_attribution").to_s.strip
     end
 
     def optional_production_layers
@@ -57,18 +89,6 @@ module MapTiles
       raise ArgumentError, "Unknown optional production layer(s): #{unknown_layers.join(', ')}" if unknown_layers.any?
 
       layers
-    end
-
-    def artifact_path
-      output_dir.join("#{artifact_basename}-#{version}.pmtiles")
-    end
-
-    def metadata_path
-      output_dir.join("#{artifact_basename}-#{version}.metadata.json")
-    end
-
-    def versioned_object_key
-      object_key("#{artifact_basename}-#{version}.pmtiles")
     end
 
     def automatic_publish_debounce
@@ -87,16 +107,60 @@ module MapTiles
       fetch_setting("manifest_content_type").to_s.strip
     end
 
-    def latest_object_key
-      object_key("#{artifact_basename}-latest.pmtiles")
+    def artifact_path
+      output_dir.join("#{artifact_basename}-#{version}.pmtiles")
     end
 
-    def latest_manifest_object_key
-      object_key("#{artifact_basename}-latest.json")
+    def metadata_path
+      output_dir.join("#{artifact_basename}-#{version}.metadata.json")
     end
 
-    def latest_manifest_basename
-      "#{artifact_basename}-latest.json"
+    def style_template_path(style_name)
+      Rails.root.join("config/map_styles/austrian_rocks_#{sanitize_style_name(style_name)}.json")
+    end
+
+    def style_artifact_path(style_name)
+      output_dir.join("#{artifact_basename}-#{version}-#{sanitize_style_name(style_name)}.json")
+    end
+
+    def manifest_artifact_path
+      output_dir.join(manifest_object_name)
+    end
+
+    def versioned_object_key
+      object_key(bunny_prefix, "#{artifact_basename}-#{version}.pmtiles")
+    end
+
+    def style_object_key(style_name)
+      object_key(style_prefix, "#{artifact_basename}-#{version}-#{sanitize_style_name(style_name)}.json")
+    end
+
+    def manifest_object_key
+      object_key(manifest_prefix, manifest_object_name)
+    end
+
+    def public_url_for_object_key(key)
+      raw_key = key.to_s.strip
+      raise ArgumentError, "object_key is required" if raw_key.blank?
+      raise ArgumentError, "object_key must not contain empty path segments" if raw_key.start_with?("/") || raw_key.end_with?("/") || raw_key.include?("//")
+
+      sanitized_key = raw_key.split("/").map do |segment|
+        sanitize_path_segment(segment, name: "object_key")
+      end.join("/")
+
+      "#{public_cdn_base}/#{sanitized_key}"
+    end
+
+    def pmtiles_public_url
+      public_url_for_object_key(versioned_object_key)
+    end
+
+    def style_public_url(style_name)
+      public_url_for_object_key(style_object_key(style_name))
+    end
+
+    def manifest_public_url
+      public_url_for_object_key(manifest_object_key)
     end
 
     def expected_layers
@@ -122,8 +186,49 @@ module MapTiles
       raise ArgumentError, VERSION_REQUIRED_MESSAGE
     end
 
-    def object_key(file_name)
-      [ bunny_prefix.presence, file_name ].compact.join("/")
+    def object_key(prefix, file_name)
+      [ prefix.presence, file_name ].compact.join("/")
+    end
+
+    def sanitized_prefix(name)
+      prefix = fetch_setting(name).to_s.strip.gsub(%r{\A/+|/+\z}, "")
+      return "" if prefix.blank?
+
+      prefix.split("/").map do |segment|
+        sanitize_path_segment(segment, name: name)
+      end.join("/")
+    end
+
+    def sanitize_style_name(style_name, name: "style_name")
+      style = style_name.to_s.strip
+      raise ArgumentError, "#{name} must be one of: #{STYLE_NAMES.join(', ')}" unless STYLE_NAMES.include?(style)
+
+      style
+    end
+
+    def public_cdn_base
+      host = public_cdn_host.to_s.delete_suffix("/")
+      raise ArgumentError, "public_cdn_host is required" if host.blank?
+
+      uri = URI.parse(host.match?(%r{\Ahttps?://}i) ? host : "https://#{host}")
+      raise ArgumentError, "public_cdn_host must use https" unless uri.scheme == "https"
+      raise ArgumentError, "public_cdn_host must not contain credentials" if uri.userinfo.present?
+      raise ArgumentError, "public_cdn_host must not contain a path" if uri.path.present? && uri.path != "/"
+      raise ArgumentError, "public_cdn_host must not contain query parameters" if uri.query.present?
+      raise ArgumentError, "public_cdn_host must not contain a fragment" if uri.fragment.present?
+
+      uri.to_s.delete_suffix("/")
+    rescue URI::InvalidURIError => e
+      raise ArgumentError, "public_cdn_host is invalid: #{e.message}"
+    end
+
+    def opacity_setting(name)
+      opacity = Float(fetch_setting(name))
+      raise ArgumentError, "#{name} must be between 0 and 1" unless opacity.between?(0.0, 1.0)
+
+      opacity
+    rescue TypeError, ArgumentError
+      raise ArgumentError, "#{name} must be between 0 and 1"
     end
 
     def sanitize_path_segment(value, name:)

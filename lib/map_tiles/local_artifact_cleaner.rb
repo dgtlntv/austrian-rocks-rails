@@ -22,7 +22,7 @@ module MapTiles
 
       removed_paths = cleanup_candidates.select { |path| expired?(path) && !current_artifact?(path) }
       removed_paths.each { |path| FileUtils.rm_f(path) }
-      out.puts "cleaned #{removed_paths.length} old local PMTiles artifact(s) older than #{retention_days} day(s)"
+      out.puts "cleaned #{removed_paths.length} old local map release artifact(s) older than #{retention_days} day(s)"
       removed_paths
     end
 
@@ -36,7 +36,10 @@ module MapTiles
       basename = configuration.artifact_basename
       [
         configuration.output_dir.join("#{basename}-*.pmtiles").to_s,
-        configuration.output_dir.join("#{basename}-*.metadata.json").to_s
+        configuration.output_dir.join("#{basename}-*.metadata.json").to_s,
+        configuration.output_dir.join("#{basename}-*-light.json").to_s,
+        configuration.output_dir.join("#{basename}-*-dark.json").to_s,
+        configuration.output_dir.join(configuration.manifest_object_name).to_s
       ]
     end
 
@@ -45,7 +48,13 @@ module MapTiles
     end
 
     def current_artifact?(path)
-      [ configuration.artifact_path, configuration.metadata_path ].map(&:to_s).include?(path.to_s)
+      [
+        configuration.artifact_path,
+        configuration.metadata_path,
+        configuration.style_artifact_path("light"),
+        configuration.style_artifact_path("dark"),
+        configuration.manifest_artifact_path
+      ].map(&:to_s).include?(path.to_s)
     end
   end
 end

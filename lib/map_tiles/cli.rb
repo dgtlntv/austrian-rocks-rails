@@ -101,7 +101,7 @@ module MapTiles
       end
 
       published = publisher_class.new(configuration: versioned_configuration, out: out).publish
-      print_manifest_url(published)
+      print_manifest_url(published, configuration: versioned_configuration)
       cleaner_class.new(configuration: versioned_configuration, out: out).clean
       0
     end
@@ -135,12 +135,17 @@ module MapTiles
       [ configuration.with_version(version), remaining_argv ]
     end
 
-    def print_manifest_url(published)
+    def print_manifest_url(published, configuration:)
       manifest = if published.is_a?(Hash)
         published[:manifest] || published["manifest"]
+      else
+        Array(published).find do |object|
+          object_key = object[:key] || object["key"]
+          object_key == configuration.manifest_object_key
+        end
       end
       manifest_url = manifest&.fetch(:url, nil) || manifest&.fetch("url", nil)
-      out.puts "latest manifest -> #{manifest_url}" if manifest_url.present?
+      out.puts "current manifest -> #{manifest_url}" if manifest_url.present?
     end
 
     def extract_skip_smoke!(remaining_argv)

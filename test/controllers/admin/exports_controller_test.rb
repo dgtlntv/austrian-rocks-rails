@@ -40,7 +40,7 @@ class Admin::ExportsControllerTest < ActionDispatch::IntegrationTest
         started_at: 19.minutes.ago,
         finished_at: 18.minutes.ago,
         pmtiles_url: "https://cdn.example.test/map_tiles/austrian-rocks-2026-06-08T16-45-30Z.pmtiles",
-        manifest_url: "https://cdn.example.test/map_tiles/austrian-rocks-latest.json"
+        manifest_url: "https://cdn.example.test/map_tiles/current.json"
       )
       pending = MapTilePublishAttempt.create!(
         source: "automatic",
@@ -71,7 +71,7 @@ class Admin::ExportsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "pending"
     assert_includes response.body, "2026-06-08T16-45-30Z"
     assert_includes response.body, "https://cdn.example.test/map_tiles/austrian-rocks-2026-06-08T16-45-30Z.pmtiles"
-    assert_includes response.body, "https://cdn.example.test/map_tiles/austrian-rocks-latest.json"
+    assert_includes response.body, "https://cdn.example.test/map_tiles/current.json"
     assert_includes response.body, "Problem#123 changed"
     assert_includes response.body, "Boulder#9 changed"
     assert_includes response.body, "[REDACTED BUNNY_STORAGE_SECRET_ACCESS_KEY]"

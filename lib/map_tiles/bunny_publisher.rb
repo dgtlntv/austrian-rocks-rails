@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require "aws-sdk-s3"
-require "json"
 require "net/http"
-require "stringio"
 require "uri"
 require "map_tiles/configuration"
+require "map_tiles/release_manifest"
+require "map_tiles/style_materializer"
 
 module MapTiles
   class BunnyPublisher
@@ -15,6 +15,9 @@ module MapTiles
     class VerificationError < Error; end
 
     PMTILES_CONTENT_TYPE = "application/octet-stream"
+    JSON_CONTENT_TYPE = "application/json; charset=utf-8"
+    IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable"
+    MANIFEST_CACHE_CONTROL = "no-cache, max-age=0, must-revalidate"
     REQUIRED_BUNNY_ENV = %w[
       BUNNY_STORAGE_ENDPOINT
       BUNNY_STORAGE_REGION
@@ -22,41 +25,35 @@ module MapTiles
       BUNNY_STORAGE_ACCESS_KEY_ID
       BUNNY_STORAGE_SECRET_ACCESS_KEY
     ].freeze
-    attr_reader :configuration, :s3_client, :http_head, :out, :clock
+    attr_reader :configuration, :s3_client, :http_head, :out, :style_materializer, :release_manifest
 
-    def initialize(configuration: Configuration.new, s3_client: nil, http_head: nil, out: $stdout, clock: -> { Time.current })
+    def initialize(configuration: Configuration.new, s3_client: nil, http_head: nil, out: $stdout, style_materializer: nil, release_manifest: nil)
       @configuration = configuration
       @s3_client = s3_client
       @http_head = http_head || method(:net_http_head)
       @out = out
-      @clock = clock
+      @style_materializer = style_materializer || StyleMaterializer.new(configuration: configuration)
+      @release_manifest = release_manifest || ReleaseManifest.new(configuration: configuration)
     end
 
     def publish
       validate_configuration!
-      artifact_path = configuration.artifact_path
-      raise ConfigurationError, "PMTiles artifact is missing: #{artifact_path}" unless artifact_path.exist?
-      raise ConfigurationError, "PMTiles artifact is empty: #{artifact_path}" unless artifact_path.size.positive?
+      pmtiles_path = configuration.artifact_path
+      validate_artifact!(pmtiles_path, "PMTiles")
 
-      pmtiles_key = configuration.versioned_object_key
-      upload_pmtiles_object(pmtiles_key, artifact_path)
-      pmtiles_url = public_url_for(pmtiles_key)
-      verify_public_url!(pmtiles_url)
+      style_paths = style_materializer.materialize
+      manifest_path = release_manifest.write
+      uploads = upload_plan(pmtiles_path: pmtiles_path, style_paths: style_paths, manifest_path: manifest_path)
+      uploads.each { |upload| validate_artifact!(upload.fetch(:path), upload.fetch(:label)) }
 
-      manifest_key = configuration.latest_manifest_object_key
-      manifest_body = manifest_json(pmtiles_url: pmtiles_url, pmtiles_object_key: pmtiles_key)
-      # latest.json is the only overwritten object; overwriting PMTiles archives can produce stale or mixed range responses.
-      upload_manifest_object(manifest_key, manifest_body)
-      manifest_url = public_url_for(manifest_key)
-      verify_public_url!(manifest_url)
+      versioned_uploads, manifest_upload = split_upload_plan(uploads)
+      versioned_uploads.each { |upload| upload_object(upload) }
+      versioned_uploads.each { |upload| verify_public_url!(upload.fetch(:url)) }
+      upload_object(manifest_upload)
+      verify_public_url!(manifest_upload.fetch(:url))
 
-      published = {
-        pmtiles: { key: pmtiles_key, url: pmtiles_url },
-        manifest: { key: manifest_key, url: manifest_url }
-      }
-
-      out.puts "published #{pmtiles_key} -> #{pmtiles_url}"
-      out.puts "published #{manifest_key} -> #{manifest_url}"
+      published = (versioned_uploads + [ manifest_upload ]).map { |upload| { key: upload.fetch(:key), url: upload.fetch(:url) } }
+      published.each { |object| out.puts "published #{object.fetch(:key)} -> #{object.fetch(:url)}" }
       published
     end
 
@@ -71,52 +68,81 @@ module MapTiles
 
       configuration.artifact_basename
       configuration.versioned_object_key
-      configuration.latest_manifest_object_key
+      configuration.style_object_key("light")
+      configuration.style_object_key("dark")
+      configuration.manifest_object_key
+      configuration.pmtiles_public_url
+      configuration.style_public_url("light")
+      configuration.style_public_url("dark")
+      configuration.manifest_public_url
     rescue ArgumentError => e
       raise ConfigurationError, e.message
     end
 
-    def upload_pmtiles_object(key, artifact_path)
-      File.open(artifact_path, "rb") do |body|
-        upload_object(
-          key: key,
-          body: body,
+    def validate_artifact!(path, label)
+      raise ConfigurationError, "#{label} artifact is missing: #{path}" unless path.exist?
+      raise ConfigurationError, "#{label} artifact is empty: #{path}" unless path.size.positive?
+    end
+
+    def split_upload_plan(uploads)
+      manifest_upload = uploads.find { |upload| upload.fetch(:key) == configuration.manifest_object_key }
+      versioned_uploads = uploads.reject { |upload| upload.equal?(manifest_upload) }
+      raise ConfigurationError, "Manifest upload is missing from map release upload plan" unless manifest_upload
+
+      [ versioned_uploads, manifest_upload ]
+    end
+
+    def upload_plan(pmtiles_path:, style_paths:, manifest_path:)
+      [
+        {
+          label: "PMTiles",
+          key: configuration.versioned_object_key,
+          path: pmtiles_path,
+          url: configuration.pmtiles_public_url,
           content_type: PMTILES_CONTENT_TYPE,
-          cache_control: configuration.pmtiles_cache_control
+          cache_control: IMMUTABLE_CACHE_CONTROL
+        },
+        {
+          label: "light style",
+          key: configuration.style_object_key("light"),
+          path: style_paths.fetch("light"),
+          url: configuration.style_public_url("light"),
+          content_type: JSON_CONTENT_TYPE,
+          cache_control: IMMUTABLE_CACHE_CONTROL
+        },
+        {
+          label: "dark style",
+          key: configuration.style_object_key("dark"),
+          path: style_paths.fetch("dark"),
+          url: configuration.style_public_url("dark"),
+          content_type: JSON_CONTENT_TYPE,
+          cache_control: IMMUTABLE_CACHE_CONTROL
+        },
+        {
+          label: "manifest",
+          key: configuration.manifest_object_key,
+          path: manifest_path,
+          url: configuration.manifest_public_url,
+          content_type: JSON_CONTENT_TYPE,
+          cache_control: MANIFEST_CACHE_CONTROL
+        }
+      ]
+    rescue KeyError => e
+      raise ConfigurationError, "Style materializer did not return #{e.key.inspect} style artifact"
+    end
+
+    def upload_object(upload)
+      File.open(upload.fetch(:path), "rb") do |body|
+        client.put_object(
+          bucket: configuration.env.fetch("BUNNY_STORAGE_BUCKET"),
+          key: upload.fetch(:key),
+          body: body,
+          content_type: upload.fetch(:content_type),
+          cache_control: upload.fetch(:cache_control)
         )
       end
-    end
-
-    def upload_manifest_object(key, manifest_body)
-      upload_object(
-        key: key,
-        body: StringIO.new(manifest_body),
-        content_type: configuration.manifest_content_type,
-        cache_control: "public, max-age=#{configuration.manifest_cache_ttl_seconds}"
-      )
-    end
-
-    def upload_object(key:, body:, content_type:, cache_control:)
-      client.put_object(
-        bucket: configuration.env.fetch("BUNNY_STORAGE_BUCKET"),
-        key: key,
-        body: body,
-        content_type: content_type,
-        cache_control: cache_control
-      )
     rescue Aws::Errors::ServiceError, SystemCallError => e
-      raise UploadError, "Bunny PMTiles upload failed for key #{key} (#{e.class})"
-    end
-
-    def manifest_json(pmtiles_url:, pmtiles_object_key:)
-      JSON.generate(
-        version: configuration.version,
-        pmtiles_url: pmtiles_url,
-        published_at: clock.call.utc.iso8601,
-        artifact_basename: configuration.artifact_basename,
-        pmtiles_object_key: pmtiles_object_key,
-        pmtiles_object_basename: File.basename(pmtiles_object_key)
-      )
+      raise UploadError, "Bunny map release upload failed for key #{upload.fetch(:key)} (#{e.class})"
     end
 
     def client
@@ -129,25 +155,16 @@ module MapTiles
       )
     end
 
-    def public_url_for(key)
-      "#{public_cdn_base}/#{key}"
-    end
-
-    def public_cdn_base
-      host = configuration.public_cdn_host.to_s.delete_suffix("/")
-      host.match?(%r{\Ahttps?://}i) ? host : "https://#{host}"
-    end
-
     def verify_public_url!(url)
       response = http_head.call(URI.parse(url))
       status = response_status(response)
       return if status&.between?(200, 299)
 
-      raise VerificationError, "Bunny PMTiles public URL failed HEAD check: #{url} returned #{status || 'unknown status'}"
+      raise VerificationError, "Bunny map release public URL failed HEAD check: #{url} returned #{status || 'unknown status'}"
     rescue URI::InvalidURIError => e
-      raise VerificationError, "Bunny PMTiles public URL is invalid: #{url} (#{e.message})"
+      raise VerificationError, "Bunny map release public URL is invalid: #{url} (#{e.message})"
     rescue Net::OpenTimeout, Net::ReadTimeout, SocketError, SystemCallError => e
-      raise VerificationError, "Bunny PMTiles public URL failed HEAD check: #{url} (#{e.class})"
+      raise VerificationError, "Bunny map release public URL failed HEAD check: #{url} (#{e.class})"
     end
 
     def response_status(response)

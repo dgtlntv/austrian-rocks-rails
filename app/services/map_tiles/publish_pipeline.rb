@@ -148,8 +148,8 @@ module MapTiles
       else
         objects = Array(published).map { |object| object_hash(object) }
         pmtiles = objects.find { |object| object[:key] == configuration.versioned_object_key } || objects.first || {}
-        manifest = objects.find { |object| object[:key] == configuration.latest_manifest_object_key } ||
-          objects.find { |object| object[:key].to_s.include?("latest") } || objects.second || {}
+        manifest = objects.find { |object| object[:key] == configuration.manifest_object_key } ||
+          objects.find { |object| object[:url] == configuration.manifest_public_url } || {}
       end
 
       {
@@ -158,8 +158,8 @@ module MapTiles
           url: pmtiles[:url].presence || public_url_for(configuration.versioned_object_key, configuration: configuration)
         },
         manifest: {
-          key: manifest[:key].presence || configuration.latest_manifest_object_key,
-          url: manifest[:url].presence || public_url_for(configuration.latest_manifest_object_key, configuration: configuration)
+          key: manifest[:key].presence || configuration.manifest_object_key,
+          url: manifest[:url].presence || configuration.manifest_public_url
         }
       }
     end

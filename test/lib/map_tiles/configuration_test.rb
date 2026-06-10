@@ -10,13 +10,22 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "loads committed Rails map tile configuration for test" do
-    configuration = MapTiles::Configuration.new(version: "2026-06-07")
+    configuration = MapTiles::Configuration.new(version: "2026-06-09")
 
     assert_equal Rails.root.join("tmp/map_tiles"), configuration.output_dir
     assert_equal Rails.root.join("tmp/map_tiles/geojson"), configuration.geojson_dir
     assert_equal "austrian-rocks", configuration.artifact_basename
     assert_equal "tiles.austrian.rocks", configuration.public_cdn_host
     assert_equal "map_tiles/test", configuration.bunny_prefix
+    assert_equal "map_styles", configuration.style_prefix
+    assert_equal "map_tiles", configuration.manifest_prefix
+    assert_equal "current.json", configuration.manifest_object_name
+    assert_equal "light", configuration.default_style
+    assert_equal "https://basemap.bergwerk-gis.at/api/styles/basemap-at-farbe", configuration.basemap_at_style_url
+    assert_includes configuration.basemap_at_attribution, "Grundkarte:"
+    assert_includes configuration.basemap_at_attribution, "https://basemap.at/"
+    assert_equal 0.35, configuration.terrain_opacity
+    assert_equal 0.35, configuration.contour_opacity
     assert_equal [], configuration.optional_production_layers
     assert_equal 30.minutes, configuration.automatic_publish_debounce
     assert_equal 60, configuration.manifest_cache_ttl_seconds
@@ -26,12 +35,12 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
 
   test "supports environment-specific settings through injected Rails config" do
     development = MapTiles::Configuration.new(
-      version: "2026-06-07",
+      version: "2026-06-09",
       settings: settings("bunny_prefix" => "map_tiles/e2e", "optional_production_layers" => [ "pois" ])
     )
-    test = MapTiles::Configuration.new(version: "2026-06-07", settings: settings("bunny_prefix" => "map_tiles/test"))
+    test = MapTiles::Configuration.new(version: "2026-06-09", settings: settings("bunny_prefix" => "map_tiles/test"))
     production = MapTiles::Configuration.new(
-      version: "2026-06-07",
+      version: "2026-06-09",
       settings: settings("bunny_prefix" => "map_tiles", "optional_production_layers" => [ "pois" ])
     )
 
@@ -44,21 +53,28 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
 
   test "committed development config supports zero-POI local E2E smoke" do
     development_settings = Rails.application.config_for(:map_tiles, env: "development")
-    configuration = MapTiles::Configuration.new(version: "2026-06-07", settings: development_settings)
+    configuration = MapTiles::Configuration.new(version: "2026-06-09", settings: development_settings)
 
     assert_equal "map_tiles/e2e", configuration.bunny_prefix
     assert_equal [ "pois" ], configuration.optional_production_layers
   end
 
-  test "uses explicit safe version for artifact paths and object keys" do
-    configuration = MapTiles::Configuration.new(version: "2026.06_07-e2e", settings: settings("bunny_prefix" => "/maps/e2e/"))
+  test "uses explicit safe version for artifact paths object keys and public urls" do
+    configuration = MapTiles::Configuration.new(version: "2026-06-09", settings: settings("bunny_prefix" => "/map_tiles/test/"))
 
-    assert_equal "2026.06_07-e2e", configuration.version
-    assert_equal Rails.root.join("#{@output_dir}/austrian-rocks-2026.06_07-e2e.pmtiles"), configuration.artifact_path
-    assert_equal Rails.root.join("#{@output_dir}/austrian-rocks-2026.06_07-e2e.metadata.json"), configuration.metadata_path
-    assert_equal "maps/e2e/austrian-rocks-2026.06_07-e2e.pmtiles", configuration.versioned_object_key
-    assert_respond_to configuration, :latest_object_key
-    assert_equal "maps/e2e/austrian-rocks-latest.pmtiles", configuration.latest_object_key
+    assert_equal "2026-06-09", configuration.version
+    assert_equal Rails.root.join("#{@output_dir}/austrian-rocks-2026-06-09.pmtiles"), configuration.artifact_path
+    assert_equal Rails.root.join("#{@output_dir}/austrian-rocks-2026-06-09.metadata.json"), configuration.metadata_path
+    assert_equal Rails.root.join("#{@output_dir}/austrian-rocks-2026-06-09-light.json"), configuration.style_artifact_path("light")
+    assert_equal Rails.root.join("#{@output_dir}/current.json"), configuration.manifest_artifact_path
+    assert_equal Rails.root.join("config/map_styles/austrian_rocks_light.json"), configuration.style_template_path("light")
+    assert_equal "map_tiles/test/austrian-rocks-2026-06-09.pmtiles", configuration.versioned_object_key
+    assert_equal "map_styles/austrian-rocks-2026-06-09-light.json", configuration.style_object_key("light")
+    assert_equal "map_styles/austrian-rocks-2026-06-09-dark.json", configuration.style_object_key("dark")
+    assert_equal "map_tiles/current.json", configuration.manifest_object_key
+    assert_equal "https://cdn.example.test/map_tiles/test/austrian-rocks-2026-06-09.pmtiles", configuration.pmtiles_public_url
+    assert_equal "https://cdn.example.test/map_styles/austrian-rocks-2026-06-09-light.json", configuration.style_public_url("light")
+    assert_equal "https://cdn.example.test/map_tiles/current.json", configuration.manifest_public_url
   end
 
   test "requires explicit version for artifact-specific methods only" do
@@ -66,6 +82,7 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
 
     assert_equal Rails.root.join(@output_dir), configuration.output_dir
     assert_equal Rails.root.join("#{@output_dir}/geojson"), configuration.geojson_dir
+    assert_equal "https://cdn.example.test/map_tiles/current.json", configuration.manifest_public_url
 
     error = assert_raises(ArgumentError) { configuration.artifact_path }
     assert_equal "--version is required for build, smoke, and publish", error.message
@@ -73,21 +90,73 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
 
   test "rejects unsafe configured path segments and versions" do
     assert_raises(ArgumentError) do
-      MapTiles::Configuration.new(version: "2026/06/07", settings: settings).artifact_path
+      MapTiles::Configuration.new(version: "2026/06/09", settings: settings).artifact_path
     end
 
     assert_raises(ArgumentError) do
-      MapTiles::Configuration.new(version: "2026-06-07", settings: settings("artifact_basename" => "../evil")).artifact_path
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("artifact_basename" => "../evil")).artifact_path
     end
 
     assert_raises(ArgumentError) do
-      MapTiles::Configuration.new(version: "2026-06-07", settings: settings("bunny_prefix" => "maps/../evil")).versioned_object_key
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("bunny_prefix" => "maps/../evil")).versioned_object_key
     end
+
+    assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("style_prefix" => "../styles")).style_object_key("light")
+    end
+
+    assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("manifest_object_name" => "current.txt")).manifest_object_key
+    end
+  end
+
+  test "rejects unsafe style names public hosts and object keys" do
+    configuration = MapTiles::Configuration.new(version: "2026-06-09", settings: settings)
+
+    assert_raises(ArgumentError) { configuration.style_object_key("blue") }
+    assert_raises(ArgumentError) { configuration.public_url_for_object_key("") }
+    assert_raises(ArgumentError) { configuration.public_url_for_object_key("/map_tiles/austrian-rocks.pmtiles") }
+    assert_raises(ArgumentError) { configuration.public_url_for_object_key("map_tiles/austrian-rocks.pmtiles/") }
+    assert_raises(ArgumentError) { configuration.public_url_for_object_key("map_tiles//austrian-rocks.pmtiles") }
+    assert_raises(ArgumentError) { configuration.public_url_for_object_key("map_tiles/../evil.pmtiles") }
+    assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("public_cdn_host" => "http://cdn.example.test")).pmtiles_public_url
+    end
+    assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("public_cdn_host" => "https://user:pass@cdn.example.test")).pmtiles_public_url
+    end
+    assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("public_cdn_host" => "https://cdn.example.test/maps")).pmtiles_public_url
+    end
+    assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("public_cdn_host" => "https://cdn.example.test?token=x")).pmtiles_public_url
+    end
+    assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("public_cdn_host" => "https://cdn.example.test#tiles")).pmtiles_public_url
+    end
+  end
+
+  test "removes mutable PMTiles helper" do
+    configuration = MapTiles::Configuration.new(version: "2026-06-09", settings: settings)
+
+    assert_not_respond_to configuration, :"latest_#{'object'}_key"
+  end
+
+  test "rejects out-of-range style opacity settings" do
+    terrain_error = assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("terrain_opacity" => 1.1)).terrain_opacity
+    end
+    contour_error = assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("contour_opacity" => -0.1)).contour_opacity
+    end
+
+    assert_equal "terrain_opacity must be between 0 and 1", terrain_error.message
+    assert_equal "contour_opacity must be between 0 and 1", contour_error.message
   end
 
   test "rejects unknown optional production layer names" do
     configuration = MapTiles::Configuration.new(
-      version: "2026-06-07",
+      version: "2026-06-09",
       settings: settings("optional_production_layers" => [ "pois", "bogus_layer" ])
     )
 
@@ -138,31 +207,6 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     assert_equal "application/vnd.custom+json", configuration.manifest_content_type
   end
 
-  test "returns latest manifest object key derived from basename and prefix" do
-    configuration = MapTiles::Configuration.new(version: "v1", settings: settings("bunny_prefix" => "maps/prod"))
-
-    assert_equal "maps/prod/austrian-rocks-latest.json", configuration.latest_manifest_object_key
-  end
-
-  test "returns latest manifest basename" do
-    configuration = MapTiles::Configuration.new(version: "v1", settings: settings)
-
-    assert_equal "austrian-rocks-latest.json", configuration.latest_manifest_basename
-  end
-
-  test "exposes latest PMTiles object key for legacy CLI compatibility" do
-    configuration = MapTiles::Configuration.new(version: "v1", settings: settings("bunny_prefix" => "maps/prod"))
-
-    assert_equal "maps/prod/austrian-rocks-latest.pmtiles", configuration.latest_object_key
-  end
-
-  test "does not expose latest.pmtiles via manifest method" do
-    configuration = MapTiles::Configuration.new(version: "v1", settings: settings)
-
-    assert_equal "austrian-rocks-latest.json", configuration.latest_manifest_basename
-    assert_not_respond_to configuration, :latest_manifest_pmtiles
-  end
-
   private
 
   def settings(overrides = {})
@@ -171,6 +215,14 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
       "output_dir" => @output_dir,
       "public_cdn_host" => "https://cdn.example.test",
       "bunny_prefix" => "maps",
+      "style_prefix" => "map_styles",
+      "manifest_prefix" => "map_tiles",
+      "manifest_object_name" => "current.json",
+      "default_style" => "light",
+      "basemap_at_style_url" => "https://basemap.bergwerk-gis.at/api/styles/basemap-at-farbe",
+      "basemap_at_attribution" => "Grundkarte: <a href=\"https://basemap.at/\" target=\"_blank\" rel=\"noopener noreferrer\">basemap.at</a>",
+      "terrain_opacity" => 0.35,
+      "contour_opacity" => 0.35,
       "optional_production_layers" => [],
       "automatic_publish_debounce_minutes" => "30",
       "manifest_cache_ttl_seconds" => "60",

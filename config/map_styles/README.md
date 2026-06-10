@@ -1,0 +1,15 @@
+# Austrian Rocks MapLibre styles
+
+`austrian_rocks_light.json` and `austrian_rocks_dark.json` are committed MapLibre style version 8 templates for web, iOS, and Android clients. During Austrian Rocks development they are derived from Bergwerk GIS's testing-only basemap.at color MapLibre style at `https://basemap.bergwerk-gis.at/api/styles/basemap-at-farbe` and add Austrian Rocks PMTiles overlay styling. The Bergwerk endpoint is not treated as production-ready; before Austrian Rocks production release, switch to the official production-ready basemap.at vector style once it is available.
+
+The displayed basemap is basemap.at. The required attribution is therefore `Grundkarte: basemap.at`, with `basemap.at` linking to `https://basemap.at/`, following the Open Government Data Österreich CC-BY 4.0 naming guidance. These templates intentionally do not add OpenStreetMap attribution because no OSM basemap is displayed by these styles. If a future style adds another displayed source, that source must carry its own attribution without misleading users about the basemap.
+
+Both styles include:
+
+- the Bergwerk basemap.at vector source and layers, normalized to the owned source id `basemap-at`, using CORS-enabled `https://basemap.bergwerk-gis.at/api/tiles/basemap-at-vector/{z}/{x}/{y}.pbf` tile URLs, setting source `maxzoom: 16` so MapLibre overzooms from the highest native vector tiles instead of requesting unavailable higher zooms, and removing the top-end layer `maxzoom: 20` values so those layers do not disappear at the exclusive z20 boundary;
+- a lower-opacity basemap.at `gelände` raster-shading layer controlled by `config/map_tiles.yml` (`terrain_opacity`, currently `0.35`), normalized to source id `basemap-at-gelaende`, setting source `maxzoom: 17` so terrain overzooms consistently from the highest native raster tiles and avoids unavailable z18+ JPEG requests, and removing the terrain layer's exclusive `maxzoom: 20` boundary;
+- a basemap.at Höhenlinien/contour vector source normalized to source id `basemap-at-hoehenlinien`, using CORS-enabled `https://mapsneu.wien.gv.at/basemapv/bmapvhl/3857/tile/{z}/{y}/{x}.pbf` tiles, setting source `maxzoom: 16` so MapLibre overzooms from the highest native contour tiles, controlling line and label opacity through `config/map_tiles.yml` (`contour_opacity`, currently `0.35`), and committing the upstream contour layers directly in the shared styles instead of fetching a second style JSON at runtime;
+- one Austrian Rocks vector source named `austrian-rocks` using a development-safe PMTiles URL in the committed template;
+- style layers for every source layer in `MapTiles::LayerContract.layer_names`.
+
+During publication, `MapTiles::StyleMaterializer` writes immutable versioned light/dark style JSON artifacts and rewrites the `austrian-rocks` source URL to the exact versioned PMTiles URL for that release. Clients should fetch the non-cached release manifest, then load the versioned style URL from `styles.light` or `styles.dark`.

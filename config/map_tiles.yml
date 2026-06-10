@@ -3,6 +3,14 @@ default: &default
   output_dir: tmp/map_tiles
   public_cdn_host: tiles.austrian.rocks
   bunny_prefix: map_tiles
+  style_prefix: map_styles
+  manifest_prefix: map_tiles
+  manifest_object_name: current.json
+  default_style: light
+  basemap_at_style_url: https://basemap.bergwerk-gis.at/api/styles/basemap-at-farbe
+  basemap_at_attribution: 'Grundkarte: <a href="https://basemap.at/" target="_blank" rel="noopener noreferrer">basemap.at</a>'
+  terrain_opacity: 0.35
+  contour_opacity: 0.35
   optional_production_layers: []
   automatic_publish_debounce_minutes: 30
   manifest_cache_ttl_seconds: 60
