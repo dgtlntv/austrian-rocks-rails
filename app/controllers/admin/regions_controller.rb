@@ -66,7 +66,7 @@ class Admin::RegionsController < Admin::BaseController
   private
 
   def region_params
-    params.require(:region).permit(:name, :slug, :published, :main_cluster_id)
+    params.require(:region).permit(:name, :slug, :published, :main_cluster_id, :warning_de, :warning_en, :guidebook_id, :parking_poi_id)
   end
 
   def set_region

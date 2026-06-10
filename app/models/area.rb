@@ -9,6 +9,8 @@ class Area < ApplicationRecord
   has_many :walking_path_areas, dependent: :destroy
   has_many :walking_paths, through: :walking_path_areas
   belongs_to :cluster, optional: true
+  belongs_to :guidebook, optional: true
+  belongs_to :parking_poi, class_name: "Poi", optional: true
 
   has_one_attached :cover do |attachable|
     attachable.variant :thumb, resize_to_limit: [ 400, 400 ], saver: { quality: 80, strip: true, interlace: true }, preprocessed: true
@@ -25,6 +27,7 @@ class Area < ApplicationRecord
 
   validates :tags, array: { inclusion: { in: %w[popular beginner_friendly family_friendly dry_fast] } }
   validates :slug, presence: true
+  validate :parking_poi_must_be_parking
 
 
   def levels
@@ -69,5 +72,13 @@ class Area < ApplicationRecord
 
   def topos_count
     Topo.published.joins(lines: :problem).where(problems: { area_id: id }).uniq.count
+  end
+
+  private
+
+  def parking_poi_must_be_parking
+    return if parking_poi.nil? || parking_poi.parking?
+
+    errors.add(:parking_poi, "must be a parking POI")
   end
 end

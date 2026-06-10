@@ -1,0 +1,47 @@
+<div class="flex justify-end">
+  <%= link_to "New guidebook", new_admin_guidebook_path, class: "btn" %>
+</div>
+
+<div class="flex flex-col my-6">
+  <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+    <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+      <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Id</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% @guidebooks.each do |guidebook| %>
+              <tr class="place-content-start align-top h-16">
+                <td class="px-6 py-2 whitespace-nowrap w-1/12">
+                  <div class="text-sm text-gray-500"><%= link_to guidebook.id, edit_admin_guidebook_path(guidebook) %></div>
+                </td>
+                <td class="px-6 py-2 whitespace-nowrap w-3/12">
+                  <span class="text-sm text-gray-900 font-bold">
+                    <%= link_to guidebook.title, edit_admin_guidebook_path(guidebook) %>
+                  </span>
+                </td>
+                <td class="px-6 py-2 whitespace-nowrap w-2/12 text-sm text-gray-500"><%= guidebook.author %></td>
+                <td class="px-6 py-2 w-4/12 text-sm text-gray-500">
+                  <%= link_to guidebook.url, guidebook.url, target: "_blank", rel: "noopener noreferrer", class: "break-all" %>
+                </td>
+                <td class="px-6 py-2 whitespace-nowrap w-2/12 text-sm text-gray-500 space-x-3">
+                  <%= link_to "Edit", edit_admin_guidebook_path(guidebook), class: "text-brand-600 font-semibold" %>
+                  <%= button_to "Delete", admin_guidebook_path(guidebook), method: :delete, class: "text-red-600 font-semibold", form: { class: "inline", data: { turbo_confirm: "Delete this guidebook?" } } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p><%= "#{@guidebooks.count} results" %></p>

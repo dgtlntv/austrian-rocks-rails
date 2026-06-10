@@ -3,7 +3,7 @@ id: "0006"
 slug: maplibre-web-interactions
 branch: incant/0006-maplibre-web-interactions
 title: Polish web map interactions on MapLibre
-stage: plan
+stage: implement
 status: in-progress
 created: 2026-06-10
 commit: f8a71849
@@ -14,10 +14,10 @@ updated: 2026-06-10
 
 ## Status
 - Work item: `0006` / `maplibre-web-interactions`
-- Stage: plan (awaiting human approval)
+- Stage: implement
 - Branch: `incant/0006-maplibre-web-interactions`
-- Current phase: none started — plan written, not yet approved
-- Next step: human approves this plan, then `/incant:implement 0006` starting with `0006-P1`
+- Current phase: `0006-P1` complete (plan approved by human 2026-06-10 in the implement session)
+- Next step: `/incant:review 0006` for the P1 phase gate, then `/incant:implement 0006` for `0006-P2`
 - Blockers: none
 - Key decisions:
   - **Sprite delivery: single self-hosted Austrian Rocks sprite** (not MapLibre multi-sprite).
@@ -50,7 +50,8 @@ updated: 2026-06-10
   - **Cover photo URLs** are baked via the existing `cdn_image` direct route with
     `expires_in: nil` (non-expiring signed proxy URL; the route self-overrides host with
     `config.asset_host` outside local envs).
-- Verification evidence: (collected per phase during implementation)
+- Verification evidence:
+  - `0006-P1` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/models test/controllers/admin` → 111 runs, 409 assertions, 0 failures, 0 errors; `bin/rubocop -f github` → exit 0, no offenses. Schema regenerated to version 2026_06_10_090002 with warnings on clusters/regions, guidebooks table, and guidebook/parking FKs on regions/clusters/areas.
 
 ## Files touched
 
@@ -110,19 +111,19 @@ Goal: admins can enter every piece of card data the exporter will bake: warnings
 clusters/regions (areas already have them), guidebooks, and a designated parking POI per
 region/cluster/area.
 
-- [ ] step 1: read `db/schema.rb` (tables `regions`, `clusters`, `areas`, `pois`, plus a
+- [x] step 1: read `db/schema.rb` (tables `regions`, `clusters`, `areas`, `pois`, plus a
       recent migration under `db/migrate/`) before writing migrations.
-- [ ] step 2: migration `AddWarningsToClustersAndRegions`
+- [x] step 2: migration `AddWarningsToClustersAndRegions`
       (`ActiveRecord::Migration[8.0]`): `add_column :clusters, :warning_de, :text`,
       `add_column :clusters, :warning_en, :text`, same two for `:regions` — mirroring the
       existing `areas.warning_de/_en` text columns.
-- [ ] step 3: migration `CreateGuidebooks`: table `guidebooks` with `t.string :title,
+- [x] step 3: migration `CreateGuidebooks`: table `guidebooks` with `t.string :title,
       null: false`, `t.string :author`, `t.string :url, null: false`, `t.timestamps`.
-- [ ] step 4: migration `AddGuidebookAndParkingToClimbingEntities`: for each of
+- [x] step 4: migration `AddGuidebookAndParkingToClimbingEntities`: for each of
       `:regions`, `:clusters`, `:areas` — `add_reference table, :guidebook,
       foreign_key: true, null: true` and `add_reference table, :parking_poi,
       foreign_key: { to_table: :pois }, null: true`.
-- [ ] step 5: `app/models/guidebook.rb` — `class Guidebook < ApplicationRecord` with
+- [x] step 5: `app/models/guidebook.rb` — `class Guidebook < ApplicationRecord` with
       `has_many :regions`, `has_many :clusters`, `has_many :areas`,
       `validates :title, presence: true`,
       `validates :url, presence: true, format: { with: %r{\Ahttps?://}i, message: "must be an http(s) URL" }`,
@@ -131,37 +132,37 @@ region/cluster/area.
       properties, so production saves must schedule a republish). Add a brief class
       comment stating the cascade intent (entities inherit the closest ancestor's
       guidebook at tile export).
-- [ ] step 6: read `app/models/region.rb`, `app/models/cluster.rb`,
+- [x] step 6: read `app/models/region.rb`, `app/models/cluster.rb`,
       `app/models/area.rb`; then add to each: `belongs_to :guidebook, optional: true`
       and `belongs_to :parking_poi, class_name: "Poi", optional: true` plus
       `validate :parking_poi_must_be_parking` defined as: errors on `:parking_poi`
       unless `parking_poi.nil? || parking_poi.poi_type == "parking"`. On `Region` and
       `Cluster` also add `normalizes :warning_de, :warning_en, with: ->(s) { s.strip.presence }`
       (Area already normalizes its warnings).
-- [ ] step 7: read `config/routes.rb` admin namespace; add `resources :guidebooks`
+- [x] step 7: read `config/routes.rb` admin namespace; add `resources :guidebooks`
       alongside the existing flat admin resources.
-- [ ] step 8: `app/controllers/admin/guidebooks_controller.rb` — follow the
+- [x] step 8: `app/controllers/admin/guidebooks_controller.rb` — follow the
       `Admin::PoisController` / `Admin::ClustersController` structure (inherit
       `Admin::BaseController`): `index` (ordered list), `new`, `create`, `edit`,
       `update`, `destroy`; strong params
       `params.require(:guidebook).permit(:title, :author, :url)`; redirect to
       `edit_admin_guidebook_path` after save like the sibling controllers.
-- [ ] step 9: read `app/views/admin/areas/_form.html.erb` and one sibling `index.html.erb`
+- [x] step 9: read `app/views/admin/areas/_form.html.erb` and one sibling `index.html.erb`
       for markup conventions; create `app/views/admin/guidebooks/{index,new,edit,_form}.html.erb`
       using the `DefaultFormBuilder` field pattern (`form.label` + `form.text_field` in
       `col-span-6 sm:col-span-4` wrappers; index as the usual admin table).
-- [ ] step 10: extend admin forms:
+- [x] step 10: extend admin forms:
       - `app/views/admin/regions/_form.html.erb` and `app/views/admin/clusters/_form.html.erb`:
         `form.text_area :warning_de, rows: 3` + `:warning_en` (copy the area form's
         warning block), `form.collection_select :guidebook_id, Guidebook.order(:title), :id, :title, { include_blank: true }`,
         `form.collection_select :parking_poi_id, Poi.parking.order(:name), :id, :name, { include_blank: true }`.
       - `app/views/admin/areas/_form.html.erb`: the same guidebook + parking selects
         (warnings already exist there).
-- [ ] step 11: read then update strong params: `Admin::RegionsController` and
+- [x] step 11: read then update strong params: `Admin::RegionsController` and
       `Admin::ClustersController` permit `:warning_de, :warning_en, :guidebook_id,
       :parking_poi_id`; `Admin::AreasController#area_params` additionally permits
       `:guidebook_id, :parking_poi_id`.
-- [ ] step 12: tests —
+- [x] step 12: tests —
       - `test/models/guidebook_test.rb`: title/url presence, rejects `javascript:` and
         bare-word URLs, accepts http/https.
       - model tests for region/cluster/area: guidebook + parking association round-trip;

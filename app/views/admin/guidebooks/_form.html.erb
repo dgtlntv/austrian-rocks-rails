@@ -1,0 +1,26 @@
+<% if @guidebook.errors.any? %>
+  <div class="col-span-6 rounded-md bg-red-50 p-4 text-sm text-red-700">
+    <p class="font-semibold">Could not save guidebook:</p>
+    <ul class="list-disc pl-5">
+      <% @guidebook.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<div class="col-span-6 sm:col-span-4">
+  <%= form.label :title %>
+  <%= form.text_field :title, autocomplete: "off" %>
+</div>
+
+<div class="col-span-6 sm:col-span-4">
+  <%= form.label :author %>
+  <%= form.text_field :author, autocomplete: "off" %>
+</div>
+
+<div class="col-span-6 sm:col-span-4">
+  <%= form.label :url, "URL" %>
+  <%= form.text_field :url, autocomplete: "off" %>
+  <p class="mt-2 text-sm text-gray-500">Must be an http(s) link, e.g. a shop or publisher page.</p>
+</div>
