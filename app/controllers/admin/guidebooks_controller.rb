@@ -14,7 +14,7 @@ class Admin::GuidebooksController < Admin::BaseController
       flash[:notice] = "Guidebook created"
       redirect_to edit_admin_guidebook_path(guidebook)
     else
-      flash[:error] = guidebook.errors.full_messages.join("; ")
+      flash.now[:error] = guidebook.errors.full_messages.join("; ")
       @guidebook = guidebook
       render "new", status: :unprocessable_entity
     end
@@ -31,16 +31,24 @@ class Admin::GuidebooksController < Admin::BaseController
       flash[:notice] = "Guidebook updated"
       redirect_to edit_admin_guidebook_path(@guidebook)
     else
-      flash[:error] = @guidebook.errors.full_messages.join("; ")
+      flash.now[:error] = @guidebook.errors.full_messages.join("; ")
       render "edit", status: :unprocessable_entity
     end
   end
 
   def destroy
     set_guidebook
-    @guidebook.destroy
-    flash[:notice] = "Guidebook deleted"
-    redirect_to admin_guidebooks_path
+    in_use = { "regions" => @guidebook.regions, "clusters" => @guidebook.clusters, "areas" => @guidebook.areas }.
+      select { |_, scope| scope.exists? }.keys
+
+    if in_use.any?
+      flash[:error] = "Cannot delete: guidebook is still assigned to #{in_use.join(", ")}"
+      redirect_to edit_admin_guidebook_path(@guidebook)
+    else
+      @guidebook.destroy
+      flash[:notice] = "Guidebook deleted"
+      redirect_to admin_guidebooks_path
+    end
   end
 
   private

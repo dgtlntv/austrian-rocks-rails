@@ -52,6 +52,7 @@ updated: 2026-06-10
     `config.asset_host` outside local envs).
 - Verification evidence:
   - `0006-P1` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/models test/controllers/admin` → 111 runs, 409 assertions, 0 failures, 0 errors; `bin/rubocop -f github` → exit 0, no offenses. Schema regenerated to version 2026_06_10_090002 with warnings on clusters/regions, guidebooks table, and guidebook/parking FKs on regions/clusters/areas.
+  - `0006-P1` review fixes (2026-06-10): addressed all P1 review findings — guidebook destroy now refuses with a flash error when assigned to regions/clusters/areas (new controller test), `flash.now` on re-render branches, redundant `null: true` removed from the FK migration. Docker gate re-run green: 112 runs, 415 assertions, 0 failures, 0 errors; rubocop exit 0.
 
 ## Files touched
 

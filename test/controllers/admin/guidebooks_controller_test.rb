@@ -64,4 +64,15 @@ class Admin::GuidebooksControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to admin_guidebooks_path(locale: :en)
   end
+
+  test "destroy refuses when guidebook is still assigned" do
+    Area.create!(name: "Guide Area", slug: "guide-area", guidebook: @guidebook)
+
+    assert_no_difference "Guidebook.count" do
+      delete admin_guidebook_path(@guidebook, locale: :en)
+    end
+
+    assert_redirected_to edit_admin_guidebook_path(@guidebook, locale: :en)
+    assert_includes flash[:error], "still assigned to areas"
+  end
 end

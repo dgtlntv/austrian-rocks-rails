@@ -60,19 +60,24 @@ commit: d0c11809
   are *designed* to be shared across many entities, so an in-use delete is the likely case, and
   the index/edit views offer a Delete button that will 500. Fix: rescue
   `ActiveRecord::InvalidForeignKey` (or check `regions/clusters/areas.exists?` first) and
-  re-render with a flash error naming the entities still referencing it. status: open
+  re-render with a flash error naming the entities still referencing it. status: addressed —
+  destroy now checks `regions/clusters/areas.exists?` and redirects to the edit page with a flash
+  error naming the assigning entity types; covered by the new "destroy refuses when guidebook is
+  still assigned" controller test.
 
 ### Nit
 - app/controllers/admin/guidebooks_controller.rb:17 + 34 — `flash[:error]` (not `flash.now`) set
   before a `render` leaks the message into the *next* request as well. Copied from the sibling
   `Admin::PoisController#update`, so consistent house style; noting it so the pattern doesn't
-  spread further in P4/P5 views. status: open
+  spread further in P4/P5 views. status: addressed — both render branches use `flash.now[:error]`
+  (sibling controllers left untouched; out of this item's scope).
 - db/migrate/20260610090002_add_guidebook_and_parking_to_climbing_entities.rb:4-5 — `null: true`
-  on `add_reference` is the default and redundant. No functional impact. status: open
+  on `add_reference` is the default and redundant. No functional impact. status: addressed —
+  removed; no-op for the already-generated schema.
 
 ### Verdict
-Ready to release? **With fixes** — for the P1 phase gate: **pass**. No blockers or majors; the
-phase delivers everything P1 promised (warnings on clusters/regions, Guidebook model + admin CRUD,
-parking-POI links, admin forms/strong-params, tests) with a fresh green gate. The one minor
-(in-use guidebook delete → 500) should be picked up in a later phase or the revise loop before the
-item closes; the nits are take-or-leave. Proceed to `0006-P2`.
+Ready to release? **Yes** (for the P1 phase gate — the item as a whole continues with P2–P6). No
+blockers or majors; the phase delivers everything P1 promised (warnings on clusters/regions,
+Guidebook model + admin CRUD, parking-POI links, admin forms/strong-params, tests). All findings
+from this pass were addressed in the same session and the gate re-ran green after the fixes:
+112 runs, 415 assertions, 0 failures/errors, rubocop clean (Docker PostGIS). Proceed to `0006-P2`.
