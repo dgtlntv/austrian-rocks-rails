@@ -16,8 +16,8 @@ updated: 2026-06-10
 - Work item: `0006` / `maplibre-web-interactions`
 - Stage: implement
 - Branch: `incant/0006-maplibre-web-interactions`
-- Current phase: `0006-P2` complete
-- Next step: `/incant:review 0006` for the P2 phase gate, then `/incant:implement 0006` for `0006-P3`
+- Current phase: `0006-P2` complete and reviewed
+- Next step: `/incant:implement 0006` for `0006-P3`
 - Blockers: none
 - Key decisions:
   - **Sprite delivery: single self-hosted Austrian Rocks sprite** (not MapLibre multi-sprite).
@@ -54,6 +54,7 @@ updated: 2026-06-10
   - `0006-P1` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/models test/controllers/admin` → 111 runs, 409 assertions, 0 failures, 0 errors; `bin/rubocop -f github` → exit 0, no offenses. Schema regenerated to version 2026_06_10_090002 with warnings on clusters/regions, guidebooks table, and guidebook/parking FKs on regions/clusters/areas.
   - `0006-P1` review fixes (2026-06-10): addressed all P1 review findings — guidebook destroy now refuses with a flash error when assigned to regions/clusters/areas (new controller test), `flash.now` on re-render branches, redundant `null: true` removed from the FK migration. Docker gate re-run green: 112 runs, 415 assertions, 0 failures, 0 errors; rubocop exit 0.
   - `0006-P2` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/lib/map_tiles && bin/rubocop lib/map_tiles test/lib/map_tiles -f github` → 66 runs, 1939 assertions, 0 failures, 0 errors; rubocop exit 0. Exporter now emits cascaded warning/guidebook/parking fields, cover URLs, aggregate problem counts/grade ranges, and main-cluster bounds; layer/smoke contracts allow the new card URL fields.
+  - `0006-P2` review fixes (2026-06-10): accepted the intentionally ignored `/docs/` contract note as `wontfix`; added exporter coverage for area cover URLs cascading to cluster main-area and region main-cluster→main-area card properties, plus absent-cover fallback. Docker gate re-run green — `bin/rails db:prepare && bin/rails test test/lib/map_tiles && bin/rubocop lib/map_tiles test/lib/map_tiles -f github` → 66 runs, 1947 assertions, 0 failures, 0 errors; rubocop exit 0.
 
 ## Files touched
 

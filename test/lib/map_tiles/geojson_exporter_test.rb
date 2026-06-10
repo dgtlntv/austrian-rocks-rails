@@ -169,7 +169,9 @@ class MapTiles::GeojsonExporterTest < ActiveSupport::TestCase
     assert_not_includes region, "mainClusterSouthWestLat"
   end
 
-  test "exports deterministic cover photo URLs" do
+  test "exports deterministic cover photo URLs with main-child fallback" do
+    @cluster.update!(main_area_id: @area.id)
+    @region.update!(main_cluster_id: @cluster.id)
     @area.cover.attach(
       io: StringIO.new(Base64.decode64(PNG_FIXTURE)),
       filename: "cover.png",
@@ -177,18 +179,30 @@ class MapTiles::GeojsonExporterTest < ActiveSupport::TestCase
     )
 
     first_paths = MapTiles::GeojsonExporter.new(configuration: @configuration).export
-    first_url = feature_properties(first_paths.fetch("areas"), "areaId", @area.id).fetch("coverPhotoUrl")
+    first_area_url = feature_properties(first_paths.fetch("areas"), "areaId", @area.id).fetch("coverPhotoUrl")
+    first_cluster_url = feature_properties(first_paths.fetch("clusters"), "clusterId", @cluster.id).fetch("coverPhotoUrl")
+    first_region_url = feature_properties(first_paths.fetch("regions"), "regionId", @region.id).fetch("coverPhotoUrl")
 
     second_paths = MapTiles::GeojsonExporter.new(configuration: @configuration).export
-    second_url = feature_properties(second_paths.fetch("areas"), "areaId", @area.id).fetch("coverPhotoUrl")
+    second_area_url = feature_properties(second_paths.fetch("areas"), "areaId", @area.id).fetch("coverPhotoUrl")
+    second_cluster_url = feature_properties(second_paths.fetch("clusters"), "clusterId", @cluster.id).fetch("coverPhotoUrl")
+    second_region_url = feature_properties(second_paths.fetch("regions"), "regionId", @region.id).fetch("coverPhotoUrl")
 
-    assert_equal first_url, second_url
-    assert_match(%r{/rails/active_storage/representations/proxy/}, first_url)
+    assert_equal first_area_url, second_area_url
+    assert_equal first_area_url, first_cluster_url
+    assert_equal first_area_url, first_region_url
+    assert_equal first_cluster_url, second_cluster_url
+    assert_equal first_region_url, second_region_url
+    assert_match(%r{/rails/active_storage/representations/proxy/}, first_area_url)
 
     @area.cover.purge
     paths = MapTiles::GeojsonExporter.new(configuration: @configuration).export
     area = feature_properties(paths.fetch("areas"), "areaId", @area.id)
+    cluster = feature_properties(paths.fetch("clusters"), "clusterId", @cluster.id)
+    region = feature_properties(paths.fetch("regions"), "regionId", @region.id)
     assert_not_includes area, "coverPhotoUrl"
+    assert_not_includes cluster, "coverPhotoUrl"
+    assert_not_includes region, "coverPhotoUrl"
   end
 
   test "encodes POI access area metadata as a scalar JSON string" do
