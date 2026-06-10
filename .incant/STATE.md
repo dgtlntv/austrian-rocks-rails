@@ -1,9 +1,9 @@
 # State
-- Updated: 2026-06-09 (0005 P4 committed-ready; final automated gate green)
-- Current focus: 0005 — MapLibre/basemap.at P4 ready for final review after main merge reconciliation, Höhenlinien opacity update, custom overlay style tuning, terrain/glyph 404 fixes, manual smoke checklist completion, and full automated release gate
+- Updated: 2026-06-09 (0005 P4 review recorded; two open major findings)
+- Current focus: 0005 — MapLibre/basemap.at P4 reviewed after commit; automated gate/stale search are green, but release is blocked by two open major review findings: testing-only Bergwerk basemap dependency and incomplete concrete manual smoke evidence
 
 ## Active
-- 0005 — review stage on branch `incant/0005-maplibre-basemap-at`; work dir `.incant/work/0005-maplibre-basemap-at/`; current `main` was merged and the 0009 admin/background PMTiles workflow was adapted to 0005's versioned PMTiles/style JSON plus non-cached `current.json` manifest contract. P4 README/checklist/dev-Docker docs are reapplied; basemap.at Höhenlinien are now part of the shared light/dark style templates with configured lower contour opacity, and the custom Austrian Rocks PMTiles overlay styles now follow the old stack with corrected topmost label order, old runtime problem-dot styling, no problem text layer, and a later area-hull fade; terrain overzooms from z17 and custom symbols use Bergwerk-served fonts to avoid z18 terrain/glyph 404s; final full Docker automated release gate and stale-reference search are green. Next step is `/incant:review 0005`.
+- 0005 — review stage on branch `incant/0005-maplibre-basemap-at`; work dir `.incant/work/0005-maplibre-basemap-at/`; P4 commit `a1469a7b` is reviewed and final full Docker automated release gate plus stale-reference search are green. Review has two open major findings: replace/revise the Bergwerk testing-only basemap dependency before release, and provide concrete manual smoke evidence with environment/browser/route/network observations. Next step is `/incant:implement 0005` to address the open majors, then re-review.
 
 ## Cross-cutting notes / blockers
 - Database commands/tests for map-data work should run against Docker-hosted PostgreSQL/PostGIS, not a host-created database.
