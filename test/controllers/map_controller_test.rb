@@ -33,6 +33,28 @@ class MapControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "northEastLat"
   end
 
+  test "map page renders the info card target with localized card strings" do
+    get "/en/map"
+
+    assert_response :success
+    assert_includes response.body, 'data-map-target="card"'
+    assert_includes response.body, "data-map-card-strings-value="
+    assert_includes response.body, "Show on map"
+    assert_not_includes response.body, "data-map-area-id-value"
+
+    get "/de/map"
+
+    assert_response :success
+    assert_includes response.body, "Auf der Karte zeigen"
+  end
+
+  test "area slug deep link renders the area id for MapLibre controller" do
+    get "/en/map/test-area"
+
+    assert_response :success
+    assert_includes response.body, "data-map-area-id-value=\"#{@area.id}\""
+  end
+
   test "problem deep link renders problem data for MapLibre controller" do
     get "/en/map", params: { pid: @problem.id }
 

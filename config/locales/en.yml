@@ -181,6 +181,18 @@ en:
                     title: Map with topos for %{area}
                     description:
                         Interactive map for climbing in %{area} in Austria
+            card:
+                show_on_map: Show on map
+                directions: Directions
+                guidebook: Guidebook
+                problems: problems
+                warning: Warning
+                close: Close
+                details: Details
+                height_meters: "%{height} m"
+                poi_types:
+                    parking: Parking
+                    train_station: Train station
             filters:
                 label: Filters
                 level: Level

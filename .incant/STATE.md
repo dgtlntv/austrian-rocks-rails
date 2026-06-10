@@ -1,9 +1,9 @@
 # State
-- Updated: 2026-06-10 (0006-P3 sprite+styles+crossfade done; gate green)
+- Updated: 2026-06-10 (0006-P4 selection runtime + info card done; gate green)
 - Current focus: 0006 — Polish web map interactions on MapLibre
 
 ## Active
-- [0006] implementing (plan approved 2026-06-10) — P1 DB/admin and P2 exporter/tile contract done and reviewed. P3 done (gate green: 76 runs/2531 assertions, rubocop clean): sprite pipeline + Apple-Maps-style pins (resting disc / selected balloon+dot, human-approved design), selected layers with `-1` sentinels, z14→15 crossfade, Bergwerk sprite dependency removed. Next: `/incant:review 0006` (P3 gate), then P4 selection/card runtime (note: P4 must also exclude the selected id from base layers — see plan Status). Remaining: P5 entry points+popup removal, P6 docs/release/smoke. Branch `incant/0006-maplibre-web-interactions`. Inter font self-hosting split to inbox.
+- [0006] implementing (plan approved 2026-06-10) — P1 DB/admin, P2 exporter/tile contract, P3 sprite/pins/crossfade done and reviewed clean. P4 done (gate green: 9 runs/171 assertions, importmap audit clean, rubocop clean): `map/selection.js` (single-selection invariant, sentinel filters, base-layer exclusion incl. the P3 note, grow tween), `map/info_card.js` (safe-DOM responsive card), controller select wiring + background deselect + bottom-sheet padding, `map_card_strings` + de/en `views.map.card.*` locales, view card target/data attributes. Next: `/incant:review 0006` (P4 gate), then P5 search/deep-link integration + popup removal + zoom-clamp fix. Remaining after that: P6 docs/release/smoke. Branch `incant/0006-maplibre-web-interactions`. Inter font self-hosting split to inbox.
 
 ## Cross-cutting notes / blockers
 - Database commands/tests for map-data work should run against Docker-hosted PostgreSQL/PostGIS, not a host-created database.

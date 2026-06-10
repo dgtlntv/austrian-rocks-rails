@@ -16,9 +16,22 @@ updated: 2026-06-10
 - Work item: `0006` / `maplibre-web-interactions`
 - Stage: implement
 - Branch: `incant/0006-maplibre-web-interactions`
-- Current phase: `0006-P3` complete (gate green, awaiting review)
-- Next step: `/incant:review 0006` for the P3 phase gate; then `/incant:implement 0006` for `0006-P4`
+- Current phase: `0006-P4` complete (gate green, awaiting review)
+- Next step: `/incant:review 0006` for the P4 phase gate; then `/incant:implement 0006` for `0006-P5`
 - Blockers: none
+- P4 as-built deviations from the plan text:
+  - `MapSelection` also excludes the selected id from the base symbol layer's filter
+    (per the P3 note below) so the resting pin does not render under the balloon; the
+    `problems` base layer is deliberately NOT excluded — its filter is owned by the
+    grade-filter UI (`applyLayerFilter` replaces it wholesale) and the bigger stroked
+    selected circle fully covers the base circle anyway.
+  - Added a `details` card string key (problem CTA label) beyond the planned string
+    list — the plan named the redirect CTA but no label for it.
+  - `registerProblemClicks`, `registerPoiClicks`, `poiPopupContent`, and the
+    controller's `safeHttpUrl` were already removed in P4 (they became dead code once
+    `registerSelectClicks` took over layer clicks; `InfoCard` carries its own
+    `safeHttpUrl`). `problemPopupContent`/`problemFeatureId`/`createPopup` stay for the
+    `?pid=`/search deep-link popups until P5 rewires those flows.
 - P3 as-built deviations from the plan text:
   - Icon design reworked per human feedback during the phase (Apple-Maps direction):
     resting pins are 20×20 colored discs with white glyphs + label beside; selected pins
@@ -70,6 +83,7 @@ updated: 2026-06-10
   - `0006-P2` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/lib/map_tiles && bin/rubocop lib/map_tiles test/lib/map_tiles -f github` → 66 runs, 1939 assertions, 0 failures, 0 errors; rubocop exit 0. Exporter now emits cascaded warning/guidebook/parking fields, cover URLs, aggregate problem counts/grade ranges, and main-cluster bounds; layer/smoke contracts allow the new card URL fields.
   - `0006-P2` review fixes (2026-06-10): accepted the intentionally ignored `/docs/` contract note as `wontfix`; added exporter coverage for area cover URLs cascading to cluster main-area and region main-cluster→main-area card properties, plus absent-cover fallback. Docker gate re-run green — `bin/rails db:prepare && bin/rails test test/lib/map_tiles && bin/rubocop lib/map_tiles test/lib/map_tiles -f github` → 66 runs, 1947 assertions, 0 failures, 0 errors; rubocop exit 0.
   - `0006-P3` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/lib/map_tiles && bin/rubocop lib/map_tiles test/lib/map_tiles -f github` → 76 runs, 2531 assertions, 0 failures, 0 errors; rubocop exit 0. Sprite pipeline (builder + 4 versioned uploads + manifest `spriteUrl` + materializer sprite rewrite/validation), 10 committed icons (20 PNGs + SVG sources + README), both templates carry pin/selected layers with `-1` sentinel filters, z14→15 hull/boulder crossfade, dev sprite URL, and no Bergwerk sprite references (`flugplatz` gone; style test proves every `icon-image` resolves to a committed icon). Icons visually verified via rendered previews during authoring.
+  - `0006-P4` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/controllers/map_controller_test.rb test/controllers/mapping/contribution_requests_controller_test.rb && bin/importmap audit && bin/rubocop -f github` → 9 runs, 171 assertions, 0 failures, 0 errors; no vulnerable packages; rubocop exit 0 (`GATE_EXIT=0`). New `map/selection.js` (single-selection invariant, `-1` sentinel filters, base-layer exclusion, 180ms ease-out grow tween) and `map/info_card.js` (safe-DOM card, bottom sheet / `lg:` docked panel), importmap `pin_all_from app/javascript/map`, controller select wiring + background-click deselect + sheet padding, `map_card_strings` helper + `views.map.card.*` de/en locales, card target + data attributes in the view, new markup tests.
 
 ## Files touched
 
@@ -364,9 +378,9 @@ existing Bunny flow. (Pins reference only style-declared sprite icons — no `ma
 Goal: tapping any pin or problem on `/map` selects it (smooth grow) and opens a
 responsive, localized info card; tapping elsewhere/closing deselects.
 
-- [ ] step 1: read `config/importmap.rb`; add
+- [x] step 1: read `config/importmap.rb`; add
       `pin_all_from "app/javascript/map", under: "map"`.
-- [ ] step 2: new `app/javascript/map/selection.js` exporting class `MapSelection`:
+- [x] step 2: new `app/javascript/map/selection.js` exporting class `MapSelection`:
       - `constructor(map)`; tracks `{ kind, id, layerId }` of the current selection;
       - `select(kind, id)` / `clear()` set the matching `-selected` layer's filter
         (`["==", ["get", "<kind>Id"], id]`, sentinel `-1` to clear) and run the grow
@@ -377,7 +391,7 @@ responsive, localized info card; tapping elsewhere/closing deselects.
         1.0→1.25 via `setLayoutProperty` for symbol layers and `circle-radius` base→+40%
         via `setPaintProperty` for `problems-selected`; `clear()` cancels any running
         frame and resets the property.
-- [ ] step 3: new `app/javascript/map/info_card.js` exporting class `InfoCard`:
+- [x] step 3: new `app/javascript/map/info_card.js` exporting class `InfoCard`:
       - `constructor(container, strings, locale)` — container is the Stimulus target,
         `strings` the parsed `data-map-card-strings-value` JSON;
       - `show(kind, properties, callbacks)` builds the card DOM exclusively with
@@ -399,19 +413,19 @@ responsive, localized info card; tapping elsewhere/closing deselects.
       - `hide()`; responsive layout via Tailwind classes on the container: base =
         bottom sheet (`fixed inset-x-0 bottom-0 …`), `lg:` = docked left panel
         (`lg:inset-auto lg:left-4 lg:top-4 lg:w-96 lg:rounded-xl …`).
-- [ ] step 4: read `app/helpers/map_helper.rb`; add `map_card_strings` returning a hash
+- [x] step 4: read `app/helpers/map_helper.rb`; add `map_card_strings` returning a hash
       of every static card string from `t()` (`show_on_map`, `directions`, `guidebook`,
       `problems`, `warning`, `close`, `height_meters`, a `steepness` values map, a
       `poi_types` map). Add the matching keys under `views.map.card` in
       `config/locales/en.yml` and `config/locales/de.yml` (reuse the existing
       `problem.steepness.*` translations for the steepness map).
-- [ ] step 5: read `app/views/map/index.html.erb`; add inside the controller div:
+- [x] step 5: read `app/views/map/index.html.erb`; add inside the controller div:
       `<div data-map-target="card" class="hidden …"></div>` and the attributes
       `data-map-card-strings-value="<%= map_card_strings.to_json %>"` and, when `@area`,
       `data-map-area-id-value="<%= @area.id %>"`. Read `app/controllers/map_controller.rb`
       — `@area` already exists for meta tags; no controller change needed beyond what
       P5 uses.
-- [ ] step 6: rewire `app/javascript/controllers/map_controller.js` (read fully first;
+- [x] step 6: rewire `app/javascript/controllers/map_controller.js` (read fully first;
       keep its JSDoc standard):
       - import `MapSelection` and `InfoCard`; add the `card` target and `cardStrings` /
         `areaId` values; instantiate both on `load`;
@@ -435,7 +449,7 @@ responsive, localized info card; tapping elsewhere/closing deselects.
         close — the selected pin stays visible;
       - keep `createPopup`/`contributionPopupContent` for the contribution overlay only
         (problem/POI popup removal happens in P5 together with the entry-point rewires).
-- [ ] step 7: extend `test/controllers/map_controller_test.rb` (read first): the map page
+- [x] step 7: extend `test/controllers/map_controller_test.rb` (read first): the map page
       renders the card target, `data-map-card-strings-value` containing the localized
       `show_on_map` string per locale, and `data-map-area-id-value` for `?slug=` requests;
       strings render in both `de` and `en`.

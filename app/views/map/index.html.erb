@@ -25,6 +25,10 @@
   data-map-manifest-url-value="<%= map_release_manifest_url %>"
   data-map-style-value="<%= map_default_style %>"
   data-map-contribute-value="<%= params[:contribute] ? "true" : "false" %>"
+  data-map-card-strings-value="<%= map_card_strings.to_json %>"
+  <% if @area %>
+  data-map-area-id-value="<%= @area.id %>"
+  <% end %>
   <% if params[:contribute] %>
   data-map-contribute-source-value="<%= mapping_requests_path(format: :geojson) %>"
   <% end %>
@@ -36,5 +40,6 @@
   <% end %>
 >
   <div id="map" data-map-target="map"></div>
+  <div data-map-target="card" class="hidden"></div>
   <%= render "filters" %>
 </div>

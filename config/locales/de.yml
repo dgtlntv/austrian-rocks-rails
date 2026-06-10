@@ -190,6 +190,18 @@ de:
                     description:
                         Interaktive Karte für das Klettergebiet %{area} in
                         Österreich
+            card:
+                show_on_map: Auf der Karte zeigen
+                directions: Route
+                guidebook: Kletterführer
+                problems: Routen
+                warning: Warnung
+                close: Schließen
+                details: Details
+                height_meters: "%{height} m"
+                poi_types:
+                    parking: Parkplatz
+                    train_station: Bahnhof
             filters:
                 label: Filter
                 level: Schwierigkeitsgrad

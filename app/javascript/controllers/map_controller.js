@@ -1,12 +1,15 @@
 /**
  * Stimulus controller for the Rails map pages. It wires MapLibre GL JS, the
  * PMTiles protocol, release-manifest style loading, web-only interactions,
- * grade filters, search events, and the dynamic contribution-request overlay;
- * shared basemap/source/layer styling lives in the published style JSONs.
+ * pin selection with the responsive info card, grade filters, search events,
+ * and the dynamic contribution-request overlay; shared basemap/source/layer
+ * styling lives in the published style JSONs.
  */
 import { Controller } from "@hotwired/stimulus"
 import maplibregl from "maplibre-gl"
 import { Protocol } from "pmtiles"
+import MapSelection from "map/selection"
+import InfoCard from "map/info_card"
 
 const AUSTRIA_BOUNDS = [
     [9.430320338084726, 46.28576190178245],
@@ -28,6 +31,7 @@ const ALL_GRADES = [
 export default class extends Controller {
     static targets = [
         "map",
+        "card",
         "gradeRadioButton",
         "gradeMin",
         "gradeMax",
@@ -39,6 +43,8 @@ export default class extends Controller {
     static values = {
         bounds: Object,
         problem: Object,
+        cardStrings: Object,
+        areaId: Number,
         locale: { type: String, default: "en" },
         manifestUrl: String,
         style: { type: String, default: "light" },
@@ -122,6 +128,10 @@ export default class extends Controller {
         this.addControls()
 
         this.map.on("load", () => {
+            this.selection = new MapSelection(this.map)
+            if (this.hasCardTarget) {
+                this.infoCard = new InfoCard(this.cardTarget, this.cardStringsValue, this.localeValue)
+            }
             this.addContributionLayers()
             this.centerMap()
             this.cleanHistory()
@@ -265,15 +275,16 @@ export default class extends Controller {
         this.registerPointerLayer("cluster-hulls", (zoom) => zoom <= 12)
         this.registerPointerLayer("regions", (zoom) => zoom <= 10)
         this.registerPointerLayer("region-hulls", (zoom) => zoom <= 10)
-        this.registerProblemClicks("problems")
         this.registerContributionClicks()
-        this.registerPoiClicks()
-        this.registerBoundsClicks("areas", (zoom) => zoom < 15)
-        this.registerBoundsClicks("areas-hulls", (zoom) => zoom < 15)
-        this.registerBoundsClicks("clusters", (zoom) => zoom <= 12)
-        this.registerBoundsClicks("cluster-hulls", (zoom) => zoom <= 12)
-        this.registerBoundsClicks("regions", (zoom) => zoom <= 10)
-        this.registerBoundsClicks("region-hulls", (zoom) => zoom <= 10)
+        this.registerSelectClicks("problems", "problem")
+        this.registerSelectClicks("pois", "poi", (zoom) => zoom >= 12)
+        this.registerSelectClicks("areas", "area", (zoom) => zoom < 15)
+        this.registerSelectClicks("areas-hulls", "area", (zoom) => zoom < 15)
+        this.registerSelectClicks("clusters", "cluster", (zoom) => zoom <= 12)
+        this.registerSelectClicks("cluster-hulls", "cluster", (zoom) => zoom <= 12)
+        this.registerSelectClicks("regions", "region", (zoom) => zoom <= 10)
+        this.registerSelectClicks("region-hulls", "region", (zoom) => zoom <= 10)
+        this.registerBackgroundClicks()
     }
 
     /**
@@ -292,20 +303,122 @@ export default class extends Controller {
     }
 
     /**
-     * Opens safe problem popups for a problem style layer.
-     * @param {string} layerId Layer ID to handle.
+     * Selects the clicked feature and opens its info card.
+     * @param {string} layerId Layer ID to handle (hulls select their pin's entity).
+     * @param {string} kind Entity kind: region/cluster/area/poi/problem.
+     * @param {Function} zoomPredicate Returns true when click should select.
      * @returns {void}
      */
-    registerProblemClicks(layerId) {
+    registerSelectClicks(layerId, kind, zoomPredicate = () => true) {
         if (!this.map.getLayer(layerId)) return
 
         this.map.on("click", layerId, (event) => {
+            if (!zoomPredicate(this.map.getZoom())) return
+
             const feature = event.features[0]
-            this.createPopup()
-                .setLngLat(feature.geometry.coordinates.slice())
-                .setDOMContent(this.problemPopupContent(feature.properties))
-                .addTo(this.map)
+            const id = feature.properties[`${kind}Id`]
+            if (id === undefined || id === null) return
+            if (this.selection.current?.kind === kind && this.selection.current?.id === id) return
+
+            this.selectFeature(kind, id, feature.properties, event.lngLat)
         })
+    }
+
+    /**
+     * Clears the selection when a click hits no interactive feature.
+     * @returns {void}
+     */
+    registerBackgroundClicks() {
+        this.map.on("click", (event) => {
+            if (!this.selection.current) return
+
+            const features = this.map.queryRenderedFeatures(event.point, {
+                layers: this.interactiveLayerIds(),
+            })
+            if (features.length === 0) this.clearSelection()
+        })
+    }
+
+    /**
+     * Returns the existing layer IDs a click may interact with.
+     * @returns {string[]} Existing interactive layer IDs.
+     */
+    interactiveLayerIds() {
+        return [
+            "problems", "problems-selected",
+            "pois", "pois-selected",
+            "areas", "areas-selected", "areas-hulls",
+            "clusters", "clusters-selected", "cluster-hulls",
+            "regions", "regions-selected", "region-hulls",
+            "contribute-problems", "contribute-problems-texts",
+        ].filter((layerId) => this.map.getLayer(layerId))
+    }
+
+    /**
+     * Applies a selection: grows the selected pin and opens the info card.
+     * @param {string} kind Entity kind: region/cluster/area/poi/problem.
+     * @param {number} id Entity id from the tile properties.
+     * @param {Object} properties Tile feature properties for the card.
+     * @param {maplibregl.LngLat} lngLat Selected coordinate for sheet handling.
+     * @returns {void}
+     */
+    selectFeature(kind, id, properties, lngLat) {
+        this.selection.select(kind, id)
+        this.infoCard?.show(kind, properties, {
+            showOnMap: () => this.showSelectionOnMap(kind, properties),
+            close: () => this.clearSelection(),
+        })
+        this.adjustSheetPadding(lngLat)
+    }
+
+    /**
+     * Clears the selection, hides the card, and resets the sheet padding.
+     * @returns {void}
+     */
+    clearSelection() {
+        this.selection.clear()
+        this.infoCard?.hide()
+        this.map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 })
+    }
+
+    /**
+     * Card "Show on map" CTA: flies to the entity bounds — for regions the
+     * main-cluster bounds when baked, else the full bounds — then closes the card.
+     * @param {string} kind Entity kind: region/cluster/area/poi/problem.
+     * @param {Object} properties Tile feature properties with bounds.
+     * @returns {void}
+     */
+    showSelectionOnMap(kind, properties) {
+        const bounds = kind === "region" && properties.mainClusterSouthWestLat !== undefined
+            ? [
+                [properties.mainClusterSouthWestLon, properties.mainClusterSouthWestLat],
+                [properties.mainClusterNorthEastLon, properties.mainClusterNorthEastLat],
+            ]
+            : [
+                [properties.southWestLon, properties.southWestLat],
+                [properties.northEastLon, properties.northEastLat],
+            ]
+        if (bounds[0][0] !== undefined) this.flyToBounds(bounds)
+        this.clearSelection()
+    }
+
+    /**
+     * Below the lg breakpoint the card is a bottom sheet: pads the map by the
+     * sheet height and eases to the selected coordinate when it is covered.
+     * @param {maplibregl.LngLat} lngLat Selected coordinate.
+     * @returns {void}
+     */
+    adjustSheetPadding(lngLat) {
+        if (!this.hasCardTarget || window.matchMedia("(min-width: 1024px)").matches) return
+
+        const sheetHeight = this.cardTarget.offsetHeight
+        this.map.setPadding({ top: 0, bottom: sheetHeight, left: 0, right: 0 })
+        if (!lngLat) return
+
+        const point = this.map.project(lngLat)
+        if (point.y > this.map.getContainer().clientHeight - sheetHeight) {
+            this.map.easeTo({ center: lngLat, duration: 300 })
+        }
     }
 
     /**
@@ -323,46 +436,6 @@ export default class extends Controller {
                     .setDOMContent(this.contributionPopupContent(feature.properties))
                     .addTo(this.map)
             })
-        })
-    }
-
-    /**
-     * Opens safe POI popups at zoom levels where POIs are interactive.
-     * @returns {void}
-     */
-    registerPoiClicks() {
-        if (!this.map.getLayer("pois")) return
-
-        this.map.on("click", "pois", (event) => {
-            if (this.map.getZoom() < 12) return
-
-            const popupContent = this.poiPopupContent(event.features[0].properties)
-            if (!popupContent) return
-
-            this.createPopup()
-                .setLngLat(event.features[0].geometry.coordinates.slice())
-                .setDOMContent(popupContent)
-                .addTo(this.map)
-        })
-    }
-
-    /**
-     * Flies to bounds encoded on region/cluster/area features.
-     * @param {string} layerId Layer ID to handle.
-     * @param {Function} zoomPredicate Returns true when click should drill in.
-     * @returns {void}
-     */
-    registerBoundsClicks(layerId, zoomPredicate) {
-        if (!this.map.getLayer(layerId)) return
-
-        this.map.on("click", layerId, (event) => {
-            if (!zoomPredicate(this.map.getZoom())) return
-
-            const props = event.features[0].properties
-            this.flyToBounds([
-                [props.southWestLon, props.southWestLat],
-                [props.northEastLon, props.northEastLat],
-            ])
         })
     }
 
@@ -391,23 +464,6 @@ export default class extends Controller {
         grade.textContent = problem.grade || ""
         container.appendChild(grade)
         return container
-    }
-
-    /**
-     * Builds a POI popup only when googleUrl is a safe HTTP(S) URL.
-     * @param {Object} properties POI feature properties.
-     * @returns {HTMLElement|null} Popup content element or null.
-     */
-    poiPopupContent(properties) {
-        const url = this.safeHttpUrl(properties.googleUrl)
-        if (!url) return null
-
-        const link = document.createElement("a")
-        link.href = url.toString()
-        link.target = "_blank"
-        link.rel = "noopener noreferrer"
-        link.textContent = this.localeValue == "de" ? "Auf Google ansehen" : "See on Google"
-        return link
     }
 
     /**
@@ -474,20 +530,6 @@ export default class extends Controller {
      */
     problemFeatureId(problem) {
         return problem.id ?? problem.problemId
-    }
-
-    /**
-     * Accepts only HTTP(S) URLs for popup links.
-     * @param {string} value Raw URL value.
-     * @returns {URL|null} Parsed safe URL or null.
-     */
-    safeHttpUrl(value) {
-        try {
-            const url = new URL(value)
-            return ["http:", "https:"].includes(url.protocol) ? url : null
-        } catch (_error) {
-            return null
-        }
     }
 
     /**
