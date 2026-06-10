@@ -3,3 +3,4 @@
 
 - 2026-06-10 Replace Bergwerk GIS testing-only basemap.at vector/tile endpoint with an official production-ready basemap.at-derived style/source before production map release; keep linked Grundkarte: basemap.at attribution and the shared web/mobile style contract.
 - 2026-06-10 Re-run and document concrete manual browser smoke evidence for the MapLibre/basemap.at Rails maps, including environment/browser/data, route URLs, attribution clickability, filters/search/hash/history behaviour, contribution markers, console output, and network proof that Mapbox is absent.
+- 2026-06-10 Self-host Inter font in the map tiles/styles stack: generate PBF glyph ranges from Inter, publish them via the Bunny CDN map release flow, and switch the shared MapLibre style templates from Roboto (Bergwerk GIS testing endpoint) to Inter; consider sprite self-hosting at the same time.
