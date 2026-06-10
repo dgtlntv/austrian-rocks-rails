@@ -230,6 +230,8 @@ module MapTiles
 
     def area_properties(area, bounds, include_name: false, include_short_name: false, include_cluster: false)
       cluster = area.cluster if include_cluster
+      area_ids = [ area.id ]
+
       {
         areaId: area.id,
         areaSlug: area.slug,
@@ -238,12 +240,15 @@ module MapTiles
         shortName: include_short_name ? area.short_name : nil,
         clusterId: cluster&.id,
         clusterSlug: cluster&.slug
-      }.merge(bounds_properties(bounds))
+      }.merge(bounds_properties(bounds)).
+        merge(aggregate_properties(area_ids)).
+        merge(card_properties(area))
     end
 
     def cluster_properties(cluster, bounds, include_name: false)
       region = cluster.region
       main_area = Area.find_by(id: cluster.main_area_id) if cluster.main_area_id.present?
+      area_ids = published_child_areas(cluster).pluck(:id)
 
       {
         clusterId: cluster.id,
@@ -253,11 +258,14 @@ module MapTiles
         regionSlug: region&.slug,
         mainAreaId: main_area&.id,
         mainAreaSlug: main_area&.slug
-      }.merge(bounds_properties(bounds))
+      }.merge(bounds_properties(bounds)).
+        merge(aggregate_properties(area_ids)).
+        merge(card_properties(cluster))
     end
 
     def region_properties(region, bounds, include_name: false)
       main_cluster = Cluster.find_by(id: region.main_cluster_id) if region.main_cluster_id.present?
+      area_ids = published_descendant_areas(region).pluck(:id)
 
       {
         regionId: region.id,
@@ -265,7 +273,133 @@ module MapTiles
         name: include_name ? display_label(region, :name, :slug, fallback_prefix: "Region") : nil,
         mainClusterId: main_cluster&.id,
         mainClusterSlug: main_cluster&.slug
-      }.merge(bounds_properties(bounds))
+      }.merge(bounds_properties(bounds)).
+        merge(aggregate_properties(area_ids)).
+        merge(card_properties(region)).
+        merge(main_cluster_bounds_properties(main_cluster))
+    end
+
+    # Resolve card metadata from the closest climbing entity first, then walk up the
+    # area -> cluster -> region hierarchy. The exported scalar values are the contract
+    # seam shared by web and native clients, so the cascade is resolved here once.
+    def effective_card_attributes(record)
+      records = card_cascade_records(record)
+
+      {
+        warning_de: first_present(records, :warning_de),
+        warning_en: first_present(records, :warning_en),
+        guidebook: first_present(records, :guidebook),
+        parking_poi: first_present(records, :parking_poi)
+      }
+    end
+
+    def card_cascade_records(record)
+      case record
+      when Area
+        [ record, record.cluster, record.cluster&.region ].compact
+      when Cluster
+        [ record, record.region ].compact
+      when Region
+        [ record ]
+      else
+        [ record ]
+      end
+    end
+
+    def first_present(records, attribute)
+      records.each do |record|
+        value = record.public_send(attribute)
+        return value if value.present?
+      end
+
+      nil
+    end
+
+    def aggregate_properties(area_ids)
+      grade_min, grade_max = grade_range_for_area_ids(area_ids)
+
+      {
+        problemCount: problem_count_for_area_ids(area_ids),
+        gradeMin: grade_min,
+        gradeMax: grade_max
+      }
+    end
+
+    def problem_count_for_area_ids(area_ids)
+      Problem.joins(:area).where(area_id: area_ids, areas: { published: true }).count
+    end
+
+    def grade_range_for_area_ids(area_ids)
+      return if area_ids.blank?
+
+      grade_indexes = Problem.joins(:area).
+        where(area_id: area_ids, areas: { published: true }).
+        where.not(grade: [ nil, "" ]).
+        distinct.
+        pluck(:grade).
+        filter_map { |grade| Problem::GRADE_VALUES.index(grade) }
+      return if grade_indexes.blank?
+
+      [ Problem::GRADE_VALUES.fetch(grade_indexes.min), Problem::GRADE_VALUES.fetch(grade_indexes.max) ]
+    end
+
+    def card_properties(record)
+      attributes = effective_card_attributes(record)
+      guidebook = attributes.fetch(:guidebook)
+      parking_poi = attributes.fetch(:parking_poi)
+      warning_de = attributes.fetch(:warning_de)
+      warning_en = attributes.fetch(:warning_en)
+
+      {
+        coverPhotoUrl: cover_photo_url(record),
+        warning: warning_de,
+        warningEn: different_label(warning_de, warning_en),
+        guidebookTitle: guidebook&.title,
+        guidebookAuthor: guidebook&.author,
+        guidebookUrl: guidebook&.url,
+        parkingPoiId: parking_poi&.id,
+        parkingName: parking_poi&.name,
+        parkingGoogleUrl: parking_poi&.google_url
+      }
+    end
+
+    def cover_photo_url(record)
+      cover = effective_cover_attachment(record)
+      return unless cover&.attached?
+
+      Rails.application.routes.url_helpers.cdn_image_url(
+        cover.variant(:medium),
+        expires_in: nil,
+        host: Rails.application.config.asset_host.presence || "http://localhost:3000"
+      )
+    end
+
+    def effective_cover_attachment(record)
+      return record.cover if record.respond_to?(:cover) && record.cover.attached?
+
+      case record
+      when Cluster
+        main_area = Area.find_by(id: record.main_area_id) if record.main_area_id.present?
+        effective_cover_attachment(main_area) if main_area.present?
+      when Region
+        main_cluster = Cluster.find_by(id: record.main_cluster_id) if record.main_cluster_id.present?
+        effective_cover_attachment(main_cluster) if main_cluster.present?
+      end
+    end
+
+    def main_cluster_bounds_properties(main_cluster)
+      return {} if main_cluster.blank?
+
+      area_ids = published_child_areas(main_cluster).pluck(:id)
+      bounds = explicit_or_boulder_bounds(main_cluster, area_ids)
+      return {} if bounds.blank?
+
+      {
+        mainClusterSouthWestLat: bounds[:south_west_lat],
+        mainClusterSouthWestLon: bounds[:south_west_lon],
+        mainClusterNorthEastLat: bounds[:north_east_lat],
+        mainClusterNorthEastLon: bounds[:north_east_lon]
+      }
     end
 
     def bounds_properties(bounds)

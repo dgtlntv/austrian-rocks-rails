@@ -41,6 +41,10 @@ class MapTiles::LayerContractTest < ActiveSupport::TestCase
     assert_includes MapTiles::LayerContract.fetch("problems").optional_properties, "boulderId"
     assert_includes MapTiles::LayerContract.fetch("walking_paths").required_properties, "walkingPathId"
     assert_includes MapTiles::LayerContract.fetch("pois").required_properties, "accessAreasJson"
+    assert_includes MapTiles::LayerContract.fetch("areas").optional_properties, "coverPhotoUrl"
+    assert_includes MapTiles::LayerContract.fetch("cluster_hulls").optional_properties, "parkingGoogleUrl"
+    assert_includes MapTiles::LayerContract.fetch("regions").optional_properties, "mainClusterSouthWestLat"
+    assert_includes MapTiles::LayerContract.fetch("region_hulls").optional_properties, "mainClusterNorthEastLon"
     assert_equal "LineString/MultiLineString", MapTiles::LayerContract.fetch("walking_paths").geometry_type
   end
 end

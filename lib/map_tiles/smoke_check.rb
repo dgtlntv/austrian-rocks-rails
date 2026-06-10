@@ -25,6 +25,7 @@ module MapTiles
     PMTILES_INTERNAL_COMPRESSION_OFFSET = 97
     PMTILES_COMPRESSION_NONE = 1
     PMTILES_COMPRESSION_GZIP = 2
+    ALLOWED_URL_FIELDS = %w[coverPhotoUrl googleUrl guidebookUrl parkingGoogleUrl].freeze
 
     attr_reader :configuration, :argv, :out, :mode, :allowed_empty_layers
 
@@ -216,9 +217,13 @@ module MapTiles
 
         actual_fields.each do |field|
           failures << "PMTiles metadata layer #{contract_layer.name} has forbidden circuit field: #{field}" if field.match?(/circuit/i)
-          failures << "PMTiles metadata layer #{contract_layer.name} has forbidden app URL field: #{field}" if field.match?(/url/i) && field != "googleUrl"
+          failures << "PMTiles metadata layer #{contract_layer.name} has forbidden app URL field: #{field}" if forbidden_url_field?(field)
         end
       end
+    end
+
+    def forbidden_url_field?(field)
+      field.match?(/url/i) && !ALLOWED_URL_FIELDS.include?(field)
     end
 
     def metadata_field_names(metadata_layer)
@@ -299,7 +304,7 @@ module MapTiles
 
       properties.each do |key, value|
         failures << "GeoJSON layer #{layer.name} feature #{index} has forbidden circuit field: #{key}" if key.match?(/circuit/i)
-        failures << "GeoJSON layer #{layer.name} feature #{index} has forbidden app URL field: #{key}" if key.match?(/url/i) && key != "googleUrl"
+        failures << "GeoJSON layer #{layer.name} feature #{index} has forbidden app URL field: #{key}" if forbidden_url_field?(key)
 
         next if value.nil? || SCALAR_VALUE_CLASSES.any? { |klass| value.is_a?(klass) }
 

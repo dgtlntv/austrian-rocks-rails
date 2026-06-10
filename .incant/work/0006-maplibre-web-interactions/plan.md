@@ -16,8 +16,8 @@ updated: 2026-06-10
 - Work item: `0006` / `maplibre-web-interactions`
 - Stage: implement
 - Branch: `incant/0006-maplibre-web-interactions`
-- Current phase: `0006-P1` complete (plan approved by human 2026-06-10 in the implement session)
-- Next step: `/incant:review 0006` for the P1 phase gate, then `/incant:implement 0006` for `0006-P2`
+- Current phase: `0006-P2` complete
+- Next step: `/incant:review 0006` for the P2 phase gate, then `/incant:implement 0006` for `0006-P3`
 - Blockers: none
 - Key decisions:
   - **Sprite delivery: single self-hosted Austrian Rocks sprite** (not MapLibre multi-sprite).
@@ -53,6 +53,7 @@ updated: 2026-06-10
 - Verification evidence:
   - `0006-P1` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/models test/controllers/admin` → 111 runs, 409 assertions, 0 failures, 0 errors; `bin/rubocop -f github` → exit 0, no offenses. Schema regenerated to version 2026_06_10_090002 with warnings on clusters/regions, guidebooks table, and guidebook/parking FKs on regions/clusters/areas.
   - `0006-P1` review fixes (2026-06-10): addressed all P1 review findings — guidebook destroy now refuses with a flash error when assigned to regions/clusters/areas (new controller test), `flash.now` on re-render branches, redundant `null: true` removed from the FK migration. Docker gate re-run green: 112 runs, 415 assertions, 0 failures, 0 errors; rubocop exit 0.
+  - `0006-P2` (2026-06-10): Docker gate green — `bin/rails db:prepare && bin/rails test test/lib/map_tiles && bin/rubocop lib/map_tiles test/lib/map_tiles -f github` → 66 runs, 1939 assertions, 0 failures, 0 errors; rubocop exit 0. Exporter now emits cascaded warning/guidebook/parking fields, cover URLs, aggregate problem counts/grade ranges, and main-cluster bounds; layer/smoke contracts allow the new card URL fields.
 
 ## Files touched
 
@@ -75,6 +76,7 @@ updated: 2026-06-10
 ### Phase P2 — tile contract
 - `lib/map_tiles/geojson_exporter.rb` — cascade resolution + new card properties + region main-cluster bounds
 - `lib/map_tiles/layer_contract.rb` — new optional properties on areas/area_hulls/clusters/cluster_hulls/regions/region_hulls
+- `lib/map_tiles/smoke_check.rb` — URL-field allowlist updated for the new safe card URL properties
 - `test/lib/map_tiles/geojson_exporter_test.rb` — cascade matrix + new property tests
 - `test/lib/map_tiles/layer_contract_test.rb` — contract additions
 - `docs/map_tiles.md` — source-layer schema sections updated
@@ -181,20 +183,20 @@ region/cluster/area.
 Goal: every property the cards need ships in the tiles, cascade resolved identically for
 all platforms, with the region main-cluster bounds for the Maltatal fix.
 
-- [ ] step 1: read `lib/map_tiles/geojson_exporter.rb`, `lib/map_tiles/layer_contract.rb`,
+- [x] step 1: read `lib/map_tiles/geojson_exporter.rb`, `lib/map_tiles/layer_contract.rb`,
       and `test/lib/map_tiles/geojson_exporter_test.rb` before editing.
-- [ ] step 2: add a pure cascade method to `GeojsonExporter`:
+- [x] step 2: add a pure cascade method to `GeojsonExporter`:
       `def effective_card_attributes(record)` — walks `record` → parent (`area.cluster` →
       `cluster.region`) and returns
       `{ warning_de:, warning_en:, guidebook:, parking_poi: }` where each value is the
       record's own value if present, else the nearest ancestor's. Document the cascade
       semantics in a method comment (this is the exporter's contract seam). Reuse it for
       areas, clusters (cluster → region), and regions (own values only).
-- [ ] step 3: add aggregate helpers: `problem_count_for_area_ids(area_ids)` (count of
+- [x] step 3: add aggregate helpers: `problem_count_for_area_ids(area_ids)` (count of
       problems in published areas) and `grade_range_for_area_ids(area_ids)` returning
       `[min, max]` grade strings ordered by index in `Problem::GRADE_VALUES` (ignore
       blank grades; nil when no graded problems).
-- [ ] step 4: add `cover_photo_url(record)`: resolves the cover attachment — a record's
+- [x] step 4: add `cover_photo_url(record)`: resolves the cover attachment — a record's
       own attached `cover` wins (regions/clusters/areas all have `has_one_attached
       :cover`); else a cluster falls back to its `main_area`'s cover and a region to its
       `main_cluster`'s effective cover (main-child chain). Returns
@@ -203,7 +205,7 @@ all platforms, with the region main-cluster bounds for the Maltatal fix.
       no cover is attached. Note: `Cluster`'s `has_one_attached :cover` currently
       declares no variants — add the same `:thumb`/`:medium` variant block Region and
       Area already define.
-- [ ] step 5: extend `area_properties` / `cluster_properties` / `region_properties` (used
+- [x] step 5: extend `area_properties` / `cluster_properties` / `region_properties` (used
       by both point and hull features) with, following the existing `name`/`nameEn`
       localization pattern (`warning` = de value, `warningEn` only when different):
       `problemCount`, `gradeMin`, `gradeMax`, `coverPhotoUrl`, `warning`, `warningEn`,
@@ -213,10 +215,10 @@ all platforms, with the region main-cluster bounds for the Maltatal fix.
       `mainClusterNorthEastLat/Lon` from the main cluster's `sw`/`ne` (or its boulder
       bounds via `explicit_or_boulder_bounds`), omitted when no main cluster is set.
       `compact_properties` already drops nils.
-- [ ] step 6: extend `lib/map_tiles/layer_contract.rb`: add the new property names to
+- [x] step 6: extend `lib/map_tiles/layer_contract.rb`: add the new property names to
       `optional_properties` of `areas`, `area_hulls`, `clusters`, `cluster_hulls`,
       `regions`, `region_hulls` (main-cluster bounds props on the two region layers only).
-- [ ] step 7: tests in `test/lib/map_tiles/geojson_exporter_test.rb` —
+- [x] step 7: tests in `test/lib/map_tiles/geojson_exporter_test.rb` —
       - update `assert_no_canonical_url` allowlist to permit exactly `coverPhotoUrl`,
         `guidebookUrl`, `parkingGoogleUrl` besides `googleUrl`;
       - cascade matrix for warning, guidebook, parking (the spec's acceptance grid):
@@ -232,7 +234,7 @@ all platforms, with the region main-cluster bounds for the Maltatal fix.
         cover;
       - update `test/lib/map_tiles/layer_contract_test.rb` for the new optional
         properties.
-- [ ] step 8: read `docs/map_tiles.md` source-layer sections; update the `areas`,
+- [x] step 8: read `docs/map_tiles.md` source-layer sections; update the `areas`,
       `area_hulls`, `clusters`, `cluster_hulls`, `regions`, `region_hulls` property
       tables with the new optional properties and a short "card data cascade" paragraph
       (own value → cluster → region, resolved at export).
