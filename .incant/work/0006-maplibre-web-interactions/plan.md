@@ -16,9 +16,9 @@ updated: 2026-06-10
 - Work item: `0006` / `maplibre-web-interactions`
 - Stage: implement
 - Branch: `incant/0006-maplibre-web-interactions`
-- Current phase: `0006-P5` complete after review fix (gate green, awaiting re-review)
-- Next step: `/incant:review 0006` to re-review P5; then `/incant:implement 0006` for `0006-P6`
-- Blockers: none
+- Current phase: `0006-P6` pending after P5 re-review; `0006-P7` added for human-smoke UX polish before final release
+- Next step: `/incant:implement 0006` for `0006-P6`; then `/incant:implement 0006` for `0006-P7` to address the captured interaction concerns before final review/release
+- Blockers: human smoke surfaced UX concerns captured in `0006-P7`; do not release until they are addressed or explicitly resolved
 - Review fixes (P5 revise loop, 2026-06-10):
   - Blocker `app/controllers/map_controller.rb:16` / `?problem=` deep links: map index
     now resolves `problem_id` from `params[:pid]` or `params[:problem]`, preserving the
@@ -556,6 +556,35 @@ and the visual/interactive behaviour is verified in a real browser and recorded.
       Status block and `.incant/STATE.md`; request `/incant:review 0006`.
 
 **Quality gate:** `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.invalid -e BUNNY_STORAGE_ACCESS_KEY_ID=dummy -e BUNNY_STORAGE_SECRET_ACCESS_KEY=dummy -e BUNNY_STORAGE_REGION=dummy -e BUNNY_STORAGE_BUCKET=dummy web bash -lc 'bin/rails db:prepare && bin/rails test && bin/importmap audit && bin/rubocop -f github && bin/brakeman --no-pager'` → full suite green, no vulnerable packages, no offenses, no warnings; **plus** the completed manual smoke record with observations.
+
+## Phase 0006-P7 — human-smoke interaction polish
+
+Goal: address the human-smoke UX concerns before final release. Keep this phase focused on
+polishing the shipped interaction model rather than redesigning the map from scratch.
+
+- [ ] Pin labels: reduce the font sizes beside pins, especially region labels; tighten the
+      region pin-to-text spacing so labels feel sized to the new pin icons rather than the old
+      text-only map.
+- [ ] Selection animation: preserve/restore the grow transition when opening the first card,
+      not only when switching while a card is already open; add a tasteful Apple-Maps-like
+      wiggle/settle on selection without making it distracting.
+- [ ] Card CTA: rename the German/English “Show on map” copy to something that means “zoom
+      to this place/area” instead of implying the user is not already on the map; also fix the
+      CTA if it does nothing in manual smoke.
+- [ ] Card close button: make the close hover background a true circle, not a squashed oval.
+- [ ] Card placement: keep the card within the map area so it does not cover the search bar.
+- [ ] Map padding/camera shift: only shift the map when the card would actually cover the
+      selected pin; make that shift smooth; do not automatically “unshift” the map on close.
+- [ ] Card stats: present problem count and grade range more nicely, using existing grade-range
+      indicator patterns where possible. Consider showing a small set of popular routes only if
+      the data contract supports it or the phase intentionally extends the tile properties.
+- [ ] Region pins: evaluate making region pins slightly larger in both selected and unselected
+      states while keeping label sizing balanced.
+
+**Quality gate:** rerun the relevant automated gate for the touched files (at minimum the map
+controller/markup tests, map tile style tests if style JSON changes, `bin/importmap audit`, and
+`bin/rubocop -f github`) and repeat the affected manual-smoke checks from
+`.incant/work/0006-maplibre-web-interactions/manual-smoke.md`.
 
 ## Coverage self-review
 
