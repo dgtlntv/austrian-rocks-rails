@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd /rails
+
+bin/rails db:prepare
+rm -f tmp/pids/server.pid
+exec bin/dev

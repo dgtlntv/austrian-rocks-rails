@@ -9,6 +9,8 @@ module MapTiles
     class Error < StandardError; end
 
     SOURCE_NAME = "austrian-rocks"
+    CONTOUR_SOURCE_NAME = "basemap-at-hoehenlinien"
+    TERRAIN_LAYER_ID = "gelände"
 
     attr_reader :configuration
 
@@ -19,6 +21,7 @@ module MapTiles
     def materialize
       Configuration::STYLE_NAMES.to_h do |style_name|
         style = read_style_template(style_name)
+        apply_configured_opacity!(style)
         validate_style!(style, style_name)
         style.fetch("sources").fetch(SOURCE_NAME)["url"] = "pmtiles://#{configuration.pmtiles_public_url}"
 
@@ -36,6 +39,19 @@ module MapTiles
       JSON.parse(configuration.style_template_path(style_name).read)
     rescue JSON::ParserError => e
       raise Error, "#{style_name} style JSON is invalid: #{e.message}"
+    end
+
+    def apply_configured_opacity!(style)
+      Array(style["layers"]).each do |layer|
+        paint = layer["paint"]
+        next unless paint.is_a?(Hash)
+
+        paint["raster-opacity"] = configuration.terrain_opacity if layer.fetch("id", "").casecmp(TERRAIN_LAYER_ID).zero?
+        next unless layer["source"] == CONTOUR_SOURCE_NAME
+
+        paint["line-opacity"] = configuration.contour_opacity if layer["type"] == "line"
+        paint["text-opacity"] = configuration.contour_opacity if layer["type"] == "symbol"
+      end
     end
 
     def validate_style!(style, style_name)

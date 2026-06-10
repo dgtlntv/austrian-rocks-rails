@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+if [[ -f .kamal/secrets ]]; then
+  echo "Loading Docker development environment from .kamal/secrets"
+  set -a
+  # shellcheck disable=SC1091
+  source .kamal/secrets
+  set +a
+else
+  echo "No .kamal/secrets file found; using local Docker defaults" >&2
+fi
+
+# Keep Docker development Postgres isolated from the production/Kamal password.
+# The host-side Kamal secrets are still available to Compose for Rails/Bunny env.
+export DEV_POSTGRES_PASSWORD="${DEV_POSTGRES_PASSWORD:-password}"
+export RAILS_ENV="${RAILS_ENV:-development}"
+export DEV_DB_DUMP_PATH="${DEV_DB_DUMP_PATH:-tmp/db/production.dump}"
+export DEV_DB_RESTORE="${DEV_DB_RESTORE:-if-empty}"
+
+if [[ $# -ne 0 ]]; then
+  exec docker compose "$@"
+fi
+
+db_exec() {
+  docker compose exec -T -e PGPASSWORD="$DEV_POSTGRES_PASSWORD" db "$@"
+}
+
+rails_database_present() {
+  local count
+  count=$(db_exec psql -h 127.0.0.1 -U austrian-rocks -d dump-prod -tAc "select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind in ('r', 'p') and c.relname in ('schema_migrations', 'areas', 'problems')" | tr -d '[:space:]')
+  [[ "${count:-0}" != "0" ]]
+}
+
+restore_dev_dump() {
+  echo "Restoring development database from ${DEV_DB_DUMP_PATH} with the Postgres 16 container"
+  docker cp "$DEV_DB_DUMP_PATH" austrian-rocks-db:/tmp/dev-db-dump
+
+  case "$DEV_DB_DUMP_PATH" in
+    *.dump|*.backup|*.pgdump)
+      db_exec pg_restore --clean --if-exists --no-owner --no-acl -h 127.0.0.1 -U austrian-rocks -d dump-prod /tmp/dev-db-dump
+      ;;
+    *.gz)
+      db_exec bash -lc 'gzip -dc /tmp/dev-db-dump | psql -h 127.0.0.1 -U austrian-rocks -d dump-prod'
+      ;;
+    *)
+      if db_exec pg_restore --list /tmp/dev-db-dump >/dev/null 2>&1; then
+        db_exec pg_restore --clean --if-exists --no-owner --no-acl -h 127.0.0.1 -U austrian-rocks -d dump-prod /tmp/dev-db-dump
+      else
+        db_exec psql -h 127.0.0.1 -U austrian-rocks -d dump-prod -f /tmp/dev-db-dump
+      fi
+      ;;
+  esac
+
+  db_exec rm -f /tmp/dev-db-dump
+}
+
+docker compose up -d --wait db
+
+if [[ "$DEV_DB_RESTORE" == "never" ]]; then
+  echo "Skipping development database dump restore because DEV_DB_RESTORE=never"
+elif [[ ! -f "$DEV_DB_DUMP_PATH" ]]; then
+  echo "No development database dump found at ${DEV_DB_DUMP_PATH}; Rails will prepare the database normally"
+elif [[ "$DEV_DB_RESTORE" == "always" ]]; then
+  restore_dev_dump
+elif rails_database_present; then
+  echo "Development database already has Rails tables; skipping ${DEV_DB_DUMP_PATH} restore"
+else
+  restore_dev_dump
+fi
+
+exec docker compose up --build web

@@ -66,12 +66,11 @@ module MapTiles
     end
 
     def terrain_opacity
-      opacity = Float(fetch_setting("terrain_opacity"))
-      raise ArgumentError, "terrain_opacity must be between 0 and 1" unless opacity.between?(0.0, 1.0)
+      opacity_setting("terrain_opacity")
+    end
 
-      opacity
-    rescue TypeError, ArgumentError
-      raise ArgumentError, "terrain_opacity must be between 0 and 1"
+    def contour_opacity
+      opacity_setting("contour_opacity")
     end
 
     def basemap_at_style_url
@@ -221,6 +220,15 @@ module MapTiles
       uri.to_s.delete_suffix("/")
     rescue URI::InvalidURIError => e
       raise ArgumentError, "public_cdn_host is invalid: #{e.message}"
+    end
+
+    def opacity_setting(name)
+      opacity = Float(fetch_setting(name))
+      raise ArgumentError, "#{name} must be between 0 and 1" unless opacity.between?(0.0, 1.0)
+
+      opacity
+    rescue TypeError, ArgumentError
+      raise ArgumentError, "#{name} must be between 0 and 1"
     end
 
     def sanitize_path_segment(value, name:)

@@ -21,10 +21,11 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     assert_equal "map_tiles", configuration.manifest_prefix
     assert_equal "current.json", configuration.manifest_object_name
     assert_equal "light", configuration.default_style
-    assert_equal "https://mapsneu.wien.gv.at/basemapvectorneu/root.json", configuration.basemap_at_style_url
+    assert_equal "https://basemap.bergwerk-gis.at/api/styles/basemap-at-farbe", configuration.basemap_at_style_url
     assert_includes configuration.basemap_at_attribution, "Grundkarte:"
     assert_includes configuration.basemap_at_attribution, "https://basemap.at/"
     assert_equal 0.35, configuration.terrain_opacity
+    assert_equal 0.35, configuration.contour_opacity
     assert_equal [], configuration.optional_production_layers
     assert_equal 30.minutes, configuration.automatic_publish_debounce
     assert_equal 60, configuration.manifest_cache_ttl_seconds
@@ -141,6 +142,18 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     assert_not_respond_to configuration, :"latest_#{'object'}_key"
   end
 
+  test "rejects out-of-range style opacity settings" do
+    terrain_error = assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("terrain_opacity" => 1.1)).terrain_opacity
+    end
+    contour_error = assert_raises(ArgumentError) do
+      MapTiles::Configuration.new(version: "2026-06-09", settings: settings("contour_opacity" => -0.1)).contour_opacity
+    end
+
+    assert_equal "terrain_opacity must be between 0 and 1", terrain_error.message
+    assert_equal "contour_opacity must be between 0 and 1", contour_error.message
+  end
+
   test "rejects unknown optional production layer names" do
     configuration = MapTiles::Configuration.new(
       version: "2026-06-09",
@@ -206,9 +219,10 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
       "manifest_prefix" => "map_tiles",
       "manifest_object_name" => "current.json",
       "default_style" => "light",
-      "basemap_at_style_url" => "https://mapsneu.wien.gv.at/basemapvectorneu/root.json",
+      "basemap_at_style_url" => "https://basemap.bergwerk-gis.at/api/styles/basemap-at-farbe",
       "basemap_at_attribution" => "Grundkarte: <a href=\"https://basemap.at/\" target=\"_blank\" rel=\"noopener noreferrer\">basemap.at</a>",
       "terrain_opacity" => 0.35,
+      "contour_opacity" => 0.35,
       "optional_production_layers" => [],
       "automatic_publish_debounce_minutes" => "30",
       "manifest_cache_ttl_seconds" => "60",

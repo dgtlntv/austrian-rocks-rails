@@ -31,10 +31,9 @@ RUN git clone --depth 1 --branch "$TIPPECANOE_VERSION" https://github.com/felt/t
 
 # Set development environment
 ENV RAILS_ENV="development" \
-    BUNDLE_PATH="/usr/local/bundle"
-
-# Install Foreman for running Procfile.dev
-RUN gem install foreman
+    BUNDLE_PATH="/usr/local/bundle" \
+    GEM_HOME="/usr/local/bundle" \
+    PATH="/usr/local/bundle/bin:${PATH}"
 
 # Copy Gemfile first for better caching
 COPY Gemfile Gemfile.lock ./

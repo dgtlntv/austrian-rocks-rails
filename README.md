@@ -50,16 +50,42 @@ processing.
 
 -   `bin/dev`
 
-### Map tiles and web map releases
+### Run the app with Docker
 
--   The Rails web map uses MapLibre GL with Austrian Rocks-owned style JSONs
-    derived from basemap.at. No browser map token is required.
+-   `bin/docker-dev`
+-   The wrapper sources `.kamal/secrets` on the host, exports those values for
+    Docker Compose, then starts the `web` and PostGIS services. Docker Postgres
+    intentionally uses the local password `password` by default instead of the
+    production `POSTGRES_PASSWORD` from Kamal secrets.
+-   On first boot with an empty Docker database, the web container restores
+    `tmp/db/production.dump` by default, runs migrations, and starts `bin/dev`.
+-   If you need to force a fresh restore from the dump, run
+    `DEV_DB_RESTORE=always bin/docker-dev`. To skip dump restore entirely, run
+    `DEV_DB_RESTORE=never bin/docker-dev`.
+-   If the Postgres volume was previously created with a different password,
+    reset it with `docker compose down -v` before running `bin/docker-dev` again.
+    Override with `DEV_POSTGRES_PASSWORD=...` only if you intentionally want a
+    non-default local Docker database password.
+
+### Map development and web map releases
+
+-   The Rails web map uses MapLibre GL, the PMTiles protocol, and Austrian
+    Rocks-owned style JSONs derived from basemap.at. No browser map token or
+    credentials are required. While Austrian Rocks is still in development,
+    those styles derive from Bergwerk GIS's testing-only
+    `basemap-at-farbe` style; before production release, switch to the official
+    production-ready basemap.at vector style once available.
+-   The shared styles include the basemap.at vector stack, lower-opacity
+    `gelände` shading, lower-opacity basemap.at Höhenlinien/contours, and
+    Austrian Rocks PMTiles overlays.
 -   Published map releases use immutable PMTiles/style objects plus a non-cached
     manifest at `https://tiles.austrian.rocks/map_tiles/current.json`.
 -   Clients fetch the manifest and load `styles.light` for the Rails web map;
     mobile clients can choose `styles.light` or `styles.dark`.
 -   Do not point clients at a mutable PMTiles URL. Each manifest entry references
     the exact versioned PMTiles and style JSON for that release.
+-   Run map-tile tests against Docker-hosted PostgreSQL/PostGIS, for example via
+    `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/lib/map_tiles'`.
 
 ### Optional: JOSM
 

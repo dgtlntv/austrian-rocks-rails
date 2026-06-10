@@ -12,7 +12,7 @@ const AUSTRIA_BOUNDS = [
     [9.430320338084726, 46.28576190178245],
     [17.230613306834925, 49.18126637161225],
 ]
-const GRADE_FILTER_LAYERS = ["problems", "problems-texts"]
+const GRADE_FILTER_LAYERS = ["problems"]
 const ALL_GRADES = [
     "1a", "1a/+", "1a+", "1b", "1b/+", "1b+", "1c", "1c/+", "1c+",
     "2a", "2a/+", "2a+", "2b", "2b/+", "2b+", "2c", "2c/+", "2c+",
@@ -195,6 +195,7 @@ export default class extends Controller {
                 visibility: "visible",
                 "text-allow-overlap": true,
                 "text-field": ["to-string", ["get", "name"]],
+                "text-font": ["Roboto-Regular"],
                 "text-size": ["interpolate", ["linear"], ["zoom"], 19, 10, 22, 20],
             },
             paint: {
@@ -257,7 +258,6 @@ export default class extends Controller {
      */
     setupClickEvents() {
         this.registerPointerLayer("problems")
-        this.registerPointerLayer("problems-texts")
         this.registerPointerLayer("pois", (zoom) => zoom >= 12)
         this.registerPointerLayer("areas", (zoom) => zoom < 15)
         this.registerPointerLayer("areas-hulls", (zoom) => zoom < 15)
@@ -266,7 +266,6 @@ export default class extends Controller {
         this.registerPointerLayer("regions", (zoom) => zoom <= 10)
         this.registerPointerLayer("region-hulls", (zoom) => zoom <= 10)
         this.registerProblemClicks("problems")
-        this.registerProblemClicks("problems-texts")
         this.registerContributionClicks()
         this.registerPoiClicks()
         this.registerBoundsClicks("areas", (zoom) => zoom < 15)

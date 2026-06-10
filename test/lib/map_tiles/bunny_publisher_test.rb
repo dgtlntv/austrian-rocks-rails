@@ -201,7 +201,7 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
       "manifest_prefix" => "maps",
       "manifest_object_name" => "current.json",
       "default_style" => "light",
-      "basemap_at_style_url" => "https://mapsneu.wien.gv.at/basemapvectorneu/root.json",
+      "basemap_at_style_url" => "https://basemap.bergwerk-gis.at/api/styles/basemap-at-farbe",
       "basemap_at_attribution" => "Grundkarte: <a href=\"https://basemap.at/\" target=\"_blank\" rel=\"noopener noreferrer\">basemap.at</a>",
       "terrain_opacity" => 0.35,
       "optional_production_layers" => [],
