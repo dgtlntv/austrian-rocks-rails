@@ -87,6 +87,7 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
     assert @style_materializer.called
     assert @sprite_builder.called
     assert @release_manifest.called
+    upload_keys = @s3_client.puts.map { |put| put.fetch(:key) }
     assert_equal(
       %w[
         maps/austrian-rocks-2026-06-07.pmtiles
@@ -98,8 +99,9 @@ class MapTiles::BunnyPublisherTest < ActiveSupport::TestCase
         styles/austrian-rocks-2026-06-07-sprite@2x.json
         maps/current.json
       ],
-      @s3_client.puts.map { |put| put.fetch(:key) }
+      upload_keys
     )
+    assert_empty upload_keys.select { |key| key.include?("/fonts/") || key.start_with?("styles/fonts/") }
     assert_equal(
       [
         "https://cdn.example.test/maps/austrian-rocks-2026-06-07.pmtiles",

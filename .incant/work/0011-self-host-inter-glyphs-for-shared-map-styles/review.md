@@ -3,25 +3,29 @@ id: "0011"
 slug: self-host-inter-glyphs-for-shared-map-styles
 stage: review
 reviewed: 2026-06-11
-commit: 59fa681a
+commit: 6bb6c82a
 ---
 
 # Self Host Inter Glyphs For Shared Map Styles — review
 
 ### Strengths
-- config/map_tiles.yml:7 and lib/map_tiles/configuration.rb:54 — the glyph version is exposed as `font_glyph_subpath` and then derived into root, object-prefix, and public template helpers instead of scattering the CDN path through code.
-- lib/map_tiles/configuration.rb:232 — `font_glyph_subpath` is validated as safe slash-separated segments, covering the config-vs-code and security requirements for the new path surface.
-- config/map_styles/austrian_rocks_light.json:5 and config/map_styles/austrian_rocks_dark.json:5 — both committed templates point at the self-hosted Inter glyph URL required by Phase 0011-P1.
-- lib/map_tiles/style_materializer.rb:38 and lib/map_tiles/style_materializer.rb:85 — materialized styles derive glyphs from configuration and enforce the forbidden Bergwerk/Mapbox/Roboto plus approved-Inter text-font contract before writing artifacts.
-- app/javascript/controllers/map_controller.js:216 — the dynamic contribution text layer uses `Inter Regular`, aligning web-only map labels with the shared style contract.
-- config/map_styles/fonts/inter-v1/README.md:9 and config/map_styles/fonts/inter-v1/LICENSE.md:7 — Phase 0011-P2 adds clear committed provenance for the approved Inter v1 runtime glyph tree, including the source generation directory and CDN object shape.
-- config/map_styles/fonts/inter-v1/README.md:18 and config/map_styles/fonts/inter-v1/LICENSE.md:9 — documentation explicitly keeps source font binaries out of this tree and records the immutable `inter-v2` update rule.
-- test/lib/map_tiles/font_assets_test.rb:21 and test/lib/map_tiles/font_assets_test.rb:33 — the new asset test locks the directory to approved stacks plus docs, requires runtime PBFs, and rejects `.ttf`, `.otf`, `.woff`, and `.woff2` files.
-- test/lib/map_tiles/style_materializer_test.rb:38, test/lib/map_tiles/style_materializer_test.rb:69, and test/lib/map_tiles/style_materializer_test.rb:219 — tests cover committed/materialized glyph URLs and reject forbidden glyph/font references or unapproved text-font stacks.
-- Manual asset comparison during review confirmed each approved stack was copied from `tmp/font-maker-2026-06-11T14_25_38.391Z/` with 256 PBF files and no `diff -qr` mismatches.
-- Fresh gate passed this review session: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/lib/map_tiles/font_assets_test.rb test/lib/map_tiles/style_materializer_test.rb'` → 7 runs, 963 assertions, 0 failures, 0 errors, 0 skips.
-- Final scan passed this review session: `! rg -n 'basemap\.bergwerk-gis\.at/basemap-download/webapp/fonts|mapbox://fonts|Roboto' config/map_styles/austrian_rocks_*.json app/javascript/controllers/map_controller.js && test -z "$(find config/map_styles/fonts/inter-v1 -type f \( -name '*.ttf' -o -name '*.otf' -o -name '*.woff' -o -name '*.woff2' \) -print -quit)"`.
-- Commit history follows incant conventions for completed work so far: `incant 0011-P1: derive Inter map glyph styles` and `incant 0011-P2: add Inter glyph assets`.
+- lib/map_tiles/font_publisher.rb:14 — the static font publisher uses the requested `application/x-protobuf` content type and immutable cache-control constant for PBF glyph objects.
+- lib/map_tiles/font_publisher.rb:16 — it reuses the same five Bunny storage environment variable names as map release publishing, keeping the deployment contract consistent.
+- lib/map_tiles/font_publisher.rb:43 — configuration validation checks Bunny env, public CDN host, style prefix, and the configured glyph root before any upload work begins.
+- lib/map_tiles/font_publisher.rb:57 — upload planning walks only sorted `*.pbf` files below `configuration.font_glyph_root`, rejects an empty runtime glyph tree, and builds stable keys under `configuration.font_glyph_object_prefix`.
+- lib/map_tiles/font_publisher.rb:75 — each upload candidate is resolved with `realpath`, checked against the configured root, and limited to safe object-key segments, addressing the path traversal risk called out in the spec.
+- lib/map_tiles/font_publisher.rb:101 — upload failures are wrapped as `UploadError` with the object key and exception class only, avoiding raw Bunny/AWS error text or credential leakage.
+- lib/map_tiles/font_publisher.rb:125 — public reporting URLs URL-escape stack names with spaces while preserving Bunny object keys with the literal stack names MapLibre expects.
+- lib/map_tiles/cli.rb:9 and lib/map_tiles/cli.rb:58 — the CLI wires a dedicated `publish-fonts` command through `MapTiles::FontPublisher` without touching the normal `publish` branch.
+- lib/map_tiles/cli.rb:114 — `publish-fonts` rejects all extra options and runs without requiring `--version`, smoke checks, map release publishing, or cleanup.
+- lib/tasks/map_tiles.rake:33 — operators also get the requested `map_tiles:publish_fonts` Rails task for the same dedicated publish path.
+- test/lib/map_tiles/font_publisher_test.rb:23 — tests cover deterministic sorted keys, repeat publish behaviour, bodies, content type, immutable cache-control, and public URL escaping for stack names with spaces.
+- test/lib/map_tiles/font_publisher_test.rb:50 — tests cover missing Bunny env, blank style prefix, missing glyph root, and empty glyph root failures.
+- test/lib/map_tiles/font_publisher_test.rb:79 — tests cover escaped symlink/path traversal and unsafe object-key segment rejection.
+- test/lib/map_tiles/font_publisher_test.rb:97 — tests cover credential-safe upload failures when a service error contains a secret.
+- test/lib/map_tiles/cli_test.rb:94 — CLI tests prove `publish-fonts` is separate from normal versioned map publish, smoke, and cleanup paths.
+- Commit history follows incant conventions through the completed phase: `incant 0011-P1: derive Inter map glyph styles`, `incant 0011-P2: add Inter glyph assets`, and `incant 0011-P3: add font glyph publisher`.
+- Fresh P3 quality gate passed this review session: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/lib/map_tiles/font_publisher_test.rb test/lib/map_tiles/cli_test.rb'` → 15 runs, 103 assertions, 0 failures, 0 errors, 0 skips.
 
 ### Blocker
 None.
@@ -36,4 +40,4 @@ None.
 None.
 
 ### Verdict
-Ready to release? **No** — Phase 0011-P2 clears review with no open findings, but the work item is intentionally not item-release-ready yet because planned Phases 0011-P3 and 0011-P4 remain unimplemented. Continue with `/incant:implement 0011` for the next phase.
+Ready to release? **No** — Phase 0011-P3 clears review with no open findings, but the work item is not item-release-ready yet because planned Phase 0011-P4 remains unchecked/unimplemented. Continue with `/incant:implement 0011` for the documentation and normal-release separation proof phase.

@@ -17,7 +17,7 @@ spec_commit: 581501fe
 - Work item: `0011` / `self-host-inter-glyphs-for-shared-map-styles`
 - Stage: review
 - Branch: `incant/0011-self-host-inter-glyphs-for-shared-map-styles`
-- Current phase: `0011-P3` complete; awaiting phase review.
+- Current phase: `0011-P4` complete; awaiting final review.
 - Next step: run `/incant:review 0011`.
 - Blockers: none.
 - Spec staleness check: `spec.md` was drafted against `581501fe`; current HEAD was `73d3705d` before implementation, whose only project change was the committed 0011 spec/session artifacts on top of `581501fe`. I re-read the affected map tile/style code before editing and the spec still holds.
@@ -25,6 +25,8 @@ spec_commit: 581501fe
   - 2026-06-11: Phase 0011-P1 gate passed in Docker because local `bin/rails` uses Ruby 4.0.2 while the Gemfile requires 3.3.5: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/style_materializer_test.rb'` → 22 runs, 1022 assertions, 0 failures, 0 errors, 0 skips.
   - 2026-06-11: Phase 0011-P2 gate passed in Docker: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/lib/map_tiles/font_assets_test.rb test/lib/map_tiles/style_materializer_test.rb'` → 7 runs, 963 assertions, 0 failures, 0 errors, 0 skips.
   - 2026-06-11: Phase 0011-P3 gate passed in Docker: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/lib/map_tiles/font_publisher_test.rb test/lib/map_tiles/cli_test.rb'` → 15 runs, 103 assertions, 0 failures, 0 errors, 0 skips.
+  - 2026-06-11: Phase 0011-P4 gate tests passed in Docker: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/style_materializer_test.rb test/lib/map_tiles/font_assets_test.rb test/lib/map_tiles/font_publisher_test.rb test/lib/map_tiles/cli_test.rb test/lib/map_tiles/bunny_publisher_test.rb'` → 48 runs, 1234 assertions, 0 failures, 0 errors, 0 skips.
+  - 2026-06-11: Phase 0011-P4 final host scan passed: `! rg -n 'basemap\.bergwerk-gis\.at/basemap-download/webapp/fonts|mapbox://fonts|Roboto' config/map_styles/austrian_rocks_*.json app/javascript/controllers/map_controller.js && test -z "$(find config/map_styles/fonts/inter-v1 -type f \( -name '*.ttf' -o -name '*.otf' -o -name '*.woff' -o -name '*.woff2' \) -print -quit)"` → no output, exit 0.
 - Key decisions:
   - The configured glyph subpath is `fonts/inter-v1`, rooted under the existing `map_styles` style prefix.
   - MapLibre style `text-font` replacements are one-to-one: `Roboto-Light` → `Inter Light`, `Roboto-Regular` → `Inter Regular`, `Roboto-Medium` → `Inter Medium`, `Roboto-Bold` → `Inter Bold`, `Roboto-MediumItalic` → `Inter Medium Italic`, and `RobotoCondensed-BoldItalic` → `Inter Bold Italic`.
@@ -101,12 +103,12 @@ Goal: Operators can publish the committed Inter PBF tree to Bunny/CDN under `map
 ## Phase 0011-P4 — Documentation and normal-release separation proof
 Goal: Maintainers have clear publish/update instructions, and automated tests prove normal PMTiles/style/sprite releases do not upload font glyphs.
 
-- [ ] Read before editing: `config/map_styles/README.md`, `docs/map_tiles.md`, and `test/lib/map_tiles/bunny_publisher_test.rb`.
-- [ ] In `config/map_styles/README.md`, add a committed section stating that shared styles use self-hosted Inter glyphs at `https://tiles.austrian.rocks/map_styles/fonts/inter-v1/{fontstack}/{range}.pbf`, list the six approved Inter font stacks, point to `config/map_styles/fonts/inter-v1/README.md`, and state that `bin/build_pmtiles publish` does not upload fonts.
-- [ ] In ignored local `docs/map_tiles.md`, replace the sentence saying only glyphs still come from Bergwerk with a statement that glyphs are self-hosted Inter PBFs under `map_styles/fonts/inter-v1/`, add the configured font glyph subpath to the settings list, and add operator commands `bin/build_pmtiles publish-fonts` and `bin/rails map_tiles:publish_fonts`.
-- [ ] In `docs/map_tiles.md`, document first-rollout verification with `curl -I 'https://tiles.austrian.rocks/map_styles/fonts/inter-v1/Inter%20Regular/0-255.pbf'`, document that `%20` is only for manual URL checks because Bunny object keys and MapLibre font stacks contain spaces, and document future upgrade flow: generate a new PBF tree outside the app pipeline, add a new configured subpath such as `fonts/inter-v2`, update styles/tests, run `publish-fonts`, and leave `inter-v1` immutable.
-- [ ] In `test/lib/map_tiles/bunny_publisher_test.rb`, add an assertion to the existing upload plan test that no normal release upload key includes `/fonts/` or starts with `styles/fonts/`, proving `MapTiles::BunnyPublisher#publish` still publishes only PMTiles, styles, sprite objects, and manifest.
-- [ ] Run a final repository scan command to prove committed/shared map style and dynamic contribution sources contain no forbidden glyph/font references.
+- [x] Read before editing: `config/map_styles/README.md`, `docs/map_tiles.md`, and `test/lib/map_tiles/bunny_publisher_test.rb`.
+- [x] In `config/map_styles/README.md`, add a committed section stating that shared styles use self-hosted Inter glyphs at `https://tiles.austrian.rocks/map_styles/fonts/inter-v1/{fontstack}/{range}.pbf`, list the six approved Inter font stacks, point to `config/map_styles/fonts/inter-v1/README.md`, and state that `bin/build_pmtiles publish` does not upload fonts.
+- [x] In ignored local `docs/map_tiles.md`, replace the sentence saying only glyphs still come from Bergwerk with a statement that glyphs are self-hosted Inter PBFs under `map_styles/fonts/inter-v1/`, add the configured font glyph subpath to the settings list, and add operator commands `bin/build_pmtiles publish-fonts` and `bin/rails map_tiles:publish_fonts`.
+- [x] In `docs/map_tiles.md`, document first-rollout verification with `curl -I 'https://tiles.austrian.rocks/map_styles/fonts/inter-v1/Inter%20Regular/0-255.pbf'`, document that `%20` is only for manual URL checks because Bunny object keys and MapLibre font stacks contain spaces, and document future upgrade flow: generate a new PBF tree outside the app pipeline, add a new configured subpath such as `fonts/inter-v2`, update styles/tests, run `publish-fonts`, and leave `inter-v1` immutable.
+- [x] In `test/lib/map_tiles/bunny_publisher_test.rb`, add an assertion to the existing upload plan test that no normal release upload key includes `/fonts/` or starts with `styles/fonts/`, proving `MapTiles::BunnyPublisher#publish` still publishes only PMTiles, styles, sprite objects, and manifest.
+- [x] Run a final repository scan command to prove committed/shared map style and dynamic contribution sources contain no forbidden glyph/font references.
 
 **Quality gate:** `bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/style_materializer_test.rb test/lib/map_tiles/font_assets_test.rb test/lib/map_tiles/font_publisher_test.rb test/lib/map_tiles/cli_test.rb test/lib/map_tiles/bunny_publisher_test.rb && ! rg -n 'basemap\.bergwerk-gis\.at/basemap-download/webapp/fonts|mapbox://fonts|Roboto' config/map_styles/austrian_rocks_*.json app/javascript/controllers/map_controller.js && test -z "$(find config/map_styles/fonts/inter-v1 -type f \( -name '*.ttf' -o -name '*.otf' -o -name '*.woff' -o -name '*.woff2' \) -print -quit)"` → all targeted tests pass, forbidden shared-style/controller font references are absent, and no Inter source font binaries are committed under the runtime glyph tree.
 
@@ -129,4 +131,4 @@ Goal: Maintainers have clear publish/update instructions, and automated tests pr
 - [x] No placeholders: every phase names concrete files, constants, commands, and expected behaviours.
 
 ## Implementation checkpoint
-Phase 0011-P3 is complete and ready for phase review. Continue with Phase 0011-P4 only after `/incant:review 0011` clears this phase without open blocker/major findings.
+Phase 0011-P4 is complete and ready for final review. Run `/incant:review 0011` next.
