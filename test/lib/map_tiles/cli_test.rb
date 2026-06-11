@@ -7,7 +7,7 @@ require "map_tiles/cli"
 
 class MapTiles::CLITest < ActiveSupport::TestCase
   setup do
-    @calls = { exports: [], builds: [], smokes: [], publishes: [], cleans: [] }
+    @calls = { exports: [], builds: [], smokes: [], publishes: [], font_publishes: [], cleans: [] }
     @settings = {
       "artifact_basename" => "austrian-rocks",
       "output_dir" => "tmp/cli_test/#{SecureRandom.hex(8)}",
@@ -31,6 +31,7 @@ class MapTiles::CLITest < ActiveSupport::TestCase
     @builder_class = builder_class(@calls)
     @smoke_check_class = smoke_check_class(@calls)
     @publisher_class = publisher_class(@calls)
+    @font_publisher_class = font_publisher_class(@calls)
     @cleaner_class = cleaner_class(@calls)
   end
 
@@ -90,6 +91,49 @@ class MapTiles::CLITest < ActiveSupport::TestCase
     assert_includes out.string, "current manifest -> https://cdn.example.test/map_tiles/current.json"
   end
 
+  test "publish-fonts publishes static fonts without version, smoke, release publish, or clean" do
+    out = StringIO.new
+
+    status = run_cli([ "publish-fonts" ], out: out)
+
+    assert_equal 0, status
+    assert_equal 1, @calls.fetch(:font_publishes).length
+    assert_nil @calls.fetch(:font_publishes).last.fetch(:version)
+    assert_empty @calls.fetch(:smokes)
+    assert_empty @calls.fetch(:publishes)
+    assert_empty @calls.fetch(:cleans)
+    assert_includes out.string, "published fonts"
+  end
+
+  test "publish-fonts rejects unknown options" do
+    err = StringIO.new
+
+    status = run_cli([ "publish-fonts", "--version=2026-06-07" ], err: err)
+
+    assert_equal 1, status
+    assert_includes err.string, "Unknown map tiles option(s): --version=2026-06-07"
+    assert_includes err.string, "publish-fonts"
+    assert_empty @calls.fetch(:font_publishes)
+  end
+
+  test "publish-fonts reports font publisher errors with usage" do
+    err = StringIO.new
+    failing_font_publisher_class = Class.new do
+      define_method(:initialize) do |configuration:, out:|
+      end
+
+      define_method(:publish) do
+        raise MapTiles::FontPublisher::Error, "font publish failed"
+      end
+    end
+
+    status = run_cli([ "publish-fonts" ], err: err, font_publisher_class: failing_font_publisher_class)
+
+    assert_equal 1, status
+    assert_includes err.string, "font publish failed"
+    assert_includes err.string, "Usage: bin/build_pmtiles"
+  end
+
   test "publish skip smoke is the only smoke bypass" do
     env = { "MAP_TILES_SKIP_SMOKE" => "true" }
     env_configuration = MapTiles::Configuration.new(env: env, settings: @settings)
@@ -126,7 +170,7 @@ class MapTiles::CLITest < ActiveSupport::TestCase
 
   private
 
-  def run_cli(argv, configuration: @configuration, out: StringIO.new, err: StringIO.new)
+  def run_cli(argv, configuration: @configuration, out: StringIO.new, err: StringIO.new, font_publisher_class: @font_publisher_class)
     MapTiles::CLI.new(
       argv,
       configuration: configuration,
@@ -136,6 +180,7 @@ class MapTiles::CLITest < ActiveSupport::TestCase
       builder_class: @builder_class,
       smoke_check_class: @smoke_check_class,
       publisher_class: @publisher_class,
+      font_publisher_class: font_publisher_class,
       cleaner_class: @cleaner_class
     ).run
   end
@@ -206,6 +251,27 @@ class MapTiles::CLITest < ActiveSupport::TestCase
           {
             key: @configuration.manifest_object_key,
             url: "https://cdn.example.test/#{@configuration.manifest_object_key}"
+          }
+        ]
+      end
+    end
+  end
+
+  def font_publisher_class(calls)
+    Class.new do
+      define_method(:initialize) do |configuration:, out:|
+        @configuration = configuration
+        @out = out
+      end
+
+      define_method(:publish) do
+        version = @configuration.instance_variable_get(:@version) if @configuration.instance_variable_get(:@version).present?
+        calls.fetch(:font_publishes) << { version: version }
+        @out.puts "published fonts"
+        [
+          {
+            key: "map_styles/fonts/inter-v1/Inter Regular/0-255.pbf",
+            url: "https://cdn.example.test/map_styles/fonts/inter-v1/Inter%20Regular/0-255.pbf"
           }
         ]
       end
