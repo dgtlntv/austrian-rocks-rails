@@ -2,35 +2,36 @@
 id: "0006"
 slug: maplibre-web-interactions
 stage: review
-reviewed: 2026-06-10
-commit: 46be4e78
+reviewed: 2026-06-11
+commit: ecdbd687
 ---
 
-# Maplibre Web Interactions — review
+# Maplibre Web Interactions — final review
 <!-- Single fresh-eyes pass against spec + plan + acceptance + active principles. -->
 <!-- Each finding: file:line — what's wrong; why it matters; how to fix. status: open|addressed|wontfix (+ note). -->
 
-> Scope of this pass: **P5 re-review after the `?problem=` deep-link blocker fix** through commit `46be4e78`. Prior P1/P2/P3 findings remain addressed/wontfix/clean, the P4 re-review blocker remains addressed, and P6 documentation/release-smoke work is still pending.
+> Scope of this pass: **final release review** through commit `ecdbd687` on branch `incant/0006-maplibre-web-interactions`, against spec base `caafed8c`. The user stated in chat that the manual smoke was run, but the release artifact is still blank.
 
 ### Strengths
-- app/controllers/map_controller.rb:16-18 — the controller now resolves the problem deep-link id from `params[:pid]` or `params[:problem]`, preserving the existing path while satisfying the spec's `?problem=<id>` acceptance wording.
-- test/controllers/map_controller_test.rb:58-76 — coverage now exercises both `?pid=` and `?problem=` server-rendered data paths, so the JS `centerMap()` path receives `data-map-problem-value` for either query spelling.
-- app/javascript/controllers/map_controller.js:225-241,750-765 — problem and area entry points continue to call `selectFeatureWhenIdle` after camera movement, so search events and deep links route through the selected-card path instead of the removed popup path.
-- app/javascript/controllers/map_controller.js:359-391 — the idle-time selector remains bounded and defensive: it queries the source layer by id, falls back to rendered layers, retries once, and lets stale links fail without breaking the map.
-- app/javascript/controllers/map_controller.js:622-627 — the `flyToBounds` zoom-15 clamp remains removed, aligning drill-ins and region card CTAs with fitted bounds rather than forcing every target to boulder-level zoom.
-- .incant/work/0006-maplibre-web-interactions/plan.md:20-31,113-115 — the revise loop records what changed and includes Docker/PostGIS gate evidence. I re-ran the phase gate in this review session: `bin/rails db:prepare && bin/rails test test/controllers/map_controller_test.rb && bin/rubocop -f github` → 9 runs, 182 assertions, 0 failures/errors; rubocop exited clean.
+- lib/map_tiles/geojson_exporter.rb:285-329,349-384 — the exporter centralizes card cascade semantics, aggregate problem stats, `gradeHistogramJson`, cover/guidebook/parking fields, and main-cluster bounds in tile properties, which keeps web/mobile clients on one data contract.
+- lib/map_tiles/release_manifest.rb:37-45,70 — the manifest now includes and validates `spriteUrl` alongside PMTiles and styles, matching the immutable sprite publication requirement.
+- app/javascript/map/selection.js:1-35,37-84 — selection uses dedicated filtered `-selected` layers, a `-1` sentinel, base-symbol exclusion, and no `feature-state`, aligning with the approved MapLibre Native-compatible interaction model.
+- app/javascript/map/info_card.js:12-30,62-107,159-180,293-300,538-545 — card rendering uses safe DOM construction, HTTP(S)-only URL checks, and `noopener noreferrer` outbound links for untrusted tile properties.
+- app/javascript/map/info_card.js:358-428 — the grade-distribution chart handles the new sparse histogram property and preserves a text grade-range fallback for older tiles.
+- app/javascript/controllers/map_controller.js:377-390,488-518,536-583,691-699,821-834 — search/deep-link selection, region/main-cluster bounds CTAs, removal of the old zoom-15 clamp, and bottom-sheet/docked-card visibility nudges are implemented defensively.
+- .incant/work/0006-maplibre-web-interactions/plan.md:26 — recorded automated release-gate evidence is current; I re-ran it in this review session: `bin/rails db:prepare && bin/rails test && bin/importmap audit && bin/rubocop -f github && bin/brakeman --no-pager` → 231 runs, 3383 assertions, 0 failures/errors; importmap audit clean; rubocop clean; Brakeman no warnings. The stale-reference sweep only matched negative test assertions/comments, not production references.
 
 ### Blocker
-- app/controllers/map_controller.rb:16 and test/controllers/map_controller_test.rb:69-76 — the approved spec acceptance criterion names `?problem=` deep links (`spec.md:98-99`, `spec.md:223-224`), but the previous P5 pass only handled `pid`. The controller now accepts `params[:problem]` as an alias and the new test proves `/en/map?problem=<id>` emits `data-map-problem-value`, so the selected-card JS path can run for the spec-declared query. status: addressed
+- .incant/work/0006-maplibre-web-interactions/manual-smoke.md:9-54 — the approved acceptance criteria require “a manual browser smoke record exists with environment/browser/data/route URLs and observations,” and P6 step 2/P6 quality gate require the completed record. The file is still an empty checklist: run metadata, release/style URLs, and every observation cell are blank. The user’s chat note that the smoke was checked is useful evidence, but it does not satisfy the committed release artifact or leave reproducible observations for mobile/web follow-up. Fix: fill this file with the actual environment/browser/version/data/URLs and pass/fail observations from the smoke run, or explicitly record a human waiver with the rationale before re-review. status: open
 
 ### Major
 (none)
 
 ### Minor
-(none)
+- docs/map_tiles.md:170,225,234,243,252,261,270 — the interaction contract mentions `gradeHistogramJson`, but the per-source-layer optional-property tables for areas/area_hulls/clusters/cluster_hulls/regions/region_hulls omit it, and the CTA prose still names the old “Show on map” copy after P7 renamed the UI to “Zoom to place” / “Zum Ort zoomen.” This is not a runtime bug, but it weakens the mobile contract documentation delivered by requirement 13. Fix: add `gradeHistogramJson` to those optional-property lists and describe the CTA by semantics or current copy. status: open
 
 ### Nit
 (none)
 
 ### Verdict
-Ready to release? **With fixes** — the P5 blocker is addressed and there are no open blocker/major findings for this phase gate. Continue with `0006-P6`; final release still waits on the planned contract documentation, full release gate, and manual smoke evidence.
+Ready to release? **No** — one open blocker: the manual smoke record acceptance artifact is still blank. The code and automated gates look release-ready once that record/waiver is added; the documentation-table cleanup is minor and can be fixed or consciously deferred.

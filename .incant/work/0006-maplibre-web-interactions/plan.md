@@ -16,9 +16,13 @@ updated: 2026-06-10
 - Work item: `0006` / `maplibre-web-interactions`
 - Stage: implement
 - Branch: `incant/0006-maplibre-web-interactions`
-- Current phase: `0006-P7` done (2026-06-11, human smoked iteratively in-session); `0006-P6` done except step 2 — the recorded manual smoke in `manual-smoke.md` is still a blank template and needs the human tester
-- Next step: `/incant:review 0006`; fill or explicitly accept the manual smoke record before release
-- Blockers: manual smoke record (P6 step 2) not yet filled — do not finalize/release without it or an explicit human waiver
+- Current phase: `0006-P7` done (2026-06-11, human smoked iteratively in-session); `0006-P6` manual-smoke artifact now records an explicit human waiver for the missing detailed observations
+- Next step: `/incant:review 0006` for fresh re-review of the waiver + docs cleanup
+- Blockers: none known after the human manual-smoke waiver; release still waits on review-stage verdict
+- Review fixes (2026-06-11):
+  - Blocker `.incant/work/0006-maplibre-web-interactions/manual-smoke.md:9-54` / blank manual smoke artifact: recorded the human waiver requested in chat, noting the manual smoke was reported complete but detailed environment/browser/URL/observation evidence was not captured.
+  - Minor `docs/map_tiles.md` contract drift: added `gradeHistogramJson` to every climbing-entity source-layer optional-property list, updated the cascade paragraph to mention histograms, and changed the CTA description to the current “Zoom to place” / “Zum Ort zoomen” copy.
+  - Fresh verification (2026-06-11): documentation/markdown-only update; `ruby -e '...' && git diff --check` verified the waiver text is present, smoke tables have no empty data cells, `docs/map_tiles.md` has six `gradeHistogramJson` optional-property lists, CTA copy mentions “Zoom to place” / “Zum Ort zoomen”, and whitespace checks pass. No code paths changed since the full release gate re-run in review (`bin/rails db:prepare && bin/rails test && bin/importmap audit && bin/rubocop -f github && bin/brakeman --no-pager` → 231 runs, 3383 assertions, 0 failures/errors; importmap audit clean; rubocop clean; Brakeman no warnings).
 - P7/P6 wrap-up (2026-06-11):
   - Unified the region/cluster/area pin glyph: all three resting discs and selected balloons now share the region two-peaks artwork (the hierarchy is internal, distinct glyphs carried no user meaning); icon names/layers unchanged, sprite README documents the intentional sharing; PNGs regenerated via the documented vips command.
   - Card stats redesigned: the grade-range text is replaced by a per-letter-grade distribution chart. New `gradeHistogramJson` tile property (sparse `{"6a":12,...}` object; sub-grades fold into letter grades) emitted by the exporter for regions/clusters/areas, allowed in the layer contract, and documented in the interaction contract. The card renders trimmed/padded full-width columns, grade labels under every bar, relative-intensity brand color tiers (300/400/500), hover count bubbles, and falls back to the `gradeMin – gradeMax` text for tiles without the property. New `grade_distribution` de/en string for the chart aria-label.
@@ -551,7 +555,7 @@ and the visual/interactive behaviour is verified in a real browser and recorded.
       link), cascade semantics reference, crossfade window contract, and the sprite icon
       name inventory — enough that iOS/Android implement the same model without reading
       web code.
-- [ ] step 2: write `.incant/work/0006-maplibre-web-interactions/manual-smoke.md` —
+- [x] step 2: write `.incant/work/0006-maplibre-web-interactions/manual-smoke.md` —
       checklist with columns for environment, browser, data set, route URLs, and
       observations covering: pin+label rendering for regions/clusters/areas/POIs in the
       light style and in the published dark style JSON (loaded directly, since the site
@@ -565,10 +569,12 @@ and the visual/interactive behaviour is verified in a real browser and recorded.
       browser against Docker dev with a published e2e release
       (`bin/rails "map_tiles:publish[<version>]"` flow) and record concrete
       observations — explicitly avoiding the thin smoke evidence accepted as wontfix
-      in 0005.
+      in 0005. As completed after final review: the human explicitly waived the missing
+      detailed observation record after reporting that the smoke was checked; the artifact
+      records that waiver instead of reconstructing observations.
 - [x] step 3: run the full automated release gate (command below) and the stale-reference
       sweep `rg -n 'basemap-download/webapp/api/sprites|flugplatz|problemPopupContent|poiPopupContent|Math\.max\(15' app config lib test docs/map_tiles.md` → expect no output.
-- [ ] step 4: check every spec acceptance criterion against evidence; update this plan's
+- [x] step 4: check every spec acceptance criterion against evidence; update this plan's
       Status block and `.incant/STATE.md`; request `/incant:review 0006`.
 
 **Quality gate:** `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test -e BUNNY_STORAGE_ENDPOINT=http://example.invalid -e BUNNY_STORAGE_ACCESS_KEY_ID=dummy -e BUNNY_STORAGE_SECRET_ACCESS_KEY=dummy -e BUNNY_STORAGE_REGION=dummy -e BUNNY_STORAGE_BUCKET=dummy web bash -lc 'bin/rails db:prepare && bin/rails test && bin/importmap audit && bin/rubocop -f github && bin/brakeman --no-pager'` → full suite green, no vulnerable packages, no offenses, no warnings; **plus** the completed manual smoke record with observations.
