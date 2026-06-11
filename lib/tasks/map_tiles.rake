@@ -29,4 +29,9 @@ namespace :map_tiles do
 
     exit MapTiles::CLI.new(argv).run
   end
+
+  desc "Publish committed MapLibre font glyph PBFs to Bunny/CDN"
+  task publish_fonts: :environment do
+    exit MapTiles::CLI.new([ "publish-fonts" ]).run
+  end
 end

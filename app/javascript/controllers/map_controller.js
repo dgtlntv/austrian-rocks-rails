@@ -213,7 +213,7 @@ export default class extends Controller {
                 visibility: "visible",
                 "text-allow-overlap": true,
                 "text-field": ["to-string", ["get", "name"]],
-                "text-font": ["Roboto-Regular"],
+                "text-font": ["Inter Regular"],
                 "text-size": ["interpolate", ["linear"], ["zoom"], 19, 10, 22, 20],
             },
             paint: {

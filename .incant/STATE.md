@@ -1,5 +1,5 @@
 # State
-- Updated: 2026-06-11 (0013 finalized and archived)
+- Updated: 2026-06-11 (0011 archived)
 - Current focus: none
 
 ## Active

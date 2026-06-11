@@ -6,13 +6,14 @@ require "map_tiles/geojson_exporter"
 require "map_tiles/tippecanoe_builder"
 require "map_tiles/smoke_check"
 require "map_tiles/bunny_publisher"
+require "map_tiles/font_publisher"
 require "map_tiles/local_artifact_cleaner"
 
 module MapTiles
   class CLI
-    USAGE = "Usage: bin/build_pmtiles [export|build|smoke|publish] [--version=<value>] [--skip-smoke]"
+    USAGE = "Usage: bin/build_pmtiles [export|build|smoke|publish|publish-fonts] [--version=<value>] [--skip-smoke]"
 
-    attr_reader :argv, :configuration, :out, :err, :exporter_class, :builder_class, :smoke_check_class, :publisher_class, :cleaner_class
+    attr_reader :argv, :configuration, :out, :err, :exporter_class, :builder_class, :smoke_check_class, :publisher_class, :font_publisher_class, :cleaner_class
 
     def initialize(
       argv = ARGV,
@@ -23,6 +24,7 @@ module MapTiles
       builder_class: TippecanoeBuilder,
       smoke_check_class: SmokeCheck,
       publisher_class: BunnyPublisher,
+      font_publisher_class: FontPublisher,
       cleaner_class: LocalArtifactCleaner
     )
       @argv = argv.dup
@@ -33,6 +35,7 @@ module MapTiles
       @builder_class = builder_class
       @smoke_check_class = smoke_check_class
       @publisher_class = publisher_class
+      @font_publisher_class = font_publisher_class
       @cleaner_class = cleaner_class
     end
 
@@ -52,12 +55,14 @@ module MapTiles
         smoke
       when "publish"
         publish
+      when "publish-fonts"
+        publish_fonts
       else
         err.puts "Unknown map tiles command: #{command}"
         err.puts USAGE
         1
       end
-    rescue TippecanoeBuilder::Error, SmokeCheck::Error, BunnyPublisher::Error, KeyError, ArgumentError => e
+    rescue TippecanoeBuilder::Error, SmokeCheck::Error, BunnyPublisher::Error, FontPublisher::Error, KeyError, ArgumentError => e
       err.puts e.message
       err.puts USAGE
       1
@@ -103,6 +108,13 @@ module MapTiles
       published = publisher_class.new(configuration: versioned_configuration, out: out).publish
       print_manifest_url(published, configuration: versioned_configuration)
       cleaner_class.new(configuration: versioned_configuration, out: out).clean
+      0
+    end
+
+    def publish_fonts
+      reject_unknown_options!(argv)
+
+      font_publisher_class.new(configuration: configuration, out: out).publish
       0
     end
 

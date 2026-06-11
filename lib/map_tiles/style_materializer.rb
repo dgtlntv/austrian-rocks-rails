@@ -11,6 +11,19 @@ module MapTiles
     SOURCE_NAME = "austrian-rocks"
     CONTOUR_SOURCE_NAME = "basemap-at-hoehenlinien"
     TERRAIN_LAYER_ID = "gelände"
+    FORBIDDEN_STYLE_REFERENCES = [
+      "basemap.bergwerk-gis.at/basemap-download/webapp/fonts",
+      "mapbox://fonts",
+      "Roboto"
+    ].freeze
+    APPROVED_TEXT_FONTS = [
+      "Inter Light",
+      "Inter Regular",
+      "Inter Medium",
+      "Inter Bold",
+      "Inter Medium Italic",
+      "Inter Bold Italic"
+    ].freeze
 
     attr_reader :configuration
 
@@ -22,6 +35,7 @@ module MapTiles
       Configuration::STYLE_NAMES.to_h do |style_name|
         style = read_style_template(style_name)
         apply_configured_opacity!(style)
+        style["glyphs"] = configuration.font_glyphs_template_url
         validate_style!(style, style_name)
         style.fetch("sources").fetch(SOURCE_NAME)["url"] = "pmtiles://#{configuration.pmtiles_public_url}"
         style["sprite"] = configuration.sprite_public_base_url
@@ -64,7 +78,24 @@ module MapTiles
       # so a template without one would silently break every icon layer.
       raise Error, "#{style_name} style must declare a sprite URL" unless style["sprite"].is_a?(String) && style["sprite"].strip.present?
 
+      assert_safe_glyph_and_font_contract!(style, style_name)
       assert_layer_contract_coverage!(style, style_name)
+    end
+
+    def assert_safe_glyph_and_font_contract!(style, style_name)
+      serialized_style = JSON.generate(style)
+      forbidden_reference = FORBIDDEN_STYLE_REFERENCES.find { |reference| serialized_style.include?(reference) }
+      raise Error, "#{style_name} style contains forbidden font reference #{forbidden_reference}" if forbidden_reference
+
+      style.fetch("layers").each do |layer|
+        text_font = layer.dig("layout", "text-font")
+        next if text_font.nil?
+
+        invalid_fonts = Array(text_font) - APPROVED_TEXT_FONTS
+        next if text_font.is_a?(Array) && invalid_fonts.empty?
+
+        raise Error, "#{style_name} style layer #{layer.fetch('id', '(unknown)')} uses an unapproved text-font"
+      end
     end
 
     def assert_layer_contract_coverage!(style, style_name)

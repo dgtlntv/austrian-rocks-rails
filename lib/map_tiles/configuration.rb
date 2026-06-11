@@ -51,6 +51,22 @@ module MapTiles
       sanitized_prefix("style_prefix")
     end
 
+    def font_glyph_subpath
+      sanitized_subpath("font_glyph_subpath")
+    end
+
+    def font_glyph_root
+      Rails.root.join("config/map_styles", font_glyph_subpath)
+    end
+
+    def font_glyph_object_prefix
+      object_key(style_prefix, font_glyph_subpath)
+    end
+
+    def font_glyphs_template_url
+      "#{public_cdn_base}/#{font_glyph_object_prefix}/{fontstack}/{range}.pbf"
+    end
+
     def manifest_prefix
       sanitized_prefix("manifest_prefix")
     end
@@ -226,6 +242,19 @@ module MapTiles
       return "" if prefix.blank?
 
       prefix.split("/").map do |segment|
+        sanitize_path_segment(segment, name: name)
+      end.join("/")
+    end
+
+    def sanitized_subpath(name)
+      subpath = fetch_setting(name).to_s.strip
+      raise ArgumentError, "#{name} is required" if subpath.blank?
+      raise ArgumentError, "#{name} must not start or end with a slash" if subpath.start_with?("/") || subpath.end_with?("/")
+
+      segments = subpath.split("/")
+      raise ArgumentError, "#{name} must not contain empty path segments" if segments.any?(&:blank?)
+
+      segments.map do |segment|
         sanitize_path_segment(segment, name: name)
       end.join("/")
     end
