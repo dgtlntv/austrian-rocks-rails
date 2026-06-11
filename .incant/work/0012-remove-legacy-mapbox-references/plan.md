@@ -13,12 +13,13 @@ updated: 2026-06-11
 # Remove Legacy Mapbox References — plan
 
 ## Status
-- Phase: 0012-P1 planned; awaiting human approval before implementation.
-- Stage: plan
+- Phase: 0012-P1 complete; awaiting review.
+- Stage: review
 - Branch: incant/0012-remove-legacy-mapbox-references
-- Next: human approves this plan, then run `/incant:implement 0012`.
+- Next: run `/incant:review 0012`.
 - Blockers: none.
-- Fresh verification: planning-only pass; no implementation gate has run yet.
+- Fresh verification: 2026-06-11 implementation gate passed. Static checks produced no forbidden output (`lib/tasks/mapbox.rake` absent; no case-insensitive `mapbox` matches under `app config lib bin README.md Dockerfile Dockerfile.dev`; no legacy deploy volume/path in `config/deploy.yml`). Docker-backed Rails task discovery found no `mapbox` tasks, and targeted tests passed: 23 runs, 1176 assertions, 0 failures, 0 errors, 0 skips.
+- Gate note: the originally planned in-container `rg` task-discovery check failed because the web image does not include `rg`, and the first Docker test run exposed an empty `BUNNY_STORAGE_SECRET_ACCESS_KEY` test-env value. The passing rerun used equivalent `grep -i` task discovery inside Docker and a non-secret `BUNNY_STORAGE_SECRET_ACCESS_KEY=test-secret` test value.
 - Key decisions:
   - Delete the obsolete Mapbox-named rake task instead of renaming it, because `map_tiles:*` and `bin/build_pmtiles` are the maintained PMTiles export/build/publish path.
   - Remove the legacy Kamal volume mount without replacement; durable PMTiles artifacts are published to Bunny/CDN and local generated files remain under `tmp/map_tiles`.
@@ -51,16 +52,16 @@ updated: 2026-06-11
 - `test/lib/map_tiles/tippecanoe_builder_test.rb` (read) — keep historical Mapbox Tippecanoe repository absence coverage.
 
 ## Phase 0012-P1 — remove legacy Mapbox surfaces and verify MapLibre/PMTiles paths
-- [ ] Read `lib/tasks/mapbox.rake`, `lib/tasks/map_tiles.rake`, and `bin/build_pmtiles` before editing to confirm the obsolete namespace is isolated from the maintained PMTiles pipeline.
-- [ ] Delete `lib/tasks/mapbox.rake` entirely; do not add a replacement `mapbox:*` namespace, renamed legacy GeoJSON namespace, or new task file for the old `../#{BRAND_CONFIG[:slug]}-maps/mapbox/*.geojson` outputs.
-- [ ] Read `config/deploy.yml` before editing, then remove only the `austrian_rocks_mapbox:/austrian-rocks-maps/mapbox` entry from `volumes:` and leave `austrian_rocks_export:/rails/export` unchanged.
-- [ ] Read `app/controllers/admin/maps_controller.rb` before editing, then replace the Mapbox simple-style URL/comment with neutral wording that explains the standard `marker-color` simple-style property used by geojson.io; keep `hash[:"marker-color"] = "#ccc"`, GeoJSON rendering, download behaviour, and camelization behaviour unchanged.
-- [ ] Read `config/routes.rb` before editing, then replace the redirects route comment so it no longer says `mapbox`; keep `resources :redirects, only: :new` and all route names/paths unchanged.
-- [ ] Read `test/controllers/map_controller_test.rb`, `test/controllers/admin/exports_controller_test.rb`, `test/lib/map_tiles/style_materializer_test.rb`, and `test/lib/map_tiles/tippecanoe_builder_test.rb`; leave their intentional Mapbox-negative test names/helpers/literals readable and unchanged unless a test failure proves an actual behavioural regression.
-- [ ] Run static verification that `lib/tasks/mapbox.rake` is absent, Rails task discovery exposes no case-insensitive `mapbox` tasks, `config/deploy.yml` no longer contains the legacy volume/path, and `rg -n -i "mapbox" app config lib bin README.md Dockerfile Dockerfile.dev` produces no output.
-- [ ] Run the targeted Docker-backed Rails tests for public MapLibre rendering, admin export cleanup, style materialization, and Tippecanoe guidance.
-- [ ] Update this plan’s Status block with the fresh gate evidence, set `.incant/backlog.md` to `status:review phase:0012-P1`, update `.incant/STATE.md` to say item `0012` is awaiting review, and commit the phase as `incant 0012-P1: remove legacy Mapbox references`.
-**Quality gate:** `bash -lc 'test ! -e lib/tasks/mapbox.rake && ! rg -n -i "mapbox" app config lib bin README.md Dockerfile Dockerfile.dev && ! rg -n "austrian_rocks_mapbox|/austrian-rocks-maps/mapbox" config/deploy.yml && docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc "if bin/rails -T | rg -i \"mapbox\"; then exit 1; fi; bin/rails test test/controllers/map_controller_test.rb test/controllers/admin/exports_controller_test.rb test/lib/map_tiles/style_materializer_test.rb test/lib/map_tiles/tippecanoe_builder_test.rb"'` → static checks produce no forbidden output; Rails task discovery has no `mapbox` matches; targeted tests pass with 0 failures and 0 errors.
+- [x] Read `lib/tasks/mapbox.rake`, `lib/tasks/map_tiles.rake`, and `bin/build_pmtiles` before editing to confirm the obsolete namespace is isolated from the maintained PMTiles pipeline.
+- [x] Delete `lib/tasks/mapbox.rake` entirely; do not add a replacement `mapbox:*` namespace, renamed legacy GeoJSON namespace, or new task file for the old `../#{BRAND_CONFIG[:slug]}-maps/mapbox/*.geojson` outputs.
+- [x] Read `config/deploy.yml` before editing, then remove only the `austrian_rocks_mapbox:/austrian-rocks-maps/mapbox` entry from `volumes:` and leave `austrian_rocks_export:/rails/export` unchanged.
+- [x] Read `app/controllers/admin/maps_controller.rb` before editing, then replace the Mapbox simple-style URL/comment with neutral wording that explains the standard `marker-color` simple-style property used by geojson.io; keep `hash[:"marker-color"] = "#ccc"`, GeoJSON rendering, download behaviour, and camelization behaviour unchanged.
+- [x] Read `config/routes.rb` before editing, then replace the redirects route comment so it no longer says `mapbox`; keep `resources :redirects, only: :new` and all route names/paths unchanged.
+- [x] Read `test/controllers/map_controller_test.rb`, `test/controllers/admin/exports_controller_test.rb`, `test/lib/map_tiles/style_materializer_test.rb`, and `test/lib/map_tiles/tippecanoe_builder_test.rb`; leave their intentional Mapbox-negative test names/helpers/literals readable and unchanged unless a test failure proves an actual behavioural regression.
+- [x] Run static verification that `lib/tasks/mapbox.rake` is absent, Rails task discovery exposes no case-insensitive `mapbox` tasks, `config/deploy.yml` no longer contains the legacy volume/path, and `rg -n -i "mapbox" app config lib bin README.md Dockerfile Dockerfile.dev` produces no output.
+- [x] Run the targeted Docker-backed Rails tests for public MapLibre rendering, admin export cleanup, style materialization, and Tippecanoe guidance.
+- [x] Update this plan’s Status block with the fresh gate evidence, set `.incant/backlog.md` to `status:review phase:0012-P1`, update `.incant/STATE.md` to say item `0012` is awaiting review, and commit the phase as `incant 0012-P1: remove legacy Mapbox references`.
+**Quality gate:** `bash -lc 'test ! -e lib/tasks/mapbox.rake && ! rg -n -i "mapbox" app config lib bin README.md Dockerfile Dockerfile.dev && ! rg -n "austrian_rocks_mapbox|/austrian-rocks-maps/mapbox" config/deploy.yml && docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test -e BUNNY_STORAGE_SECRET_ACCESS_KEY=test-secret web bash -lc "if bin/rails -T | grep -i \"mapbox\"; then exit 1; fi; bin/rails test test/controllers/map_controller_test.rb test/controllers/admin/exports_controller_test.rb test/lib/map_tiles/style_materializer_test.rb test/lib/map_tiles/tippecanoe_builder_test.rb"'` → static checks produced no forbidden output; Rails task discovery had no `mapbox` matches; targeted tests passed with 23 runs, 1176 assertions, 0 failures, 0 errors, 0 skips.
 
 ## Coverage self-review
 - Requirement 1 → Phase 0012-P1 deletes `lib/tasks/mapbox.rake` and explicitly forbids a replacement legacy namespace/task.
@@ -74,7 +75,6 @@ updated: 2026-06-11
 - Symbol/signature consistency checked: no new Ruby constants, methods, routes, rake task names, environment variables, or deploy paths are introduced; existing `resources :redirects, only: :new` and `hash[:"marker-color"] = "#ccc"` remain unchanged.
 - No placeholders remain in this plan.
 
-## Human approval checkpoint
-- This plan is ready for human review.
-- Do not change implementation files until the human approves this plan.
-- After approval, continue with `/incant:implement 0012`.
+## Phase handoff
+- Phase 0012-P1 implementation is complete and ready for review.
+- Next: `/incant:review 0012`.

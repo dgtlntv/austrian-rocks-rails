@@ -105,7 +105,7 @@ Rails.application.routes.draw do
     get "about", to: "pages#about", as: :about
     get "contribute", to: "pages#contribute", as: :contribute
 
-    resources :redirects, only: :new # useful for redirects where we only know the problem_id or area_id, eg. mapbox
+    resources :redirects, only: :new # useful for redirects where we only know the problem_id or area_id
 
     # Permalinks (don't remove!)
     get "/p/:id", to: "welcome#problem_permalink" # used by the apps to redirect to a problem webpage

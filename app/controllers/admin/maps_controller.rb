@@ -14,9 +14,8 @@ class Admin::MapsController < ApplicationController
       hash[:updated_at] = problem.updated_at
       hash.deep_transform_keys! { |key| key.camelize(:lower) }
 
-      # simple-style attributes to make the map look nicer on geojson.io
-      # https://github.com/mapbox/simplestyle-spec/tree/master/1.1.0
-      # Important: keep the key exactly as it it (don't camelize it)
+      # Standard simple-style attributes make the map look nicer on geojson.io.
+      # Important: keep the key exactly as it is (don't camelize it).
       hash[:"marker-color"] = "#ccc"
 
       factory.feature(problem.location, nil, hash)
