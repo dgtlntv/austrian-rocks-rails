@@ -17,12 +17,13 @@ spec_commit: 581501fe
 - Work item: `0011` / `self-host-inter-glyphs-for-shared-map-styles`
 - Stage: review
 - Branch: `incant/0011-self-host-inter-glyphs-for-shared-map-styles`
-- Current phase: `0011-P1` complete; awaiting phase review.
+- Current phase: `0011-P2` complete; awaiting phase review.
 - Next step: run `/incant:review 0011`.
 - Blockers: none.
 - Spec staleness check: `spec.md` was drafted against `581501fe`; current HEAD was `73d3705d` before implementation, whose only project change was the committed 0011 spec/session artifacts on top of `581501fe`. I re-read the affected map tile/style code before editing and the spec still holds.
 - Fresh verification:
   - 2026-06-11: Phase 0011-P1 gate passed in Docker because local `bin/rails` uses Ruby 4.0.2 while the Gemfile requires 3.3.5: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/style_materializer_test.rb'` → 22 runs, 1022 assertions, 0 failures, 0 errors, 0 skips.
+  - 2026-06-11: Phase 0011-P2 gate passed in Docker: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/lib/map_tiles/font_assets_test.rb test/lib/map_tiles/style_materializer_test.rb'` → 7 runs, 963 assertions, 0 failures, 0 errors, 0 skips.
 - Key decisions:
   - The configured glyph subpath is `fonts/inter-v1`, rooted under the existing `map_styles` style prefix.
   - MapLibre style `text-font` replacements are one-to-one: `Roboto-Light` → `Inter Light`, `Roboto-Regular` → `Inter Regular`, `Roboto-Medium` → `Inter Medium`, `Roboto-Bold` → `Inter Bold`, `Roboto-MediumItalic` → `Inter Medium Italic`, and `RobotoCondensed-BoldItalic` → `Inter Bold Italic`.
@@ -73,12 +74,12 @@ Goal: The committed and materialized shared styles, plus the web-only dynamic co
 ## Phase 0011-P2 — Commit runtime Inter v1 glyph assets and provenance
 Goal: The repository contains the approved runtime Inter PBF glyph tree, documents its provenance/license, and commits no Inter source font binaries.
 
-- [ ] Read before editing: `tmp/font-maker-2026-06-11T14_25_38.391Z/`, `config/map_styles/README.md`, and `test/lib/map_tiles/style_materializer_test.rb`.
-- [ ] Create `config/map_styles/fonts/inter-v1/` with exactly these approved stack directories copied from `tmp/font-maker-2026-06-11T14_25_38.391Z/`: `Inter Light`, `Inter Regular`, `Inter Medium`, `Inter Bold`, `Inter Medium Italic`, and `Inter Bold Italic`.
-- [ ] Copy every `*.pbf` file from each approved source stack directory into its matching `config/map_styles/fonts/inter-v1/<stack>/` directory, preserving filenames such as `0-255.pbf`, and do not copy unapproved Inter/Inter Display stack directories.
-- [ ] Add `config/map_styles/fonts/inter-v1/README.md` documenting: these are committed MapLibre runtime glyph PBFs, the CDN path is `map_styles/fonts/inter-v1/{fontstack}/{range}.pbf`, the approved stacks are the six Inter stacks listed above, the source tree was `tmp/font-maker-2026-06-11T14_25_38.391Z/` generated on 2026-06-11, normal PMTiles releases do not upload fonts, and future updates must create `inter-v2` instead of mutating `inter-v1`.
-- [ ] Add `config/map_styles/fonts/inter-v1/LICENSE.md` documenting that Inter is copyright The Inter Project Authors, licensed under SIL Open Font License 1.1, with source project `https://github.com/rsms/inter`, and that this repository commits generated runtime PBF glyph assets only, not `.ttf`, `.otf`, `.woff`, or `.woff2` source font binaries.
-- [ ] Add `test/lib/map_tiles/font_assets_test.rb` with assertions that `config/map_styles/fonts/inter-v1/` contains exactly the approved stack directories plus documentation files, each approved stack has at least `0-255.pbf` and only `.pbf` files, no `.ttf`, `.otf`, `.woff`, or `.woff2` file exists under the tree, and the README/LICENSE files mention `SIL Open Font License 1.1`, `tmp/font-maker-2026-06-11T14_25_38.391Z`, and `inter-v2`.
+- [x] Read before editing: `tmp/font-maker-2026-06-11T14_25_38.391Z/`, `config/map_styles/README.md`, and `test/lib/map_tiles/style_materializer_test.rb`.
+- [x] Create `config/map_styles/fonts/inter-v1/` with exactly these approved stack directories copied from `tmp/font-maker-2026-06-11T14_25_38.391Z/`: `Inter Light`, `Inter Regular`, `Inter Medium`, `Inter Bold`, `Inter Medium Italic`, and `Inter Bold Italic`.
+- [x] Copy every `*.pbf` file from each approved source stack directory into its matching `config/map_styles/fonts/inter-v1/<stack>/` directory, preserving filenames such as `0-255.pbf`, and do not copy unapproved Inter/Inter Display stack directories.
+- [x] Add `config/map_styles/fonts/inter-v1/README.md` documenting: these are committed MapLibre runtime glyph PBFs, the CDN path is `map_styles/fonts/inter-v1/{fontstack}/{range}.pbf`, the approved stacks are the six Inter stacks listed above, the source tree was `tmp/font-maker-2026-06-11T14_25_38.391Z/` generated on 2026-06-11, normal PMTiles releases do not upload fonts, and future updates must create `inter-v2` instead of mutating `inter-v1`.
+- [x] Add `config/map_styles/fonts/inter-v1/LICENSE.md` documenting that Inter is copyright The Inter Project Authors, licensed under SIL Open Font License 1.1, with source project `https://github.com/rsms/inter`, and that this repository commits generated runtime PBF glyph assets only, not `.ttf`, `.otf`, `.woff`, or `.woff2` source font binaries.
+- [x] Add `test/lib/map_tiles/font_assets_test.rb` with assertions that `config/map_styles/fonts/inter-v1/` contains exactly the approved stack directories plus documentation files, each approved stack has at least `0-255.pbf` and only `.pbf` files, no `.ttf`, `.otf`, `.woff`, or `.woff2` file exists under the tree, and the README/LICENSE files mention `SIL Open Font License 1.1`, `tmp/font-maker-2026-06-11T14_25_38.391Z`, and `inter-v2`.
 
 **Quality gate:** `bin/rails test test/lib/map_tiles/font_assets_test.rb test/lib/map_tiles/style_materializer_test.rb` → all font asset and style contract tests pass, proving the committed runtime glyph tree matches the approved Inter stack set and contains no source font binaries.
 
@@ -127,4 +128,4 @@ Goal: Maintainers have clear publish/update instructions, and automated tests pr
 - [x] No placeholders: every phase names concrete files, constants, commands, and expected behaviours.
 
 ## Implementation checkpoint
-Phase 0011-P1 is complete and committed for review. Continue with Phase 0011-P2 only after `/incant:review 0011` clears this phase without open blocker/major findings.
+Phase 0011-P2 is complete and ready for phase review. Continue with Phase 0011-P3 only after `/incant:review 0011` clears this phase without open blocker/major findings.
