@@ -13,11 +13,13 @@ updated: 2026-06-11
 # Asset Host Localhost Photo Urls — plan
 
 ## Status
-- Phase: 0013-P1 planned; awaiting human approval.
-- Stage: plan
+- Phase: 0013-P1 implemented; awaiting review.
+- Stage: review
 - Branch: incant/0013-asset-host-localhost-photo-urls
-- Next: approve this plan, then run `/incant:implement 0013`.
+- Next: run `/incant:review 0013`.
 - Blockers: none.
+- Gate evidence:
+  - 2026-06-11: `bash -lc '! rg -n "localhost|http://localhost:3000" lib/map_tiles/geojson_exporter.rb && docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test -e BUNNY_STORAGE_SECRET_ACCESS_KEY=test-secret web bin/rails test test/lib/map_tiles/geojson_exporter_test.rb'` passed; targeted suite reported 13 runs, 208 assertions, 0 failures, 0 errors, 0 skips.
 - Key decisions:
   - Keep Rails `config.asset_host` as the only host source for exported Active Storage photo URLs.
   - Fail export when a photo URL is actually needed and `asset_host` is blank; do not omit photo fields silently.
@@ -44,18 +46,18 @@ updated: 2026-06-11
 - `config/environments/production.rb` (read) — confirm production already sets `config.asset_host` from brand asset-domain configuration.
 
 ## Phase 0013-P1 — require configured asset host for exported photo URLs
-- [ ] Read `lib/map_tiles/geojson_exporter.rb` and `test/lib/map_tiles/geojson_exporter_test.rb` before editing; keep the existing `cdn_image_url(..., expires_in: nil, host: ...)` call shape and the exporter layer/property schema intact.
-- [ ] In `lib/map_tiles/geojson_exporter.rb`, define `MissingAssetHostError = Class.new(StandardError)` inside `MapTiles::GeojsonExporter` and define `ASSET_HOST_REQUIRED_MESSAGE = "Rails.application.config.asset_host must be configured to export map tile photo URLs"` as the raised message.
-- [ ] Replace the `Rails.application.config.asset_host.presence || "http://localhost:3000"` expression in `cdn_variant_url` with `required_asset_host`, leaving `expires_in: nil` unchanged and continuing to pass the resulting host into `Rails.application.routes.url_helpers.cdn_image_url`.
-- [ ] Add a private `required_asset_host` method in `lib/map_tiles/geojson_exporter.rb` that returns `Rails.application.config.asset_host.presence` or raises `MissingAssetHostError, ASSET_HOST_REQUIRED_MESSAGE`; do not call this method from `export`, `write_layer`, or any no-photo path, so records without attached cover/topo photos do not require `asset_host`.
-- [ ] In `test/lib/map_tiles/geojson_exporter_test.rb`, save the previous `Rails.application.config.asset_host` in `setup`, set `Rails.application.config.asset_host = "https://assets.example.test"` for normal exporter tests, and restore the saved value in `teardown` after removing `@output_dir`.
-- [ ] Update the deterministic cover photo URL test to assert every exported `coverPhotoUrl` is stable, uses `https://assets.example.test`, includes `/rails/active_storage/representations/proxy/`, and does not include `localhost`; keep the main-area-to-cluster-to-region fallback assertions and the post-purge no-photo assertions.
-- [ ] Update the topo preview URL test to assert `topoPhotoUrl` uses `https://assets.example.test`, includes `/rails/active_storage/representations/proxy/`, and does not include `localhost`; keep the line coordinate JSON assertions and the no-line/no-photo assertions.
-- [ ] Add a test that sets `Rails.application.config.asset_host = nil` with the default fixture records that have no attached cover/topo photos, runs `MapTiles::GeojsonExporter.new(configuration: @configuration).export`, and asserts representative area/problem properties omit `coverPhotoUrl` and `topoPhotoUrl`.
-- [ ] Add a blank-host cover-photo failure test that attaches `@area.cover`, sets `Rails.application.config.asset_host = ""`, calls `MapTiles::GeojsonExporter.new(configuration: @configuration).export`, and asserts `MapTiles::GeojsonExporter::MissingAssetHostError` is raised with `ASSET_HOST_REQUIRED_MESSAGE`.
-- [ ] Add a blank-host topo-photo failure test that creates a published `Topo` with an attached photo, creates a `Line` for `@problem`, sets `Rails.application.config.asset_host = nil`, calls `MapTiles::GeojsonExporter.new(configuration: @configuration).export`, and asserts `MapTiles::GeojsonExporter::MissingAssetHostError` is raised with `ASSET_HOST_REQUIRED_MESSAGE`.
-- [ ] Run a static check that `lib/map_tiles/geojson_exporter.rb` no longer contains `localhost` or `http://localhost:3000`, then run the Docker-backed targeted exporter tests.
-- [ ] Update this plan’s Status block with fresh gate evidence, set `.incant/backlog.md` to `status:review phase:0013-P1`, update `.incant/STATE.md` to say item `0013` is awaiting review, and commit the implementation phase as `incant 0013-P1: require asset host for photo URLs`.
+- [x] Read `lib/map_tiles/geojson_exporter.rb` and `test/lib/map_tiles/geojson_exporter_test.rb` before editing; keep the existing `cdn_image_url(..., expires_in: nil, host: ...)` call shape and the exporter layer/property schema intact.
+- [x] In `lib/map_tiles/geojson_exporter.rb`, define `MissingAssetHostError = Class.new(StandardError)` inside `MapTiles::GeojsonExporter` and define `ASSET_HOST_REQUIRED_MESSAGE = "Rails.application.config.asset_host must be configured to export map tile photo URLs"` as the raised message.
+- [x] Replace the `Rails.application.config.asset_host.presence || "http://localhost:3000"` expression in `cdn_variant_url` with `required_asset_host`, leaving `expires_in: nil` unchanged and continuing to pass the resulting host into `Rails.application.routes.url_helpers.cdn_image_url`.
+- [x] Add a private `required_asset_host` method in `lib/map_tiles/geojson_exporter.rb` that returns `Rails.application.config.asset_host.presence` or raises `MissingAssetHostError, ASSET_HOST_REQUIRED_MESSAGE`; do not call this method from `export`, `write_layer`, or any no-photo path, so records without attached cover/topo photos do not require `asset_host`.
+- [x] In `test/lib/map_tiles/geojson_exporter_test.rb`, save the previous `Rails.application.config.asset_host` in `setup`, set `Rails.application.config.asset_host = "https://assets.example.test"` for normal exporter tests, and restore the saved value in `teardown` after removing `@output_dir`.
+- [x] Update the deterministic cover photo URL test to assert every exported `coverPhotoUrl` is stable, uses `https://assets.example.test`, includes `/rails/active_storage/representations/proxy/`, and does not include `localhost`; keep the main-area-to-cluster-to-region fallback assertions and the post-purge no-photo assertions.
+- [x] Update the topo preview URL test to assert `topoPhotoUrl` uses `https://assets.example.test`, includes `/rails/active_storage/representations/proxy/`, and does not include `localhost`; keep the line coordinate JSON assertions and the no-line/no-photo assertions.
+- [x] Add a test that sets `Rails.application.config.asset_host = nil` with the default fixture records that have no attached cover/topo photos, runs `MapTiles::GeojsonExporter.new(configuration: @configuration).export`, and asserts representative area/problem properties omit `coverPhotoUrl` and `topoPhotoUrl`.
+- [x] Add a blank-host cover-photo failure test that attaches `@area.cover`, sets `Rails.application.config.asset_host = ""`, calls `MapTiles::GeojsonExporter.new(configuration: @configuration).export`, and asserts `MapTiles::GeojsonExporter::MissingAssetHostError` is raised with `ASSET_HOST_REQUIRED_MESSAGE`.
+- [x] Add a blank-host topo-photo failure test that creates a published `Topo` with an attached photo, creates a `Line` for `@problem`, sets `Rails.application.config.asset_host = nil`, calls `MapTiles::GeojsonExporter.new(configuration: @configuration).export`, and asserts `MapTiles::GeojsonExporter::MissingAssetHostError` is raised with `ASSET_HOST_REQUIRED_MESSAGE`.
+- [x] Run a static check that `lib/map_tiles/geojson_exporter.rb` no longer contains `localhost` or `http://localhost:3000`, then run the Docker-backed targeted exporter tests.
+- [x] Update this plan’s Status block with fresh gate evidence, set `.incant/backlog.md` to `status:review phase:0013-P1`, update `.incant/STATE.md` to say item `0013` is awaiting review, and commit the implementation phase as `incant 0013-P1: require asset host for photo URLs`.
 **Quality gate:** `bash -lc '! rg -n "localhost|http://localhost:3000" lib/map_tiles/geojson_exporter.rb && docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test -e BUNNY_STORAGE_SECRET_ACCESS_KEY=test-secret web bin/rails test test/lib/map_tiles/geojson_exporter_test.rb'` → static check finds no localhost fallback in the exporter; the targeted GeoJSON exporter test suite passes with 0 failures and 0 errors.
 
 ## Coverage self-review

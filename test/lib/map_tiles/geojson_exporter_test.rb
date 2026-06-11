@@ -12,8 +12,11 @@ require "map_tiles/geojson_exporter"
 
 class MapTiles::GeojsonExporterTest < ActiveSupport::TestCase
   PNG_FIXTURE = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
+  ASSET_HOST = "https://assets.example.test"
 
   setup do
+    @previous_asset_host = Rails.application.config.asset_host
+    Rails.application.config.asset_host = ASSET_HOST
     @output_dir = Rails.root.join("tmp/map_tiles_exporter_test/#{SecureRandom.hex(8)}")
     @configuration = MapTiles::Configuration.new(version: "test-version", settings: map_tile_settings)
 
@@ -22,6 +25,7 @@ class MapTiles::GeojsonExporterTest < ActiveSupport::TestCase
 
   teardown do
     FileUtils.rm_rf(@output_dir)
+    Rails.application.config.asset_host = @previous_asset_host
   end
 
   test "exports one deterministic GeoJSON FeatureCollection per expected layer" do
@@ -206,12 +210,18 @@ class MapTiles::GeojsonExporterTest < ActiveSupport::TestCase
     second_cluster_url = feature_properties(second_paths.fetch("clusters"), "clusterId", @cluster.id).fetch("coverPhotoUrl")
     second_region_url = feature_properties(second_paths.fetch("regions"), "regionId", @region.id).fetch("coverPhotoUrl")
 
+    exported_urls = [ first_area_url, first_cluster_url, first_region_url, second_area_url, second_cluster_url, second_region_url ]
+
     assert_equal first_area_url, second_area_url
     assert_equal first_area_url, first_cluster_url
     assert_equal first_area_url, first_region_url
     assert_equal first_cluster_url, second_cluster_url
     assert_equal first_region_url, second_region_url
-    assert_match(%r{/rails/active_storage/representations/proxy/}, first_area_url)
+    exported_urls.each do |url|
+      assert_match(%r{\A#{Regexp.escape(ASSET_HOST)}/}, url)
+      assert_match(%r{/rails/active_storage/representations/proxy/}, url)
+      assert_no_match(/localhost/, url)
+    end
 
     @area.cover.purge
     paths = MapTiles::GeojsonExporter.new(configuration: @configuration).export
@@ -239,13 +249,64 @@ class MapTiles::GeojsonExporterTest < ActiveSupport::TestCase
 
     paths = MapTiles::GeojsonExporter.new(configuration: @configuration).export
     problem = feature_properties(paths.fetch("problems"), "problemId", @problem.id)
+    topo_photo_url = problem.fetch("topoPhotoUrl")
 
-    assert_match(%r{/rails/active_storage/representations/proxy/}, problem.fetch("topoPhotoUrl"))
+    assert_match(%r{\A#{Regexp.escape(ASSET_HOST)}/}, topo_photo_url)
+    assert_match(%r{/rails/active_storage/representations/proxy/}, topo_photo_url)
+    assert_no_match(/localhost/, topo_photo_url)
     assert_equal [ { "x" => 0.25, "y" => 0.8 }, { "x" => 0.5, "y" => 0.35 }, { "x" => 0.7, "y" => 0.2 } ], JSON.parse(problem.fetch("lineCoordinatesJson"))
 
     problem_without_line = feature_properties(paths.fetch("problems"), "problemId", Problem.find_by!(name: "Ignored Boulder Problem").id)
     assert_not_includes problem_without_line, "topoPhotoUrl"
     assert_not_includes problem_without_line, "lineCoordinatesJson"
+  end
+
+  test "exports records without photo URLs when asset host is blank" do
+    Rails.application.config.asset_host = nil
+
+    paths = MapTiles::GeojsonExporter.new(configuration: @configuration).export
+    area = feature_properties(paths.fetch("areas"), "areaId", @area.id)
+    problem = feature_properties(paths.fetch("problems"), "problemId", @problem.id)
+
+    assert_not_includes area, "coverPhotoUrl"
+    assert_not_includes area, "topoPhotoUrl"
+    assert_not_includes problem, "coverPhotoUrl"
+    assert_not_includes problem, "topoPhotoUrl"
+  end
+
+  test "raises a clear error for cover photo URLs when asset host is blank" do
+    @area.cover.attach(
+      io: StringIO.new(Base64.decode64(PNG_FIXTURE)),
+      filename: "cover.png",
+      content_type: "image/png"
+    )
+    Rails.application.config.asset_host = ""
+
+    error = assert_raises(MapTiles::GeojsonExporter::MissingAssetHostError) do
+      MapTiles::GeojsonExporter.new(configuration: @configuration).export
+    end
+    assert_equal MapTiles::GeojsonExporter::ASSET_HOST_REQUIRED_MESSAGE, error.message
+  end
+
+  test "raises a clear error for topo photo URLs when asset host is blank" do
+    topo = Topo.new(published: true, boulder: @boulder)
+    topo.photo.attach(
+      io: StringIO.new(Base64.decode64(PNG_FIXTURE)),
+      filename: "topo.png",
+      content_type: "image/png"
+    )
+    topo.save!
+    Line.create!(
+      problem: @problem,
+      topo: topo,
+      coordinates: [ { "x" => 0.25, "y" => 0.8 }, { "x" => 0.5, "y" => 0.35 }, { "x" => 0.7, "y" => 0.2 } ]
+    )
+    Rails.application.config.asset_host = nil
+
+    error = assert_raises(MapTiles::GeojsonExporter::MissingAssetHostError) do
+      MapTiles::GeojsonExporter.new(configuration: @configuration).export
+    end
+    assert_equal MapTiles::GeojsonExporter::ASSET_HOST_REQUIRED_MESSAGE, error.message
   end
 
   test "encodes POI access area metadata as a scalar JSON string" do
