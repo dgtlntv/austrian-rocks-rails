@@ -7,6 +7,9 @@ require "map_tiles/configuration"
 
 module MapTiles
   class GeojsonExporter
+    MissingAssetHostError = Class.new(StandardError)
+    ASSET_HOST_REQUIRED_MESSAGE = "Rails.application.config.asset_host must be configured to export map tile photo URLs"
+
     attr_reader :configuration, :entity_factory
 
     def initialize(configuration: Configuration.new)
@@ -406,8 +409,12 @@ module MapTiles
       Rails.application.routes.url_helpers.cdn_image_url(
         variant,
         expires_in: nil,
-        host: Rails.application.config.asset_host.presence || "http://localhost:3000"
+        host: required_asset_host
       )
+    end
+
+    def required_asset_host
+      Rails.application.config.asset_host.presence || raise(MissingAssetHostError, ASSET_HOST_REQUIRED_MESSAGE)
     end
 
     def effective_cover_attachment(record)
