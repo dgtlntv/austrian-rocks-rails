@@ -1,9 +1,9 @@
 # State
-- Updated: 2026-06-11 (0013 finalized and archived)
-- Current focus: none
+- Updated: 2026-06-11 (0011 spec drafted)
+- Current focus: 0011 — Self-host Inter glyphs for shared map styles
 
 ## Active
-- None.
+- 0011 — spec drafted; waiting for human approval before planning.
 
 ## Cross-cutting notes / blockers
 - Database commands/tests for map-data work should run against Docker-hosted PostgreSQL/PostGIS, not a host-created database.
