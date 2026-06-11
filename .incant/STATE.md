@@ -1,9 +1,9 @@
 # State
-- Updated: 2026-06-11 (0012 archived)
-- Current focus: none
+- Updated: 2026-06-11 (0013 spec drafted)
+- Current focus: 0013 asset host localhost photo URLs
 
 ## Active
-- None.
+- 0013 — spec drafted on branch `incant/0013-asset-host-localhost-photo-urls`; awaiting human approval before planning.
 
 ## Cross-cutting notes / blockers
 - Database commands/tests for map-data work should run against Docker-hosted PostgreSQL/PostGIS, not a host-created database.
