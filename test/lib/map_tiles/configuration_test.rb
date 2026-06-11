@@ -18,6 +18,10 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     assert_equal "tiles.austrian.rocks", configuration.public_cdn_host
     assert_equal "map_tiles/test", configuration.bunny_prefix
     assert_equal "map_styles", configuration.style_prefix
+    assert_equal "fonts/inter-v1", configuration.font_glyph_subpath
+    assert_equal Rails.root.join("config/map_styles/fonts/inter-v1"), configuration.font_glyph_root
+    assert_equal "map_styles/fonts/inter-v1", configuration.font_glyph_object_prefix
+    assert_equal "https://tiles.austrian.rocks/map_styles/fonts/inter-v1/{fontstack}/{range}.pbf", configuration.font_glyphs_template_url
     assert_equal "map_tiles", configuration.manifest_prefix
     assert_equal "current.json", configuration.manifest_object_name
     assert_equal "light", configuration.default_style
@@ -71,6 +75,9 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
     assert_equal "map_tiles/test/austrian-rocks-2026-06-09.pmtiles", configuration.versioned_object_key
     assert_equal "map_styles/austrian-rocks-2026-06-09-light.json", configuration.style_object_key("light")
     assert_equal "map_styles/austrian-rocks-2026-06-09-dark.json", configuration.style_object_key("dark")
+    assert_equal Rails.root.join("config/map_styles/fonts/inter-v1"), configuration.font_glyph_root
+    assert_equal "map_styles/fonts/inter-v1", configuration.font_glyph_object_prefix
+    assert_equal "https://cdn.example.test/map_styles/fonts/inter-v1/{fontstack}/{range}.pbf", configuration.font_glyphs_template_url
     assert_equal "map_tiles/current.json", configuration.manifest_object_key
     assert_equal "https://cdn.example.test/map_tiles/test/austrian-rocks-2026-06-09.pmtiles", configuration.pmtiles_public_url
     assert_equal "https://cdn.example.test/map_styles/austrian-rocks-2026-06-09-light.json", configuration.style_public_url("light")
@@ -119,6 +126,12 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
   test "rejects unsafe configured path segments and versions" do
     assert_raises(ArgumentError) do
       MapTiles::Configuration.new(version: "2026/06/09", settings: settings).artifact_path
+    end
+
+    [ "/fonts/inter-v1", "fonts//inter-v1", "fonts/../inter-v1", "fonts/inter v1" ].each do |unsafe_subpath|
+      assert_raises(ArgumentError) do
+        MapTiles::Configuration.new(version: "2026-06-09", settings: settings("font_glyph_subpath" => unsafe_subpath)).font_glyph_subpath
+      end
     end
 
     assert_raises(ArgumentError) do
@@ -244,6 +257,7 @@ class MapTiles::ConfigurationTest < ActiveSupport::TestCase
       "public_cdn_host" => "https://cdn.example.test",
       "bunny_prefix" => "maps",
       "style_prefix" => "map_styles",
+      "font_glyph_subpath" => "fonts/inter-v1",
       "manifest_prefix" => "map_tiles",
       "manifest_object_name" => "current.json",
       "default_style" => "light",

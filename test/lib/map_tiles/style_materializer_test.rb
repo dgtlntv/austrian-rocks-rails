@@ -7,6 +7,16 @@ require "tmpdir"
 require "map_tiles/style_materializer"
 
 class MapTiles::StyleMaterializerTest < ActiveSupport::TestCase
+  APPROVED_INTER_FONT_STACKS = [
+    "Inter Light",
+    "Inter Regular",
+    "Inter Medium",
+    "Inter Bold",
+    "Inter Medium Italic",
+    "Inter Bold Italic"
+  ].freeze
+  INTER_GLYPHS_URL = "https://tiles.austrian.rocks/map_styles/fonts/inter-v1/{fontstack}/{range}.pbf"
+
   setup do
     @output_dir = Rails.root.join("tmp/style_materializer_test/#{SecureRandom.hex(8)}")
     @configuration = MapTiles::Configuration.new(version: "2026-06-09", settings: map_tile_settings)
@@ -25,6 +35,8 @@ class MapTiles::StyleMaterializerTest < ActiveSupport::TestCase
       assert style.fetch("sources").key?("austrian-rocks")
       assert_equal "pmtiles://https://tiles.austrian.rocks/map_tiles/e2e/austrian-rocks-dev.pmtiles", style.dig("sources", "austrian-rocks", "url")
       assert_equal "https://tiles.austrian.rocks/map_styles/e2e/austrian-rocks-dev-sprite", style.fetch("sprite")
+      assert_equal INTER_GLYPHS_URL, style.fetch("glyphs")
+      assert_inter_font_contract(style)
       assert_absolute_basemap_at_vector_tiles(style)
       assert_bergwerk_basemap_style_metadata(style)
       assert_basemap_at_contours(style, style_name)
@@ -54,6 +66,8 @@ class MapTiles::StyleMaterializerTest < ActiveSupport::TestCase
       assert_equal "pmtiles://#{@configuration.pmtiles_public_url}", materialized.dig("sources", "austrian-rocks", "url")
       assert_equal @configuration.sprite_public_base_url, materialized.fetch("sprite")
       assert_equal "https://cdn.example.test/map_styles/austrian-rocks-2026-06-09-sprite", materialized.fetch("sprite")
+      assert_equal @configuration.font_glyphs_template_url, materialized.fetch("glyphs")
+      assert_inter_font_contract(materialized)
       assert_absolute_basemap_at_vector_tiles(materialized)
       assert_bergwerk_basemap_style_metadata(materialized)
       assert_basemap_at_contours(materialized, style_name)
@@ -100,6 +114,13 @@ class MapTiles::StyleMaterializerTest < ActiveSupport::TestCase
 
       assert_includes error.message, "pois"
     end
+  end
+
+  test "dynamic contribution text layer uses Inter" do
+    controller_source = Rails.root.join("app/javascript/controllers/map_controller.js").read
+
+    assert_includes controller_source, '"text-font": ["Inter Regular"]'
+    assert_not_includes controller_source, '"text-font": ["Roboto-Regular"]'
   end
 
   private
@@ -162,7 +183,7 @@ class MapTiles::StyleMaterializerTest < ActiveSupport::TestCase
       layer["source-layer"] == "AUSTRIA_HL50_100_1000_smooth500m_HL" && layer["minzoom"] == 10
     end
     assert contour_layers.any? do |layer|
-      layer["type"] == "symbol" && layer.dig("layout", "text-font") == [ "Roboto-MediumItalic" ]
+      layer["type"] == "symbol" && layer.dig("layout", "text-font") == [ "Inter Medium Italic" ]
     end
     assert_empty contour_layers.reject { |layer| layer.fetch("id").start_with?("basemap-at-hoehenlinien-") }
 
@@ -193,6 +214,21 @@ class MapTiles::StyleMaterializerTest < ActiveSupport::TestCase
 
     assert_operator first_contour_line_index, :<, first_basemap_symbol_index
     assert_operator last_contour_index, :<, first_austrian_rocks_index
+  end
+
+  def assert_inter_font_contract(style)
+    serialized_style = JSON.generate(style)
+    assert_not_includes serialized_style, "basemap.bergwerk-gis.at/basemap-download/webapp/fonts"
+    assert_not_includes serialized_style, "mapbox://fonts"
+    assert_not_includes serialized_style, "Roboto"
+
+    text_font_arrays = style.fetch("layers").filter_map { |layer| layer.dig("layout", "text-font") }
+    assert text_font_arrays.any?, "expected style to declare text-font stacks"
+    assert_empty text_font_arrays.reject { |font_stack| approved_inter_font_stack?(font_stack) }
+  end
+
+  def approved_inter_font_stack?(font_stack)
+    font_stack.is_a?(Array) && font_stack.all? { |font| APPROVED_INTER_FONT_STACKS.include?(font) }
   end
 
   def assert_no_mapbox_urls(style)
@@ -272,8 +308,8 @@ class MapTiles::StyleMaterializerTest < ActiveSupport::TestCase
     assert_equal "symbol", overlay_layer(style, "pois").fetch("type")
     assert_equal 11, overlay_layer(style, "pois").fetch("minzoom")
     assert_empty overlay_layers.select { |layer| layer["type"] == "symbol" && layer.dig("layout", "text-font").blank? }
-    assert_equal [ "Roboto-Regular" ], overlay_layer(style, "areas").dig("layout", "text-font")
-    assert_equal [ "Roboto-Regular" ], overlay_layer(style, "boulders-texts").dig("layout", "text-font")
+    assert_equal [ "Inter Regular" ], overlay_layer(style, "areas").dig("layout", "text-font")
+    assert_equal [ "Inter Regular" ], overlay_layer(style, "boulders-texts").dig("layout", "text-font")
     assert_equal 15, overlay_layer(style, "problems").fetch("minzoom")
     assert_equal [ "interpolate", [ "linear" ], [ "zoom" ], 15, 2, 18, 4, 22, 10 ], overlay_layer(style, "problems").dig("paint", "circle-radius")
     assert_equal "#878A8D", overlay_layer(style, "problems").dig("paint", "circle-color")
@@ -454,6 +490,7 @@ class MapTiles::StyleMaterializerTest < ActiveSupport::TestCase
       "public_cdn_host" => "https://cdn.example.test",
       "bunny_prefix" => "map_tiles/test",
       "style_prefix" => "map_styles",
+      "font_glyph_subpath" => "fonts/inter-v1",
       "manifest_prefix" => "map_tiles",
       "manifest_object_name" => "current.json",
       "default_style" => "light",

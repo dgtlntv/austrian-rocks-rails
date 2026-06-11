@@ -3,8 +3,8 @@ id: "0011"
 slug: self-host-inter-glyphs-for-shared-map-styles
 branch: incant/0011-self-host-inter-glyphs-for-shared-map-styles
 title: Self-host Inter glyphs for shared map styles
-stage: plan
-status: awaiting-approval
+stage: review
+status: in-progress
 created: 2026-06-11
 updated: 2026-06-11
 commit: 73d3705d
@@ -14,12 +14,15 @@ spec_commit: 581501fe
 # Plan — Self-host Inter glyphs for shared map styles
 
 ## Status
-- Phase: not started
-- Stage: plan awaiting human approval
+- Work item: `0011` / `self-host-inter-glyphs-for-shared-map-styles`
+- Stage: review
 - Branch: `incant/0011-self-host-inter-glyphs-for-shared-map-styles`
-- Next step: human approves this plan, then run `/incant:implement 0011`.
+- Current phase: `0011-P1` complete; awaiting phase review.
+- Next step: run `/incant:review 0011`.
 - Blockers: none.
-- Spec staleness check: `spec.md` was drafted against `581501fe`; current HEAD is `73d3705d`, whose only project change is the committed 0011 spec/session artifacts on top of `581501fe`. I re-read the affected map tile/style code and the spec still holds.
+- Spec staleness check: `spec.md` was drafted against `581501fe`; current HEAD was `73d3705d` before implementation, whose only project change was the committed 0011 spec/session artifacts on top of `581501fe`. I re-read the affected map tile/style code before editing and the spec still holds.
+- Fresh verification:
+  - 2026-06-11: Phase 0011-P1 gate passed in Docker because local `bin/rails` uses Ruby 4.0.2 while the Gemfile requires 3.3.5: `docker compose run --rm -e RAILS_ENV=test -e DATABASE_URL=postgis://austrian-rocks:${POSTGRES_PASSWORD:-password}@db:5432/austrian-rocks-test web bash -lc 'bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/style_materializer_test.rb'` → 22 runs, 1022 assertions, 0 failures, 0 errors, 0 skips.
 - Key decisions:
   - The configured glyph subpath is `fonts/inter-v1`, rooted under the existing `map_styles` style prefix.
   - MapLibre style `text-font` replacements are one-to-one: `Roboto-Light` → `Inter Light`, `Roboto-Regular` → `Inter Regular`, `Roboto-Medium` → `Inter Medium`, `Roboto-Bold` → `Inter Bold`, `Roboto-MediumItalic` → `Inter Medium Italic`, and `RobotoCondensed-BoldItalic` → `Inter Bold Italic`.
@@ -50,20 +53,20 @@ spec_commit: 581501fe
 ## Phase 0011-P1 — Config-derived glyph URL and Inter style contract
 Goal: The committed and materialized shared styles, plus the web-only dynamic contribution labels, use Inter glyphs/font stacks with automated tests preventing Bergwerk/Mapbox glyph or Roboto regressions.
 
-- [ ] Read before editing: `config/map_tiles.yml`, `lib/map_tiles/configuration.rb`, `lib/map_tiles/style_materializer.rb`, `config/map_styles/austrian_rocks_light.json`, `config/map_styles/austrian_rocks_dark.json`, `app/javascript/controllers/map_controller.js`, `test/lib/map_tiles/configuration_test.rb`, and `test/lib/map_tiles/style_materializer_test.rb`.
-- [ ] In `config/map_tiles.yml`, add `font_glyph_subpath: fonts/inter-v1` to the default map tile settings under `style_prefix: map_styles`, so development, test, and production inherit the same glyph version path.
-- [ ] In `lib/map_tiles/configuration.rb`, add:
+- [x] Read before editing: `config/map_tiles.yml`, `lib/map_tiles/configuration.rb`, `lib/map_tiles/style_materializer.rb`, `config/map_styles/austrian_rocks_light.json`, `config/map_styles/austrian_rocks_dark.json`, `app/javascript/controllers/map_controller.js`, `test/lib/map_tiles/configuration_test.rb`, and `test/lib/map_tiles/style_materializer_test.rb`.
+- [x] In `config/map_tiles.yml`, add `font_glyph_subpath: fonts/inter-v1` to the default map tile settings under `style_prefix: map_styles`, so development, test, and production inherit the same glyph version path.
+- [x] In `lib/map_tiles/configuration.rb`, add:
   - `font_glyph_subpath`, validating the configured path as slash-separated safe segments with no blank, `.`, or `..` segment;
   - `font_glyph_root`, returning `Rails.root.join("config/map_styles", font_glyph_subpath)`;
   - `font_glyph_object_prefix`, returning `object_key(style_prefix, font_glyph_subpath)`;
   - `font_glyphs_template_url`, returning `#{public_cdn_base}/#{font_glyph_object_prefix}/{fontstack}/{range}.pbf`.
-- [ ] In `config/map_styles/austrian_rocks_light.json` and `config/map_styles/austrian_rocks_dark.json`, set top-level `glyphs` to `https://tiles.austrian.rocks/map_styles/fonts/inter-v1/{fontstack}/{range}.pbf`.
-- [ ] In both style JSON templates, replace every single-value `layout.text-font` array using this exact mapping: `Roboto-Light` to `Inter Light`, `Roboto-Regular` to `Inter Regular`, `Roboto-Medium` to `Inter Medium`, `Roboto-Bold` to `Inter Bold`, `Roboto-MediumItalic` to `Inter Medium Italic`, and `RobotoCondensed-BoldItalic` to `Inter Bold Italic`.
-- [ ] In `lib/map_tiles/style_materializer.rb`, assign `style["glyphs"] = configuration.font_glyphs_template_url` during materialization before writing the style artifact, and validate that each style has no `basemap.bergwerk-gis.at/basemap-download/webapp/fonts`, no `mapbox://fonts`, no `Roboto` text-font value, and no `text-font` outside `Inter Light`, `Inter Regular`, `Inter Medium`, `Inter Bold`, `Inter Medium Italic`, or `Inter Bold Italic`.
-- [ ] In `app/javascript/controllers/map_controller.js`, change the `contribute-problems-texts` layer layout from `"text-font": ["Roboto-Regular"]` to `"text-font": ["Inter Regular"]`.
-- [ ] In `test/lib/map_tiles/configuration_test.rb`, assert the default test configuration exposes `font_glyph_subpath == "fonts/inter-v1"`, `font_glyph_root == Rails.root.join("config/map_styles/fonts/inter-v1")`, `font_glyph_object_prefix == "map_styles/fonts/inter-v1"`, and `font_glyphs_template_url == "https://tiles.austrian.rocks/map_styles/fonts/inter-v1/{fontstack}/{range}.pbf"`; also add unsafe subpath assertions for `/fonts/inter-v1`, `fonts//inter-v1`, `fonts/../inter-v1`, and `fonts/inter v1`.
-- [ ] In `test/lib/map_tiles/style_materializer_test.rb`, add `APPROVED_INTER_FONT_STACKS = ["Inter Light", "Inter Regular", "Inter Medium", "Inter Bold", "Inter Medium Italic", "Inter Bold Italic"]`, assert committed template glyphs equal the production Inter URL, assert materialized artifact glyphs equal `@configuration.font_glyphs_template_url`, replace current Roboto contour/overlay expectations with Inter expectations, and add helpers that scan all `text-font` arrays plus generated JSON for forbidden Bergwerk glyph URL, `mapbox://fonts`, and `Roboto`.
-- [ ] In `test/lib/map_tiles/style_materializer_test.rb`, add a controller-source assertion that `app/javascript/controllers/map_controller.js` includes `"text-font": ["Inter Regular"]` and does not include `"text-font": ["Roboto-Regular"]`.
+- [x] In `config/map_styles/austrian_rocks_light.json` and `config/map_styles/austrian_rocks_dark.json`, set top-level `glyphs` to `https://tiles.austrian.rocks/map_styles/fonts/inter-v1/{fontstack}/{range}.pbf`.
+- [x] In both style JSON templates, replace every single-value `layout.text-font` array using this exact mapping: `Roboto-Light` to `Inter Light`, `Roboto-Regular` to `Inter Regular`, `Roboto-Medium` to `Inter Medium`, `Roboto-Bold` to `Inter Bold`, `Roboto-MediumItalic` to `Inter Medium Italic`, and `RobotoCondensed-BoldItalic` to `Inter Bold Italic`.
+- [x] In `lib/map_tiles/style_materializer.rb`, assign `style["glyphs"] = configuration.font_glyphs_template_url` during materialization before writing the style artifact, and validate that each style has no `basemap.bergwerk-gis.at/basemap-download/webapp/fonts`, no `mapbox://fonts`, no `Roboto` text-font value, and no `text-font` outside `Inter Light`, `Inter Regular`, `Inter Medium`, `Inter Bold`, `Inter Medium Italic`, or `Inter Bold Italic`.
+- [x] In `app/javascript/controllers/map_controller.js`, change the `contribute-problems-texts` layer layout from `"text-font": ["Roboto-Regular"]` to `"text-font": ["Inter Regular"]`.
+- [x] In `test/lib/map_tiles/configuration_test.rb`, assert the default test configuration exposes `font_glyph_subpath == "fonts/inter-v1"`, `font_glyph_root == Rails.root.join("config/map_styles/fonts/inter-v1")`, `font_glyph_object_prefix == "map_styles/fonts/inter-v1"`, and `font_glyphs_template_url == "https://tiles.austrian.rocks/map_styles/fonts/inter-v1/{fontstack}/{range}.pbf"`; also add unsafe subpath assertions for `/fonts/inter-v1`, `fonts//inter-v1`, `fonts/../inter-v1`, and `fonts/inter v1`.
+- [x] In `test/lib/map_tiles/style_materializer_test.rb`, add `APPROVED_INTER_FONT_STACKS = ["Inter Light", "Inter Regular", "Inter Medium", "Inter Bold", "Inter Medium Italic", "Inter Bold Italic"]`, assert committed template glyphs equal the production Inter URL, assert materialized artifact glyphs equal `@configuration.font_glyphs_template_url`, replace current Roboto contour/overlay expectations with Inter expectations, and add helpers that scan all `text-font` arrays plus generated JSON for forbidden Bergwerk glyph URL, `mapbox://fonts`, and `Roboto`.
+- [x] In `test/lib/map_tiles/style_materializer_test.rb`, add a controller-source assertion that `app/javascript/controllers/map_controller.js` includes `"text-font": ["Inter Regular"]` and does not include `"text-font": ["Roboto-Regular"]`.
 
 **Quality gate:** `bin/rails test test/lib/map_tiles/configuration_test.rb test/lib/map_tiles/style_materializer_test.rb` → all configuration and style materializer tests pass, proving the glyph URL is config-derived for materialized styles and committed/materialized style contracts reject Bergwerk/Mapbox/Roboto font regressions.
 
@@ -123,5 +126,5 @@ Goal: Maintainers have clear publish/update instructions, and automated tests pr
 - [x] Goal-level verification checked: final gate proves styles, assets, publisher, CLI separation, normal-release separation, forbidden references, and source-binary absence together.
 - [x] No placeholders: every phase names concrete files, constants, commands, and expected behaviours.
 
-## Human approval checkpoint
-This plan changes no application code yet. After this plan is committed, implementation must wait for human approval before any code/assets/docs listed above are edited.
+## Implementation checkpoint
+Phase 0011-P1 is complete and committed for review. Continue with Phase 0011-P2 only after `/incant:review 0011` clears this phase without open blocker/major findings.

@@ -2,7 +2,7 @@
   "version": 8,
   "name": "Austrian Rocks Light",
   "sprite": "https://tiles.austrian.rocks/map_styles/e2e/austrian-rocks-dev-sprite",
-  "glyphs": "https://basemap.bergwerk-gis.at/basemap-download/webapp/fonts/{fontstack}/{range}.pbf",
+  "glyphs": "https://tiles.austrian.rocks/map_styles/fonts/inter-v1/{fontstack}/{range}.pbf",
   "sources": {
     "basemap-at-gelaende": {
       "type": "raster",
@@ -4172,7 +4172,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Medium"
+          "Inter Medium"
         ],
         "text-field": "{name_additional}",
         "symbol-placement": "line",
@@ -4230,7 +4230,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Bold"
+          "Inter Bold"
         ],
         "text-field": "{short_name}",
         "symbol-placement": "line",
@@ -4287,7 +4287,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Medium"
+          "Inter Medium"
         ],
         "text-field": "{short_name} {name}",
         "symbol-placement": "line",
@@ -4343,7 +4343,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Bold"
+          "Inter Bold"
         ],
         "text-field": "{short_name} {name}",
         "symbol-placement": "line",
@@ -4405,7 +4405,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "text-field": "{br_name}",
         "symbol-placement": "line",
@@ -4461,7 +4461,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "text-field": "{name_additional}",
         "symbol-placement": "line",
@@ -4520,7 +4520,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Medium"
+          "Inter Medium"
         ],
         "text-field": "{feat_name}",
         "text-allow-overlap": false,
@@ -4560,7 +4560,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Bold"
+          "Inter Bold"
         ],
         "text-field": "{feat_name}",
         "text-allow-overlap": false,
@@ -4609,7 +4609,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Bold"
+          "Inter Bold"
         ],
         "text-field": "{feat_name}",
         "text-allow-overlap": false,
@@ -4650,7 +4650,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -4696,7 +4696,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -4742,7 +4742,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -4808,7 +4808,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -4860,7 +4860,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -4908,7 +4908,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -4981,7 +4981,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -5054,7 +5054,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -5135,7 +5135,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -5216,7 +5216,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -5297,7 +5297,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -5383,7 +5383,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -5464,7 +5464,7 @@
       ],
       "layout": {
         "text-font": [
-          "RobotoCondensed-BoldItalic"
+          "Inter Bold Italic"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -5528,7 +5528,7 @@
       "layout": {
         "text-field": "{feat_name}",
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-anchor": "center",
         "text-allow-overlap": false,
@@ -5553,7 +5553,7 @@
           "feat_name"
         ],
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-anchor": "top",
         "text-allow-overlap": false,
@@ -5602,7 +5602,7 @@
       "layout": {
         "text-field": "{feat_name}",
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-anchor": "left",
         "text-allow-overlap": false,
@@ -5653,7 +5653,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Medium"
+          "Inter Medium"
         ],
         "text-field": "{feat_name}",
         "text-allow-overlap": false,
@@ -5695,7 +5695,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Medium"
+          "Inter Medium"
         ],
         "text-field": "{feat_name}",
         "text-allow-overlap": false,
@@ -5737,7 +5737,7 @@
       "layout": {
         "text-field": "{feat_name}",
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-size": 10,
         "text-letter-spacing": 0.05,
@@ -5766,7 +5766,7 @@
       "layout": {
         "text-field": "{feat_name}",
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-size": 12,
         "text-letter-spacing": 0.05,
@@ -5802,7 +5802,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -5855,7 +5855,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Light"
+          "Inter Light"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -5908,7 +5908,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Light"
+          "Inter Light"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -5961,7 +5961,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6018,7 +6018,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Light"
+          "Inter Light"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6096,7 +6096,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Light"
+          "Inter Light"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6155,7 +6155,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Light"
+          "Inter Light"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6214,7 +6214,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6283,7 +6283,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Medium"
+          "Inter Medium"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6350,7 +6350,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6417,7 +6417,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6484,7 +6484,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6551,7 +6551,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6622,7 +6622,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6693,7 +6693,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6779,7 +6779,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6854,7 +6854,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6919,7 +6919,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -6990,7 +6990,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Medium"
+          "Inter Medium"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -7054,7 +7054,7 @@
       ],
       "layout": {
         "text-font": [
-          "Roboto-Medium"
+          "Inter Medium"
         ],
         "text-field": "{feat_name}",
         "text-size": {
@@ -7112,7 +7112,7 @@
         "symbol-placement": "line",
         "symbol-spacing": 1000,
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-size": 13.3333,
         "text-field": "{_name}",
@@ -7136,7 +7136,7 @@
         "symbol-placement": "line",
         "symbol-spacing": 1000,
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-size": 12,
         "text-field": "{_name}",
@@ -7165,7 +7165,7 @@
         "symbol-placement": "line",
         "symbol-spacing": 1000,
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-size": 13.3333,
         "text-field": "{_name}",
@@ -7194,7 +7194,7 @@
         "symbol-placement": "line",
         "symbol-spacing": 1000,
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-size": 12,
         "text-field": "{_name1}",
@@ -7222,7 +7222,7 @@
         "symbol-placement": "line",
         "symbol-spacing": 1000,
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-size": 17.3333,
         "text-field": "{_name2}",
@@ -7250,7 +7250,7 @@
         "symbol-placement": "line",
         "symbol-spacing": 1000,
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-size": 14.6667,
         "text-field": "{_name3}",
@@ -7279,7 +7279,7 @@
         "symbol-placement": "line",
         "symbol-spacing": 1000,
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-size": 12,
         "text-field": "{_name1}",
@@ -7308,7 +7308,7 @@
         "symbol-placement": "line",
         "symbol-spacing": 1000,
         "text-font": [
-          "Roboto-MediumItalic"
+          "Inter Medium Italic"
         ],
         "text-size": 14.6667,
         "text-field": "{_name}",
@@ -7766,7 +7766,7 @@
           ]
         ],
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "icon-image": [
           "match",
@@ -7846,7 +7846,7 @@
           ]
         ],
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "icon-image": [
           "match",
@@ -7930,7 +7930,7 @@
         ],
         "text-max-width": 5,
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "icon-image": "ar-pin-area",
         "text-anchor": "left"
@@ -8040,7 +8040,7 @@
         ],
         "text-max-width": 5,
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "icon-image": "ar-pin-area-selected",
         "text-anchor": "left",
@@ -8105,7 +8105,7 @@
         ],
         "text-max-width": 6,
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "icon-image": "ar-pin-cluster",
         "text-anchor": "left",
@@ -8179,7 +8179,7 @@
         ],
         "text-max-width": 6,
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "icon-image": "ar-pin-cluster-selected",
         "text-anchor": "left",
@@ -8244,7 +8244,7 @@
         ],
         "text-max-width": 6,
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "icon-image": "ar-pin-region",
         "text-anchor": "left",
@@ -8330,7 +8330,7 @@
         ],
         "text-max-width": 6,
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ],
         "icon-image": "ar-pin-region-selected",
         "text-anchor": "left",
@@ -8401,7 +8401,7 @@
         ],
         "text-max-width": 5,
         "text-font": [
-          "Roboto-Regular"
+          "Inter Regular"
         ]
       },
       "paint": {

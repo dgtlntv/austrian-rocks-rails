@@ -4,6 +4,7 @@ default: &default
   public_cdn_host: tiles.austrian.rocks
   bunny_prefix: map_tiles
   style_prefix: map_styles
+  font_glyph_subpath: fonts/inter-v1
   manifest_prefix: map_tiles
   manifest_object_name: current.json
   default_style: light
