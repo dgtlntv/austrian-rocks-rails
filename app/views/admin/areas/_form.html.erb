@@ -58,6 +58,16 @@
 </div>
 
 <div class="col-span-6 sm:col-span-4">
+  <%= form.label :guidebook_id, "Guidebook" %>
+  <%= form.collection_select :guidebook_id, Guidebook.order(:title), :id, :title, { include_blank: true } %>
+</div>
+
+<div class="col-span-6 sm:col-span-4">
+  <%= form.label :parking_poi_id, "Parking POI" %>
+  <%= form.collection_select :parking_poi_id, Poi.parking.order(:name), :id, :name, { include_blank: true } %>
+</div>
+
+<div class="col-span-6 sm:col-span-4">
   <%= image_tag(@area.cover) if @area.cover&.persisted? %>
   <%= form.label :cover %>
   <%= form.file_field :cover %>

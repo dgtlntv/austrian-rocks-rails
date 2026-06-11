@@ -64,7 +64,7 @@ class Admin::ClustersController < Admin::BaseController
   private
 
   def cluster_params
-    params.require(:cluster).permit(:name, :slug, :published, :main_area_id, :region_id)
+    params.require(:cluster).permit(:name, :slug, :published, :main_area_id, :region_id, :warning_de, :warning_en, :guidebook_id, :parking_poi_id)
   end
 
   def set_cluster

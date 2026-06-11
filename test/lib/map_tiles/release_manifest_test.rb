@@ -24,6 +24,7 @@ class MapTiles::ReleaseManifestTest < ActiveSupport::TestCase
     manifest = JSON.parse(path.read)
     assert_equal "2026-06-09", manifest.fetch("version")
     assert_equal "https://cdn.example.test/map_tiles/austrian-rocks-2026-06-09.pmtiles", manifest.fetch("pmtilesUrl")
+    assert_equal "https://cdn.example.test/map_styles/austrian-rocks-2026-06-09-sprite", manifest.fetch("spriteUrl")
     assert_equal(
       {
         "light" => "https://cdn.example.test/map_styles/austrian-rocks-2026-06-09-light.json",

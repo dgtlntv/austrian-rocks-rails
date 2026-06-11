@@ -33,6 +33,28 @@ class MapControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "northEastLat"
   end
 
+  test "map page renders the info card target with localized card strings" do
+    get "/en/map"
+
+    assert_response :success
+    assert_includes response.body, 'data-map-target="card"'
+    assert_includes response.body, "data-map-card-strings-value="
+    assert_includes response.body, "Zoom to place"
+    assert_not_includes response.body, "data-map-area-id-value"
+
+    get "/de/map"
+
+    assert_response :success
+    assert_includes response.body, "Zum Ort zoomen"
+  end
+
+  test "area slug deep link renders the area id for MapLibre controller" do
+    get "/en/map/test-area"
+
+    assert_response :success
+    assert_includes response.body, "data-map-area-id-value=\"#{@area.id}\""
+  end
+
   test "problem deep link renders problem data for MapLibre controller" do
     get "/en/map", params: { pid: @problem.id }
 
@@ -44,12 +66,29 @@ class MapControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "6a"
   end
 
-  test "public problem popups use PMTiles problem ids" do
+  test "problem query alias renders problem data for MapLibre controller" do
+    get "/en/map", params: { problem: @problem.id }
+
+    assert_response :success
+    assert_maplibre_page
+    assert_includes response.body, "data-map-problem-value="
+    assert_includes response.body, "Test Problem"
+  end
+
+  test "MapLibre controller selects cards for search and deep links without legacy problem popups" do
     controller_source = Rails.root.join("app/javascript/controllers/map_controller.js").read
 
-    assert_includes controller_source, "problem.id ?? problem.problemId"
-    assert_includes controller_source, "encodeURIComponent(problemId)"
-    assert_not_includes controller_source, "problem_id=${encodeURIComponent(problem.id)}"
+    assert_includes controller_source, "selectFeatureWhenIdle"
+    assert_not_includes controller_source, "problemPopupContent"
+    assert_not_includes controller_source, "poiPopupContent"
+    assert_not_includes controller_source, "Math.max(15,"
+    assert_includes controller_source, "maxBounds: AUSTRIA_MAX_BOUNDS"
+    assert_includes controller_source, "setMinZoom"
+    assert_includes controller_source, 'registerSelectClicks("problems", "problem", (zoom) => zoom >= 15)'
+    assert_includes controller_source, 'registerSelectClicks("areas", "area", (zoom) => zoom < 16)'
+    assert_includes controller_source, "lastInteractiveClickEvent"
+    assert_includes controller_source, "selectionBounds"
+    assert_not_includes controller_source, "map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 })"
   end
 
   test "MapLibre controller keeps default attribution control clickable without temporary zoom readout" do

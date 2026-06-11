@@ -34,6 +34,7 @@ module MapTiles
     def build_manifest
       version = configuration.version
       pmtiles_url = validated_public_url(configuration.pmtiles_public_url, name: "pmtilesUrl")
+      sprite_url = validated_public_url(configuration.sprite_public_base_url, name: "spriteUrl")
       styles = Configuration::STYLE_NAMES.to_h do |style_name|
         [ style_name, validated_public_url(configuration.style_public_url(style_name), name: "styles.#{style_name}") ]
       end
@@ -41,6 +42,7 @@ module MapTiles
       {
         "version" => version,
         "pmtilesUrl" => pmtiles_url,
+        "spriteUrl" => sprite_url,
         "styles" => styles,
         "publishedAt" => published_at
       }.tap { |manifest| validate_no_credentials!(manifest) }
@@ -65,7 +67,7 @@ module MapTiles
     end
 
     def validate_no_credentials!(manifest)
-      urls = [ manifest.fetch("pmtilesUrl"), *manifest.fetch("styles").values ]
+      urls = [ manifest.fetch("pmtilesUrl"), manifest.fetch("spriteUrl"), *manifest.fetch("styles").values ]
       return if urls.none? { |url| URI.parse(url).userinfo.present? }
 
       raise Error, "release manifest must not contain credentials"

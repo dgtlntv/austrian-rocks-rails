@@ -1,16 +1,23 @@
 /**
  * Stimulus controller for the Rails map pages. It wires MapLibre GL JS, the
  * PMTiles protocol, release-manifest style loading, web-only interactions,
- * grade filters, search events, and the dynamic contribution-request overlay;
- * shared basemap/source/layer styling lives in the published style JSONs.
+ * pin selection with the responsive info card, grade filters, search events,
+ * and the dynamic contribution-request overlay; shared basemap/source/layer
+ * styling lives in the published style JSONs.
  */
 import { Controller } from "@hotwired/stimulus"
 import maplibregl from "maplibre-gl"
 import { Protocol } from "pmtiles"
+import MapSelection from "map/selection"
+import InfoCard from "map/info_card"
 
 const AUSTRIA_BOUNDS = [
     [9.430320338084726, 46.28576190178245],
     [17.230613306834925, 49.18126637161225],
+]
+const AUSTRIA_MAX_BOUNDS = [
+    [8.75, 45.7],
+    [17.95, 49.75],
 ]
 const GRADE_FILTER_LAYERS = ["problems"]
 const ALL_GRADES = [
@@ -28,6 +35,7 @@ const ALL_GRADES = [
 export default class extends Controller {
     static targets = [
         "map",
+        "card",
         "gradeRadioButton",
         "gradeMin",
         "gradeMax",
@@ -39,6 +47,8 @@ export default class extends Controller {
     static values = {
         bounds: Object,
         problem: Object,
+        cardStrings: Object,
+        areaId: Number,
         locale: { type: String, default: "en" },
         manifestUrl: String,
         style: { type: String, default: "light" },
@@ -53,7 +63,6 @@ export default class extends Controller {
      */
     async connect() {
         this.allGrades = ALL_GRADES
-        this.popup = null
         this.protocol = new Protocol()
         maplibregl.addProtocol("pmtiles", this.protocol.tile)
 
@@ -116,24 +125,33 @@ export default class extends Controller {
             hash: true,
             style: styleUrl,
             bounds: AUSTRIA_BOUNDS,
+            maxBounds: AUSTRIA_MAX_BOUNDS,
             padding: 5,
         })
 
         this.addControls()
 
         this.map.on("load", () => {
+            this.constrainMinimumZoom()
+            this.selection = new MapSelection(this.map)
+            if (this.hasCardTarget) {
+                this.infoCard = new InfoCard(this.cardTarget, this.cardStringsValue, this.localeValue)
+            }
             this.addContributionLayers()
             this.centerMap()
             this.cleanHistory()
             this.setupClickEvents()
         })
+    }
 
-        this.map.on("moveend", () => {
-            if (this.popup != null) {
-                this.popup.addTo(this.map)
-                this.popup = null
-            }
-        })
+    /**
+     * Prevents zooming out so far that Austria becomes a small island, while
+     * keeping a padded max-bounds envelope for easy border-region exploration.
+     * @returns {void}
+     */
+    constrainMinimumZoom() {
+        const camera = this.map.cameraForBounds(AUSTRIA_MAX_BOUNDS, { padding: 20 })
+        if (camera?.zoom !== undefined) this.map.setMinZoom(camera.zoom)
     }
 
     /**
@@ -227,17 +245,15 @@ export default class extends Controller {
                 [bounds.southWestLon, bounds.southWestLat],
                 [bounds.northEastLon, bounds.northEastLat],
             ])
+            if (this.hasAreaIdValue) {
+                this.selectFeatureWhenIdle("areas", "areaId", this.areaIdValue, "area")
+            }
         }
 
         if (this.hasProblemValue) {
             const problem = this.problemValue
             this.map.flyTo({ center: [problem.lon, problem.lat], zoom: 20, speed: 2 })
-
-            if (!this.contributeValue) {
-                this.popup = this.createPopup()
-                    .setLngLat([problem.lon, problem.lat])
-                    .setDOMContent(this.problemPopupContent(problem))
-            }
+            this.selectFeatureWhenIdle("problems", "problemId", problem.id, "problem")
         }
     }
 
@@ -257,23 +273,24 @@ export default class extends Controller {
      * @returns {void}
      */
     setupClickEvents() {
-        this.registerPointerLayer("problems")
+        this.registerPointerLayer("problems", (zoom) => zoom >= 15)
         this.registerPointerLayer("pois", (zoom) => zoom >= 12)
-        this.registerPointerLayer("areas", (zoom) => zoom < 15)
+        this.registerPointerLayer("areas", (zoom) => zoom < 16)
         this.registerPointerLayer("areas-hulls", (zoom) => zoom < 15)
         this.registerPointerLayer("clusters", (zoom) => zoom <= 12)
         this.registerPointerLayer("cluster-hulls", (zoom) => zoom <= 12)
         this.registerPointerLayer("regions", (zoom) => zoom <= 10)
         this.registerPointerLayer("region-hulls", (zoom) => zoom <= 10)
-        this.registerProblemClicks("problems")
         this.registerContributionClicks()
-        this.registerPoiClicks()
-        this.registerBoundsClicks("areas", (zoom) => zoom < 15)
-        this.registerBoundsClicks("areas-hulls", (zoom) => zoom < 15)
-        this.registerBoundsClicks("clusters", (zoom) => zoom <= 12)
-        this.registerBoundsClicks("cluster-hulls", (zoom) => zoom <= 12)
-        this.registerBoundsClicks("regions", (zoom) => zoom <= 10)
-        this.registerBoundsClicks("region-hulls", (zoom) => zoom <= 10)
+        this.registerSelectClicks("problems", "problem", (zoom) => zoom >= 15)
+        this.registerSelectClicks("pois", "poi", (zoom) => zoom >= 12)
+        this.registerSelectClicks("areas", "area", (zoom) => zoom < 16)
+        this.registerSelectClicks("areas-hulls", "area", (zoom) => zoom < 15)
+        this.registerSelectClicks("clusters", "cluster", (zoom) => zoom <= 12)
+        this.registerSelectClicks("cluster-hulls", "cluster", (zoom) => zoom <= 12)
+        this.registerSelectClicks("regions", "region", (zoom) => zoom <= 10)
+        this.registerSelectClicks("region-hulls", "region", (zoom) => zoom <= 10)
+        this.registerBackgroundClicks()
     }
 
     /**
@@ -292,20 +309,294 @@ export default class extends Controller {
     }
 
     /**
-     * Opens safe problem popups for a problem style layer.
-     * @param {string} layerId Layer ID to handle.
+     * Selects the clicked feature and opens its info card.
+     * @param {string} layerId Layer ID to handle (hulls select their pin's entity).
+     * @param {string} kind Entity kind: region/cluster/area/poi/problem.
+     * @param {Function} zoomPredicate Returns true when click should select.
      * @returns {void}
      */
-    registerProblemClicks(layerId) {
+    registerSelectClicks(layerId, kind, zoomPredicate = () => true) {
         if (!this.map.getLayer(layerId)) return
 
         this.map.on("click", layerId, (event) => {
+            if (!zoomPredicate(this.map.getZoom())) return
+
+            this.lastInteractiveClickEvent = event.originalEvent
             const feature = event.features[0]
-            this.createPopup()
-                .setLngLat(feature.geometry.coordinates.slice())
-                .setDOMContent(this.problemPopupContent(feature.properties))
-                .addTo(this.map)
+            const id = feature.properties[`${kind}Id`]
+            if (id === undefined || id === null) return
+            if (this.selection.current?.kind === kind && this.selection.current?.id === id) return
+
+            this.selectFeature(kind, id, feature.properties, event.lngLat)
         })
+    }
+
+    /**
+     * Clears the selection when a click hits no interactive feature.
+     * @returns {void}
+     */
+    registerBackgroundClicks() {
+        this.map.on("click", (event) => {
+            if (!this.selection.current) return
+            if (event.originalEvent && event.originalEvent === this.lastInteractiveClickEvent) return
+
+            const features = this.map.queryRenderedFeatures(event.point, {
+                layers: this.interactiveLayerIds(),
+            })
+            if (features.length === 0) this.clearSelection()
+        })
+    }
+
+    /**
+     * Returns the existing layer IDs a click may interact with.
+     * @returns {string[]} Existing interactive layer IDs.
+     */
+    interactiveLayerIds() {
+        return [
+            "problems", "problems-selected",
+            "pois", "pois-selected",
+            "areas", "areas-selected", "areas-hulls",
+            "clusters", "clusters-selected", "cluster-hulls",
+            "regions", "regions-selected", "region-hulls",
+            "contribute-problems", "contribute-problems-texts",
+        ].filter((layerId) => this.map.getLayer(layerId))
+    }
+
+    /**
+     * After camera movement settles, finds a tile feature by id and selects it.
+     * The source query handles off-screen tile data; rendered features are a
+     * fallback for style-loaded features. Missing features are retried once and
+     * then ignored so stale deep links never break the map.
+     * @param {string} sourceLayer PMTiles source-layer name.
+     * @param {string} idProperty Feature id property to filter by.
+     * @param {number|string} id Feature id to select.
+     * @param {string} kind Entity kind: region/cluster/area/poi/problem.
+     * @param {number} attemptsRemaining Retry budget after this idle event.
+     * @returns {void}
+     */
+    selectFeatureWhenIdle(sourceLayer, idProperty, id, kind, attemptsRemaining = 1) {
+        if (id === undefined || id === null) return
+
+        this.map.once("idle", () => {
+            try {
+                const filter = ["==", ["get", idProperty], id]
+                const feature = this.findSelectableFeature(sourceLayer, kind, filter)
+                if (feature) {
+                    this.selectFeature(kind, id, feature.properties || {}, this.featureLngLat(feature))
+                } else if (attemptsRemaining > 0) {
+                    this.selectFeatureWhenIdle(sourceLayer, idProperty, id, kind, attemptsRemaining - 1)
+                }
+            } catch (_error) {
+                // Deep-link/search selection is best-effort; leave the map usable.
+            }
+        })
+    }
+
+    /**
+     * Finds a selectable feature from source tiles, falling back to rendered layers.
+     * @param {string} sourceLayer PMTiles source-layer name.
+     * @param {string} kind Entity kind used to choose rendered fallback layers.
+     * @param {Array} filter MapLibre filter expression.
+     * @returns {Object|undefined} First matching feature.
+     */
+    findSelectableFeature(sourceLayer, kind, filter) {
+        const sourceFeatures = this.map.querySourceFeatures("austrian-rocks", { sourceLayer, filter })
+        if (sourceFeatures.length > 0) return sourceFeatures[0]
+
+        const layers = this.renderedLayersForKind(kind)
+        if (layers.length === 0) return undefined
+
+        return this.map.queryRenderedFeatures({ layers, filter })[0]
+    }
+
+    /**
+     * Returns existing rendered layers for a feature kind.
+     * @param {string} kind Entity kind: region/cluster/area/poi/problem.
+     * @returns {string[]} Existing layer IDs.
+     */
+    renderedLayersForKind(kind) {
+        const layerIds = {
+            problem: ["problems", "problems-selected"],
+            poi: ["pois", "pois-selected"],
+            area: ["areas", "areas-selected", "areas-hulls"],
+            cluster: ["clusters", "clusters-selected", "cluster-hulls"],
+            region: ["regions", "regions-selected", "region-hulls"],
+        }[kind] || []
+
+        return layerIds.filter((layerId) => this.map.getLayer(layerId))
+    }
+
+    /**
+     * Returns a representative coordinate for a feature to keep visible by the card.
+     * @param {Object} feature MapLibre feature.
+     * @returns {Array<number>|undefined} LngLat-like coordinate.
+     */
+    featureLngLat(feature) {
+        if (feature.geometry?.type === "Point") return feature.geometry.coordinates.slice()
+
+        const properties = feature.properties || {}
+        const west = Number(properties.southWestLon)
+        const east = Number(properties.northEastLon)
+        const south = Number(properties.southWestLat)
+        const north = Number(properties.northEastLat)
+        if (![west, east, south, north].every(Number.isFinite)) return undefined
+
+        return [
+            (west + east) / 2,
+            (south + north) / 2,
+        ]
+    }
+
+    /**
+     * Applies a selection: grows the selected pin and opens the info card.
+     * @param {string} kind Entity kind: region/cluster/area/poi/problem.
+     * @param {number} id Entity id from the tile properties.
+     * @param {Object} properties Tile feature properties for the card.
+     * @param {maplibregl.LngLatLike} lngLat Selected coordinate for sheet handling.
+     * @returns {void}
+     */
+    selectFeature(kind, id, properties, lngLat) {
+        this.selection.select(kind, id)
+        this.infoCard?.show(kind, properties, {
+            showOnMap: () => this.showSelectionOnMap(kind, properties),
+            close: () => this.clearSelection(),
+        })
+        this.adjustSheetPadding(lngLat)
+    }
+
+    /**
+     * Clears the selection and hides the card, leaving any user-visible camera
+     * padding in place instead of snapping the map back on close.
+     * @returns {void}
+     */
+    clearSelection() {
+        this.selection.clear()
+        this.infoCard?.hide()
+    }
+
+    /**
+     * Card "Show on map" CTA: flies to the entity bounds — for regions the
+     * main-cluster bounds when baked, else the full bounds — then closes the card.
+     * @param {string} kind Entity kind: region/cluster/area/poi/problem.
+     * @param {Object} properties Tile feature properties with bounds.
+     * @returns {void}
+     */
+    showSelectionOnMap(kind, properties) {
+        const bounds = this.selectionBounds(kind, properties)
+        if (!bounds) return
+
+        this.flyToBounds(bounds)
+        this.clearSelection()
+    }
+
+    /**
+     * Returns valid bounds for the selected entity, preferring a region's
+     * baked main-cluster bounds when present.
+     * @param {string} kind Entity kind: region/cluster/area/poi/problem.
+     * @param {Object} properties Tile feature properties with bounds.
+     * @returns {Array<Array<number>>|null} Southwest/northeast bounds or null.
+     */
+    selectionBounds(kind, properties) {
+        if (kind === "region") {
+            const mainClusterBounds = this.validBounds([
+                [properties.mainClusterSouthWestLon, properties.mainClusterSouthWestLat],
+                [properties.mainClusterNorthEastLon, properties.mainClusterNorthEastLat],
+            ])
+            if (mainClusterBounds) return mainClusterBounds
+        }
+
+        return this.validBounds([
+            [properties.southWestLon, properties.southWestLat],
+            [properties.northEastLon, properties.northEastLat],
+        ])
+    }
+
+    /**
+     * Normalizes a candidate bounds array, rejecting missing/blank values.
+     * @param {Array<Array<unknown>>} bounds Southwest/northeast candidates.
+     * @returns {Array<Array<number>>|null} Numeric bounds or null.
+     */
+    validBounds(bounds) {
+        if (bounds.flat().some((value) => value === undefined || value === null || value === "")) return null
+
+        const numericBounds = bounds.map((corner) => corner.map((value) => Number(value)))
+        return numericBounds.flat().every(Number.isFinite) ? numericBounds : null
+    }
+
+    /**
+     * Keeps the selected pin visible next to the open card: below the lg
+     * breakpoint the card is a bottom sheet, at lg and up a docked panel.
+     * @param {maplibregl.LngLat} lngLat Selected coordinate.
+     * @returns {void}
+     */
+    adjustSheetPadding(lngLat) {
+        if (!this.hasCardTarget) return
+
+        if (window.matchMedia("(min-width: 1024px)").matches) {
+            this.adjustDockedPanelPadding(lngLat)
+        } else {
+            this.adjustBottomSheetPadding(lngLat)
+        }
+    }
+
+    /**
+     * Smoothly nudges the map only when the bottom sheet covers the selected
+     * coordinate.
+     * @param {maplibregl.LngLat} lngLat Selected coordinate.
+     * @returns {void}
+     */
+    adjustBottomSheetPadding(lngLat) {
+        if (!lngLat) return
+
+        const sheetHeight = this.cardTarget.offsetHeight
+        const point = this.map.project(lngLat)
+        const margin = 16
+        const safeBottom = this.map.getContainer().clientHeight - sheetHeight - margin
+        if (point.y > safeBottom) {
+            this.easeSelectedPointTo(lngLat, { x: point.x, y: safeBottom })
+        }
+    }
+
+    /**
+     * Smoothly nudges the map only when the docked panel covers the selected
+     * coordinate. The card target is absolutely positioned in the map
+     * container, so its rect is mapped into map-container coordinates first.
+     * @param {maplibregl.LngLat} lngLat Selected coordinate.
+     * @returns {void}
+     */
+    adjustDockedPanelPadding(lngLat) {
+        if (!lngLat) return
+
+        const cardRect = this.cardTarget.getBoundingClientRect()
+        const containerRect = this.map.getContainer().getBoundingClientRect()
+        const panelLeft = Math.max(0, cardRect.left - containerRect.left)
+        const panelRight = Math.max(0, cardRect.right - containerRect.left)
+        const panelTop = Math.max(0, cardRect.top - containerRect.top)
+        const panelBottom = Math.max(0, cardRect.bottom - containerRect.top)
+        const margin = 16
+        const point = this.map.project(lngLat)
+        const covered = point.x > panelLeft - margin
+            && point.x < panelRight + margin
+            && point.y > panelTop - margin
+            && point.y < panelBottom + margin
+        if (covered) this.easeSelectedPointTo(lngLat, { x: panelRight + margin, y: point.y })
+    }
+
+    /**
+     * Computes the smallest center change needed to move a selected coordinate
+     * to a target screen point, avoiding full re-centers and persistent padding.
+     * @param {maplibregl.LngLatLike} lngLat Selected coordinate.
+     * @param {Object} targetPoint Desired screen point: { x, y }.
+     * @returns {void}
+     */
+    easeSelectedPointTo(lngLat, targetPoint) {
+        const point = this.map.project(lngLat)
+        const centerPoint = this.map.project(this.map.getCenter())
+        const newCenter = this.map.unproject([
+            centerPoint.x + point.x - targetPoint.x,
+            centerPoint.y + point.y - targetPoint.y,
+        ])
+        this.map.easeTo({ center: newCenter, duration: 300 })
     }
 
     /**
@@ -317,6 +608,7 @@ export default class extends Controller {
             if (!this.map.getLayer(layerId)) return
 
             this.map.on("click", layerId, (event) => {
+                this.lastInteractiveClickEvent = event.originalEvent
                 const feature = event.features[0]
                 this.createPopup()
                     .setLngLat(feature.geometry.coordinates.slice())
@@ -324,90 +616,6 @@ export default class extends Controller {
                     .addTo(this.map)
             })
         })
-    }
-
-    /**
-     * Opens safe POI popups at zoom levels where POIs are interactive.
-     * @returns {void}
-     */
-    registerPoiClicks() {
-        if (!this.map.getLayer("pois")) return
-
-        this.map.on("click", "pois", (event) => {
-            if (this.map.getZoom() < 12) return
-
-            const popupContent = this.poiPopupContent(event.features[0].properties)
-            if (!popupContent) return
-
-            this.createPopup()
-                .setLngLat(event.features[0].geometry.coordinates.slice())
-                .setDOMContent(popupContent)
-                .addTo(this.map)
-        })
-    }
-
-    /**
-     * Flies to bounds encoded on region/cluster/area features.
-     * @param {string} layerId Layer ID to handle.
-     * @param {Function} zoomPredicate Returns true when click should drill in.
-     * @returns {void}
-     */
-    registerBoundsClicks(layerId, zoomPredicate) {
-        if (!this.map.getLayer(layerId)) return
-
-        this.map.on("click", layerId, (event) => {
-            if (!zoomPredicate(this.map.getZoom())) return
-
-            const props = event.features[0].properties
-            this.flyToBounds([
-                [props.southWestLon, props.southWestLat],
-                [props.northEastLon, props.northEastLat],
-            ])
-        })
-    }
-
-    /**
-     * Builds a localized problem-popup DOM tree without raw HTML interpolation.
-     * @param {Object} problem Problem feature properties.
-     * @returns {HTMLElement} Popup content element.
-     */
-    problemPopupContent(problem) {
-        const container = document.createElement("div")
-        const problemId = this.problemFeatureId(problem)
-
-        if (problemId !== undefined && problemId !== null && problemId !== "") {
-            const link = document.createElement("a")
-            link.href = `/${this.localeValue}/redirects/new?problem_id=${encodeURIComponent(problemId)}`
-            link.target = "_blank"
-            link.rel = "noopener noreferrer"
-            link.textContent = this.localizedName(problem)
-            container.appendChild(link)
-        } else {
-            container.appendChild(document.createTextNode(this.localizedName(problem)))
-        }
-
-        const grade = document.createElement("span")
-        grade.className = "text-gray-400 ml-1"
-        grade.textContent = problem.grade || ""
-        container.appendChild(grade)
-        return container
-    }
-
-    /**
-     * Builds a POI popup only when googleUrl is a safe HTTP(S) URL.
-     * @param {Object} properties POI feature properties.
-     * @returns {HTMLElement|null} Popup content element or null.
-     */
-    poiPopupContent(properties) {
-        const url = this.safeHttpUrl(properties.googleUrl)
-        if (!url) return null
-
-        const link = document.createElement("a")
-        link.href = url.toString()
-        link.target = "_blank"
-        link.rel = "noopener noreferrer"
-        link.textContent = this.localeValue == "de" ? "Auf Google ansehen" : "See on Google"
-        return link
     }
 
     /**
@@ -468,29 +676,6 @@ export default class extends Controller {
     }
 
     /**
-     * Returns the problem ID from either Rails deep-link data or PMTiles feature properties.
-     * @param {Object} problem Problem feature properties.
-     * @returns {string|number|undefined|null} Problem identifier.
-     */
-    problemFeatureId(problem) {
-        return problem.id ?? problem.problemId
-    }
-
-    /**
-     * Accepts only HTTP(S) URLs for popup links.
-     * @param {string} value Raw URL value.
-     * @returns {URL|null} Parsed safe URL or null.
-     */
-    safeHttpUrl(value) {
-        try {
-            const url = new URL(value)
-            return ["http:", "https:"].includes(url.protocol) ? url : null
-        } catch (_error) {
-            return null
-        }
-    }
-
-    /**
      * Creates a consistent MapLibre popup instance.
      * @returns {maplibregl.Popup} Configured popup.
      */
@@ -499,7 +684,7 @@ export default class extends Controller {
     }
 
     /**
-     * Flies the map to a bounding box while keeping the current minimum zoom behaviour.
+     * Flies the map to a bounding box while fitting the target bounds.
      * @param {Array<Array<number>>} bounds Southwest and northeast coordinate pairs.
      * @returns {void}
      */
@@ -507,7 +692,6 @@ export default class extends Controller {
         const cameraOptions = this.map.cameraForBounds(bounds, {
             padding: { top: 20, bottom: 100, left: 20, right: 20 },
         })
-        cameraOptions.zoom = Math.max(15, cameraOptions.zoom)
         cameraOptions.speed = 2
         this.map.flyTo(cameraOptions)
     }
@@ -634,10 +818,7 @@ export default class extends Controller {
      */
     gotoproblem(event) {
         this.map.flyTo({ center: [event.detail.lon, event.detail.lat], zoom: 20, speed: 2 })
-        this.createPopup()
-            .setLngLat([event.detail.lon, event.detail.lat])
-            .setDOMContent(this.problemPopupContent(event.detail))
-            .addTo(this.map)
+        this.selectFeatureWhenIdle("problems", "problemId", event.detail.id, "problem")
     }
 
     /**
@@ -650,5 +831,6 @@ export default class extends Controller {
             [event.detail.south_west_lon, event.detail.south_west_lat],
             [event.detail.north_east_lon, event.detail.north_east_lat],
         ])
+        this.selectFeatureWhenIdle("areas", "areaId", event.detail.id, "area")
     }
 }

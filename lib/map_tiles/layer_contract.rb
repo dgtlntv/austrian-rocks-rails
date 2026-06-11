@@ -15,7 +15,7 @@ module MapTiles
         name: "problems",
         geometry_type: "Point",
         required_properties: %w[problemId areaId areaSlug name grade steepness featured],
-        optional_properties: %w[boulderId nameEn popularity landing height parentProblemId]
+        optional_properties: %w[boulderId nameEn popularity landing height parentProblemId topoPhotoUrl lineCoordinatesJson]
       ),
       Layer.new(
         name: "boulders",
@@ -27,37 +27,37 @@ module MapTiles
         name: "areas",
         geometry_type: "Point",
         required_properties: %w[areaId areaSlug name priority southWestLat southWestLon northEastLat northEastLon],
-        optional_properties: %w[nameEn shortName clusterId clusterSlug]
+        optional_properties: %w[nameEn shortName clusterId clusterSlug problemCount gradeMin gradeMax gradeHistogramJson coverPhotoUrl warning warningEn guidebookTitle guidebookAuthor guidebookUrl parkingPoiId parkingName parkingGoogleUrl]
       ),
       Layer.new(
         name: "area_hulls",
         geometry_type: "Polygon",
         required_properties: %w[areaId areaSlug southWestLat southWestLon northEastLat northEastLon],
-        optional_properties: %w[name nameEn priority]
+        optional_properties: %w[name nameEn priority problemCount gradeMin gradeMax gradeHistogramJson coverPhotoUrl warning warningEn guidebookTitle guidebookAuthor guidebookUrl parkingPoiId parkingName parkingGoogleUrl]
       ),
       Layer.new(
         name: "clusters",
         geometry_type: "Point",
         required_properties: %w[clusterId clusterSlug name southWestLat southWestLon northEastLat northEastLon],
-        optional_properties: %w[nameEn regionId regionSlug mainAreaId mainAreaSlug]
+        optional_properties: %w[nameEn regionId regionSlug mainAreaId mainAreaSlug problemCount gradeMin gradeMax gradeHistogramJson coverPhotoUrl warning warningEn guidebookTitle guidebookAuthor guidebookUrl parkingPoiId parkingName parkingGoogleUrl]
       ),
       Layer.new(
         name: "cluster_hulls",
         geometry_type: "Polygon",
         required_properties: %w[clusterId clusterSlug southWestLat southWestLon northEastLat northEastLon],
-        optional_properties: %w[name nameEn regionId regionSlug mainAreaId mainAreaSlug]
+        optional_properties: %w[name nameEn regionId regionSlug mainAreaId mainAreaSlug problemCount gradeMin gradeMax gradeHistogramJson coverPhotoUrl warning warningEn guidebookTitle guidebookAuthor guidebookUrl parkingPoiId parkingName parkingGoogleUrl]
       ),
       Layer.new(
         name: "regions",
         geometry_type: "Point",
         required_properties: %w[regionId regionSlug name southWestLat southWestLon northEastLat northEastLon],
-        optional_properties: %w[nameEn mainClusterId mainClusterSlug]
+        optional_properties: %w[nameEn mainClusterId mainClusterSlug mainClusterSouthWestLat mainClusterSouthWestLon mainClusterNorthEastLat mainClusterNorthEastLon problemCount gradeMin gradeMax gradeHistogramJson coverPhotoUrl warning warningEn guidebookTitle guidebookAuthor guidebookUrl parkingPoiId parkingName parkingGoogleUrl]
       ),
       Layer.new(
         name: "region_hulls",
         geometry_type: "Polygon",
         required_properties: %w[regionId regionSlug southWestLat southWestLon northEastLat northEastLon],
-        optional_properties: %w[name nameEn mainClusterId mainClusterSlug]
+        optional_properties: %w[name nameEn mainClusterId mainClusterSlug mainClusterSouthWestLat mainClusterSouthWestLon mainClusterNorthEastLat mainClusterNorthEastLon problemCount gradeMin gradeMax gradeHistogramJson coverPhotoUrl warning warningEn guidebookTitle guidebookAuthor guidebookUrl parkingPoiId parkingName parkingGoogleUrl]
       ),
       Layer.new(
         name: "walking_paths",

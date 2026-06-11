@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_06_08_120001) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_10_090002) do
   create_schema "tiger"
   create_schema "tiger_data"
   create_schema "topology"
@@ -67,7 +67,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_08_120001) do
     t.text "warning_de"
     t.text "warning_en"
     t.bigint "cluster_id"
+    t.bigint "guidebook_id"
+    t.bigint "parking_poi_id"
     t.index ["cluster_id"], name: "index_areas_on_cluster_id"
+    t.index ["guidebook_id"], name: "index_areas_on_guidebook_id"
+    t.index ["parking_poi_id"], name: "index_areas_on_parking_poi_id"
     t.index ["slug"], name: "index_areas_on_slug", unique: true
     t.index ["tags"], name: "index_areas_on_tags", using: :gin
   end
@@ -116,7 +120,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_08_120001) do
     t.string "slug"
     t.string "tags", default: [], null: false, array: true
     t.boolean "published", default: true, null: false
+    t.text "warning_de"
+    t.text "warning_en"
+    t.bigint "guidebook_id"
+    t.bigint "parking_poi_id"
+    t.index ["guidebook_id"], name: "index_clusters_on_guidebook_id"
     t.index ["main_area_id"], name: "index_clusters_on_main_area_id"
+    t.index ["parking_poi_id"], name: "index_clusters_on_parking_poi_id"
     t.index ["region_id"], name: "index_clusters_on_region_id"
     t.index ["tags"], name: "index_clusters_on_tags", using: :gin
   end
@@ -146,6 +156,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_08_120001) do
     t.string "problem_name"
     t.string "problem_url"
     t.index ["problem_id"], name: "index_contributions_on_problem_id"
+  end
+
+  create_table "guidebooks", force: :cascade do |t|
+    t.string "title", null: false
+    t.string "author"
+    t.string "url", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "imports", force: :cascade do |t|
@@ -265,7 +283,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_08_120001) do
     t.string "slug"
     t.string "tags", default: [], null: false, array: true
     t.boolean "published", default: true, null: false
+    t.text "warning_de"
+    t.text "warning_en"
+    t.bigint "guidebook_id"
+    t.bigint "parking_poi_id"
+    t.index ["guidebook_id"], name: "index_regions_on_guidebook_id"
     t.index ["main_cluster_id"], name: "index_regions_on_main_cluster_id"
+    t.index ["parking_poi_id"], name: "index_regions_on_parking_poi_id"
     t.index ["tags"], name: "index_regions_on_tags", using: :gin
   end
 
@@ -316,8 +340,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_08_120001) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "areas", "clusters"
+  add_foreign_key "areas", "guidebooks"
+  add_foreign_key "areas", "pois", column: "parking_poi_id"
   add_foreign_key "boulders", "areas"
   add_foreign_key "clusters", "areas", column: "main_area_id"
+  add_foreign_key "clusters", "guidebooks"
+  add_foreign_key "clusters", "pois", column: "parking_poi_id"
   add_foreign_key "clusters", "regions"
   add_foreign_key "contribution_requests", "problems"
   add_foreign_key "contributions", "problems"
@@ -329,6 +357,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_08_120001) do
   add_foreign_key "problems", "boulders"
   add_foreign_key "problems", "problems", column: "parent_id"
   add_foreign_key "regions", "clusters", column: "main_cluster_id"
+  add_foreign_key "regions", "guidebooks"
+  add_foreign_key "regions", "pois", column: "parking_poi_id"
   add_foreign_key "topos", "boulders"
   add_foreign_key "walking_path_areas", "areas"
   add_foreign_key "walking_path_areas", "walking_paths"

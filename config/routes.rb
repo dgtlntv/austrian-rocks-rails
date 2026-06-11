@@ -27,6 +27,7 @@ Rails.application.routes.draw do
       end
       resources :pois
       resources :poi_routes
+      resources :guidebooks
       resources :walking_paths do
         member do
           patch :publish

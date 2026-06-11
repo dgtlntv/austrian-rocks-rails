@@ -8,6 +8,7 @@ module MapTiles
   class Configuration
     VERSION_REQUIRED_MESSAGE = "--version is required for build, smoke, and publish"
     STYLE_NAMES = %w[light dark].freeze
+    SPRITE_SUFFIXES = [ ".png", ".json", "@2x.png", "@2x.json" ].freeze
 
     attr_reader :env
 
@@ -127,6 +128,28 @@ module MapTiles
       output_dir.join(manifest_object_name)
     end
 
+    # The four sprite artifacts share one versioned basename; MapLibre clients
+    # receive only the extensionless base URL and append .png/.json/@2x themselves.
+    def sprite_basename
+      "#{artifact_basename}-#{version}-sprite"
+    end
+
+    def sprite_artifact_path(suffix)
+      output_dir.join("#{sprite_basename}#{sprite_suffix(suffix)}")
+    end
+
+    def sprite_object_key(suffix)
+      object_key(style_prefix, "#{sprite_basename}#{sprite_suffix(suffix)}")
+    end
+
+    def sprite_public_url(suffix)
+      "#{sprite_public_base_url}#{sprite_suffix(suffix)}"
+    end
+
+    def sprite_public_base_url
+      public_url_for_object_key(object_key(style_prefix, sprite_basename))
+    end
+
     def versioned_object_key
       object_key(bunny_prefix, "#{artifact_basename}-#{version}.pmtiles")
     end
@@ -188,6 +211,14 @@ module MapTiles
 
     def object_key(prefix, file_name)
       [ prefix.presence, file_name ].compact.join("/")
+    end
+
+    # "@2x" makes the sprite suffixes the one object-key fragment the generic
+    # path-segment sanitizer cannot pass, so they come from a closed allowlist.
+    def sprite_suffix(suffix)
+      raise ArgumentError, "sprite suffix must be one of: #{SPRITE_SUFFIXES.join(', ')}" unless SPRITE_SUFFIXES.include?(suffix)
+
+      suffix
     end
 
     def sanitized_prefix(name)

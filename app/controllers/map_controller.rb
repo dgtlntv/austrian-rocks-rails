@@ -13,7 +13,9 @@ class MapController < ApplicationController
       with_indifferent_access.deep_transform_keys { |key| key.camelize(:lower) }
     end
 
-    if params[:pid] && (problem = Problem.find(params[:pid]))
+    problem_id = params[:pid].presence || params[:problem].presence
+
+    if problem_id && (problem = Problem.find(problem_id))
       location = if params[:contribute]
         problem.contribution_requests.first&.location_estimated
       else
